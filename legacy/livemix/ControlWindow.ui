@@ -1,0 +1,393 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <author>Josiah Bryan</author>
+ <class>ControlWindow</class>
+ <widget class="QMainWindow" name="ControlWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>800</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="verticalLayout_3">
+    <item>
+     <widget class="QSplitter" name="splitter_2">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+      <widget class="QTabWidget" name="tabWidget">
+       <property name="currentIndex">
+        <number>1</number>
+       </property>
+       <widget class="QWidget" name="tab_2">
+        <attribute name="title">
+         <string>Preview</string>
+        </attribute>
+        <layout class="QVBoxLayout" name="verticalLayout">
+         <item>
+          <widget class="QSplitter" name="splitter_5">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <widget class="QWidget" name="">
+            <layout class="QHBoxLayout" name="horizontalLayout_4">
+             <item>
+              <widget class="QGroupBox" name="previewMonitorBox">
+               <property name="title">
+                <string>Monitor</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="previeGoLiveBtn">
+               <property name="text">
+                <string>Go Live &gt;</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+           <widget class="QSplitter" name="splitter_6">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <widget class="QGroupBox" name="groupBox_2">
+             <property name="title">
+              <string>Layers</string>
+             </property>
+             <layout class="QVBoxLayout" name="verticalLayout_7">
+              <item>
+               <widget class="QListView" name="previewLayerTable">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+            <widget class="QSplitter" name="splitter_7">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+             <widget class="QGroupBox" name="previewContentSelectorGroupBox">
+              <property name="title">
+               <string>Content Selector</string>
+              </property>
+              <layout class="QVBoxLayout" name="verticalLayout_8"/>
+             </widget>
+             <widget class="QGroupBox" name="previewPlaylistGroupBox">
+              <property name="title">
+               <string>Playlist</string>
+              </property>
+              <layout class="QVBoxLayout" name="verticalLayout_9">
+               <item>
+                <layout class="QHBoxLayout" name="horizontalLayout_3">
+                 <item>
+                  <widget class="QPushButton" name="previewPlaylistUpBtn">
+                   <property name="text">
+                    <string>Up</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="previewPlaylistDownBtn">
+                   <property name="text">
+                    <string>Dn</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="previewPlaylistPrevBtn">
+                   <property name="text">
+                    <string>&lt; Prev</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="previewPlaylistNextBtn">
+                   <property name="text">
+                    <string>Nxt &gt;</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="previewPlaylistDelBtn">
+                   <property name="text">
+                    <string>X</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+               <item>
+                <widget class="QTableView" name="playlistTablePreview">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </widget>
+           </widget>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+       <widget class="QWidget" name="tab">
+        <attribute name="title">
+         <string>Live Output</string>
+        </attribute>
+        <layout class="QVBoxLayout" name="verticalLayout_6">
+         <item>
+          <widget class="QSplitter" name="splitter_4">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <widget class="QWidget" name="">
+            <layout class="QHBoxLayout" name="horizontalLayout">
+             <item>
+              <widget class="QGroupBox" name="liveMonitorBox">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                 <horstretch>1</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="title">
+                <string>Monitor</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+           <widget class="QSplitter" name="splitter_3">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <widget class="QGroupBox" name="groupBox">
+             <property name="title">
+              <string>Layers</string>
+             </property>
+             <layout class="QVBoxLayout" name="verticalLayout_2">
+              <item>
+               <widget class="QListView" name="layerTableLive">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+            <widget class="QSplitter" name="splitter">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+             <widget class="QGroupBox" name="contentSelectorGroupBox">
+              <property name="title">
+               <string>Content Selector</string>
+              </property>
+              <layout class="QVBoxLayout" name="verticalLayout_5"/>
+             </widget>
+             <widget class="QGroupBox" name="playlistGroupBox">
+              <property name="title">
+               <string>Playlist</string>
+              </property>
+              <layout class="QVBoxLayout" name="verticalLayout_4">
+               <item>
+                <layout class="QHBoxLayout" name="horizontalLayout_2">
+                 <item>
+                  <widget class="QPushButton" name="playlistUpBtn">
+                   <property name="text">
+                    <string>Up</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="playlistDownBtn">
+                   <property name="text">
+                    <string>Dn</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="playlistPrevBtn">
+                   <property name="text">
+                    <string>&lt; Prev</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="playlistNextBtn">
+                   <property name="text">
+                    <string>Nxt &gt;</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="playlistDelBtn">
+                   <property name="text">
+                    <string>X</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+               <item>
+                <widget class="QTableView" name="playlistTableLive">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </widget>
+           </widget>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </widget>
+      <widget class="QTableWidget" name="layoutScheduleTable">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>800</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="actionNew_Schedule"/>
+    <addaction name="actionOpen_Schedule"/>
+    <addaction name="actionSave_Schedule"/>
+    <addaction name="actionSave_Schedule_As"/>
+    <addaction name="separator"/>
+    <addaction name="actionQuit"/>
+   </widget>
+   <widget class="QMenu" name="menuEdit">
+    <property name="title">
+     <string>Edit</string>
+    </property>
+    <addaction name="actionAdd_Layout"/>
+    <addaction name="actionRemove_Layout"/>
+   </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>Help</string>
+    </property>
+    <addaction name="actionAbout_LiveMix_Controller"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuEdit"/>
+   <addaction name="menuHelp"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QToolBar" name="toolBar">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionAdd_Layout"/>
+   <addaction name="actionRemove_Layout"/>
+  </widget>
+  <action name="actionAbout_LiveMix_Controller">
+   <property name="text">
+    <string>About LiveMix Controller</string>
+   </property>
+  </action>
+  <action name="actionNew_Schedule">
+   <property name="text">
+    <string>New Schedule</string>
+   </property>
+  </action>
+  <action name="actionOpen_Schedule">
+   <property name="text">
+    <string>Open Schedule...</string>
+   </property>
+  </action>
+  <action name="actionSave_Schedule">
+   <property name="text">
+    <string>Save Schedule</string>
+   </property>
+  </action>
+  <action name="actionSave_Schedule_As">
+   <property name="text">
+    <string>Save Schedule As...</string>
+   </property>
+  </action>
+  <action name="actionQuit">
+   <property name="text">
+    <string>Quit</string>
+   </property>
+  </action>
+  <action name="actionAdd_Layout">
+   <property name="text">
+    <string>Add New Layout to Schedule...</string>
+   </property>
+  </action>
+  <action name="actionRemove_Layout">
+   <property name="text">
+    <string>Remove Selected Layout</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+ <designerdata>
+  <property name="gridDeltaX">
+   <number>10</number>
+  </property>
+  <property name="gridDeltaY">
+   <number>10</number>
+  </property>
+  <property name="gridSnapX">
+   <bool>true</bool>
+  </property>
+  <property name="gridSnapY">
+   <bool>true</bool>
+  </property>
+  <property name="gridVisible">
+   <bool>false</bool>
+  </property>
+ </designerdata>
+</ui>

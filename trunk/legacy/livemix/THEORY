@@ -1,0 +1,31 @@
+Theory:
+	Basic graphics engine of LiveMix is the GLWidget
+		GLWidget can have various GLDrawables
+			Example: GLVideoDrawable renders a video stream using OpenGL
+		Drawables can be:
+			- anywhere on the GLWidget
+			- have opacity and a suggested bounding rectangle
+			- Z order
+			- In and Out animations
+	
+	LiveLayer has:
+		A GLDrawable object to render on a GLWidget
+		A Control Widget for controlling
+		Many layers can be "live" at any one time
+	
+	LiveScene has:
+		Many layers
+		Timeline for showing/hiding/setting properties on layers
+			Events on timeline can be:
+				- Triggered automatically by the play clock
+					- Clock starts when layer is "shown"
+					- Clock pauses when it hits a non-timed trigger
+				- Triggered manually by clicking on the trigger
+		Only one scene "live" at any one time
+		
+	Document:
+		Many scenes
+			Scenes can be scheduled to Wall Clock time or to Play clock time
+			
+		
+		

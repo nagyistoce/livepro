@@ -1,0 +1,173 @@
+New Structure Thoughts:
+-----------------------
+
+Several Components:
+	- Player Binary:
+		- Standalone player, either plays an lmx file from disk or over the network
+		- Can be controlled over the network to send live cam for monitoring, receive video for playback, set properties on layers dynamically, and query properties on layers
+	- Player HTTP Server:
+		- Runs on the player to:
+			- Configure hardware/OS options such as:
+				- WiFi AP SSID 
+				- WiFi/LAN IP Addressing
+				- Date/Time
+				- Data Directory Mounts
+					- SMB
+					- NFS
+				- Username/passwords for HTTP
+				- FTP password for file upload to player
+			- Load an LMX file as a template
+				- Set up an internal schedule for that file
+					- E.g. per user-controllable layer, set the playlist
+						- Playlist items can either be locked to a date/time (with appros repeat options, etc)
+						- Or items can be slotted to play in order in a loop until the next scheduled item
+				- Schedule that template to run at a specific time
+				- Limited 'modify template' functionality:
+					- For non-user controllable layers, still allow them to go into an 'edit mode' to change the user properties on those 
+						layers, such as the background image, etc.
+			- View/Control currently running LMX file/schedule
+				- See a preview image captured Xfps and sent to browser
+		- HTTP server connects locally to the player to set the LMX file and read/write properties
+	- Player Live Director
+		- Linux (and ideally, Windows) GUI program
+		- Runs on any machine on the network
+		- Connects to one or more players over the network
+			- Players that support video capture can send preview streams over the network for switching control
+		- Initially, (e.g. early release) - if wanting to update schedule (e.g. auto-played stuff), will open link to web browser for that player
+			- Future releases may include native schedule editor
+		- Can edit/upload LMX templates to players
+			- Contains a 'template editor'
+				- Loads a scene into the editor
+				- Allows moving items in the scene
+				- Editing properties on the selected item
+				- Adding items to the scene
+				- Saving scene
+			- Library of LMX templates (folder browser)
+				- Select template
+					- Edit selected template
+					- Delete selected template
+					- Upload to Player
+				- Create new template
+		- Primary interface will be to control in real time the user-controllable properties of one or more players
+			- Intelligent controls, such as for the Live Video, it should provide a view of each video caputre device on the remote player for preview purposes inorder to facilitate switching between devices
+			- Discussion:	
+				- To make it easier, the template designer for the switcher could just add a layer for each video capture device.
+					- Need to add a 'layer visibility group' attribute
+						- If all members of a group are the same type (e.g. LiveVideo), then the layers are mutually exclusive in visibility
+						- If mixed members, all go visible/invisible when one does
+				- The controller would decide how to display each layer:
+					- For video layers, display preview of the live video
+						- If the layer, such as a live video, is member of a group, group the two layers together for switching purposes
+						- If layer is a video player and not in a group, display the layer as a view of the current playing file with associated playlist controls and volume/seek/pause/stop/play controls etc
+						- If layer is text layer, input for changing text
+							- Need to show a playlist or snippet collection for text to switch between texts
+						- Need to add a text scroller item
+						- If layer is image layer, preview current image
+							- Image play list needed as well along with timed display
+					- Controller can hide/show a layer at will and the controller will effect appros changes on the other layers in the group
+						- Grouped layrs are displayed appropriatly together
+				- For each player, provide a 'quasi' live view composed locally - not transmitted from player
+				
+			
+
+
+
+- CameraThread: Integrate more advanced deinterlacing methods, such as those in http://tvtime.sourceforge.net/
+
+- Integrate Qt Graphics Dojo blog - htmleditor - into editing text
+- Add fade in/out offsets
+
+- Add read signal for prop editors - even more important now with key framing , etc
+	- tried, not working right now
+	
+- For videos, add a timeline, and pause/play/ff/rw actions
+- Add mouse support to GLWidget for picking, moving
+- Add cross fading for text and static sources
+- Add canvas size setting methods 
+- Add "camera" point (viewport) movement...?
+
+- Add 'draw a border' around video if desired (for position on screen)
+
+- Add text scroller methods
+
+
+- Video file playlist - doesnt save deletes/moves for some reason
+
+- Location Editor:
+	- needs to always work in pixels
+	- Move the alignment stuff out of GLDrawable and into LiveLayer
+	- Move the show/hide animations out of GLDrawable and Into LiveLayer (maybe......)
+	- ADD MOUSE MOVE/RESIZE!
+	
+As of 2010-10-14: In Debug.lmx, the middle 'squares2.png' layer doesnt restore its position after load UNTIL I edit the width - then it properly restores rect 
+
+
+---
+Structure:
+	- Components of the LiveMix system:
+		lmx-player
+			Standalone player, reads lmx-player.ini in current directory by default, -c to specify different config.
+			.ini file specifies:
+				[window]
+					window size - where on the screen to draw the output
+				[source]
+					either:
+						A livemix controller URI, such as 'controller=lmxctrl1.domain.local:7547'
+						A list of .lmx layer files to play in sequence, such as:
+							num-files=5
+							file1: logo.lmx
+							file2: video1.lmx
+							file3: adroll.lmx
+							
+							An overlay file can be specified with:
+							overlay: branding.lmx
+							
+							Background layer that is kept behind all other layers:
+							background: my-bg.lmx
+							
+			Need some higher-level concepts:
+				A "layout" that "tacks" different layers into position
+					Changing between layouts applies pre-defined transition effects to the layouts (slide in/out, etc)
+					Each "area" of the layout has at least one LiveWidget item on it
+						The widget item defines the user-modifiable controls at runtime (communicates with the controller via IP)
+							These controls are two way - they accept changes from the user and communicate values to the user:
+								Example: A video player
+									From User: play/pause commands, seek
+									To user: Current time in the video
+						The widget item also exposes scheduleable properties
+							E.g. At YYYY-MM-DD HH:MM:SS, the content of property 'X' should be 'Y'
+						Existing LiveLayer-derived objects can implement the LiveWidget interface by:
+							[TBD]
+							
+						
+						Each LiveWidget defines a calculated contentDuration property based on the total duration of all elements in its playlist
+							//If the playlist has absolute date/times in it, then the duration is the difference between the oldest time and the latest time
+							Playlist can be changed via a schedule - e.g. a new playlist is assigned to the liveiwdget at a certain time, etc
+							
+				Schedule:
+					Changes the layout in the player
+					Or the playlist of a widget
+					Or shows/hides a root elemnt of the layout
+					Or set a specific property on a widget
+					
+					
+					
+				Playlist data types:
+					LiveVideoFileLayer:
+						List of Video Files (Duration Explicit, in/out times can be edited)
+					LiveStaticSourceLayer:
+						List of Image Files (Duration Explicit)
+					LiveTextLayer:
+						List of Strings (Duration Explicit)
+					LiveVideoInputLayer:
+						List of Camera Devices (Duration Explcit)
+						
+				Other user controllable properties:
+					(All: Play list (current item/next/prev,pause/play), (add/del,move up/down))
+					(All: Visible/Hidden)
+					LiveVideoFileLayer:
+						Volume Level
+					
+						
+						
+							

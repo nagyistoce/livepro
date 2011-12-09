@@ -1,0 +1,80 @@
+Video Encoding
+
+	You can record the output of glvidtex/gplayer to a video file through a rather convoluted process as detailed below.
+	
+	All of the key steps described below are now implemented in 'encoding-wrapper.pl'. 
+	To use:
+		perl encoding-wrapper.pl (vloopon|vloopoff|encodeon|encodeoff) [output file] [src size] [dest size] 
+	
+	Where:
+		vloopon	 - Inserts the vloopback module and prints the first available output pipe to STDOUT
+		vloopoff - Attempts to stop encoding (if running) and remove the module
+		encodeon - Starts encoding (and resize if needed) - must specify output file.
+			If output file ends in .mpg, streamer will output to an .avi encoding-wrapper.pl will use ffmpeg to convert to .mpg when 'encodeoff' is called.
+			If no src/dest size is given, src is assumed to be 1024x768 and dest is assumed 640x480.
+			If src!=dest, then 'resize' (vloopback/example/resize) is started to scale the video stream
+		encodeoff - Stops encoding and converts to .mpg if needed (does not remove the vloopback module)
+		
+	encoding-wrapper.pl stores its state data (file names, PIDs and pipe names) in /var/run/glstreamenc.dat
+ 
+Basic overview:
+	
+	1. Make and load vloopback kernel module in src/glvidtex/vloopback using 'insmod vloopback.ko pipes=2'
+	
+	2. Configure player.ini to output to V4L ('v4l-output=/dev/video2' or the first input pipe as shown by dmesg or /var/log/messages)
+	
+	3. Optional: Start 'resize' to resize the stream from the window output size to a smaller, more recording-friendly size.
+		Example:
+			If player.ini sets up a 1024x768 output window, you may want to resize the video stream to 640x480.
+			To resize the stream on the fly, use src/glvidtex/vloopback/examples/resize to resize the stream:
+			
+				resize  /dev/video3 /dev/video4 1024x768 640x480 rgb24
+			
+			'video3' is the output pipe paired with 'video2' as shown by dmesg output after calling insmod.
+			'video4' is the next input pipe as shown by dmesg
+			'1024x768' is the window size in player.ini
+			'640x480' is the size at which you want your video to record
+			'rgb24' is the pixel format of the video stream output by V4LOutput.cpp 
+				- 'resize' cannot change pixel formats, it just needs to know the pixel format of the stream
+				- We use rgb24 in V4lOutput.cpp to be compatible with the 'mjpeg' AVI output format of 'streamer' from the xawtv package (next section)
+	
+	4. Start the recording process using 'streamer' from the xawtv package:
+		
+			streamer  -c /dev/video5 -s 640x480 -r 24 -o outputfile.avi -f jpeg -F stereo -t 1:00:00
+		
+		Where:
+			-c /dev/video5 - video5 is the output pipe paired with 'video4' from the resize step (#3, above) - find it in the dmesg output after insmod
+			-s 640x480 - specifies the stream size that resize puts out (or, if recording straight from player, use the window size in player.ini)
+			-f 24 - the target FPS
+				- NB: streamer does not enforce this FPS!!!!
+					- I.e. if there are no frames output by glvidtex, then it will wont repeat a frame - it will "squeeze" the frame into the next spot, shortening the final output
+			-t 1:00:00 - record for an hour
+	
+	5. Optional: Convert to mpg:
+	
+			ffmpeg -i outputfile.avi -b 2000000 -ab 256 outputfile.mpg
+		
+		Where:
+			-b 2000000 - The video bitrate - default is 200, which results in rather poor quality
+			-ab 256    - The audio bitrate - default is 64, again, rather low.
+		
+		This shrinks the output by a significant amount, ex 10 sec file as AVI is about 11 MB, when converted it goes down to 2.7 MB as MPG.
+	
+		Of course, ffmpeg will also convert to FLV for playing online, just replace the '.mpg' with '.flv' and ffmpeg does the rest.
+		
+		Some notes on FLV conversion with FFMPEG from linuxreviews.org:
+		
+			Also note that .flv files do not support a samlerate of 48000, but it will convert using the original file's rate anyway and fault on exit. Flash video can have a sample rate of 44100, 22050 and 11025. Set the audio sampling frequency with -ar freq (usually -ar 44100) if the original file has something other than the valid rates.
+	
+			Options you may want to consider:
+	
+				-ab (number)     # audio bitrate
+				-ar freq         # audio sampling frequency
+				-b video bitrate # defaults to 200, which is kind of low
+	
+			You should also be aware of -sameq. This makes the video the same quality as the original, but tends to make flash video files twice the size as original mpeg's. This is bad when it comes to serving files, but it may be worth it if you really want your flash video to have high quality (and you have the bandwidth..).
+	
+	References:
+		http://en.linuxreviews.org/HOWTO_Convert_video_files#Windows_Media_files_.28.wmv.2F.asf.2F.wmx.29
+		http://www.catswhocode.com/blog/19-ffmpeg-commands-for-all-needs
+		http://linux.die.net/man/1/mencoder

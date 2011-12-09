@@ -1,0 +1,669 @@
+TODO:
+	BUGS:
+		- [FIXED] When viewing remote using vid send/receiver thru a VideoWidget, one of the video streams seems to 'back up' and only "unspools" when sent live thru a GLVideoDrawable... ???
+			- Disabled buffering on VideoReceiver - hackish fix, I know.
+		- [DONE] Live monitor from player seems to be buffered - check on that
+		- [DONE] Change the shortcut key in the file menu in director for the Connections and Live Monitor (both use "C")
+		- [CANTFIX] Need to push text rendering into another thread, causing live video to stutter (see the 4fps clock over live video)
+			- Optimized as much as I can right now, but rendering still takes ~80-100ms with shadow and outline
+			- Can't push QTextDocument into another thread for some reason
+			- Added a 'cached image' feature for transmitting text from director to player so the player won't have to re-render static text already rendered on the director (but will have to re-render new text)
+		- [FIXED] Deleting an item will then crash the editor on save
+		- [FIXED] PlayerSetupDialog: Clicking CONNECT before TEST crashes
+		- [FIXED] PlayerSetupDialog: Must click TEST then CONNECT 2x to connect
+		- [FIXED] Director: The playerlist item changed signal from the player doesnt highlight the right item
+		- [FIXED] Director: Remove the fractional seconds from the director playlist time
+		- [FIXED] Cross-fading between CameraThread's in GLVideoDrawable *seems* to 'fade thru black' - but only in the OpenGL painter version. The QGraphicsItem version fades front in.
+			* Can't test till at a workstation with dual video inputs - tomorrow or Tuesday
+			- Something to do with glBlendFunc - only fades thru black using OpenGL - using QGraphicsScene, it paints fine
+			- "Fixed" by adding a CrossFadeMode enum - videos and cameras only fade the front image out, not the back image in. 
+				Whereas text and images, fade front out AND back in - rather a "ductape" fix - but seems to work for now. 
+		- [FIXED] Text crossfading seems to be broken - at least in player via the setProperty command - seems to set text THEN try to crossfade...
+			- Problem was added when we switched to using the QSharedPointer for VideoFrames. Fixed by making a new m_frame2 in GLImageDrawable before crossfading.
+		- [FIXED] Make GLDirector NOT crash when the player is disconnected!
+			- Crash seems to be deep inside the Qt networking code (!!!!!!!)
+			- Short of recompiling Qt, I don't have a workaround for the crash...yet...
+			- Not a showstoper yet, so moving on to other problems for now.
+			- Updated: Seems to not crash at the same point now - now when player closes, it gets caught in a loop in VideoReceiver - then when player comes back, THEN it crashes
+			- Need to figure out where the latest crash is an if we can fix this one.
+			- Seems to be caused *by* VideoReceiver - when no videoreceiver active, player can close and reopen without crashing the director
+				- Confirmed this is the cause of crashing - VideoReceiver...
+		- [FIXED] Sometimes, clicking Connect on the player doesnt fully connect - logs in, but nothing transmitted, window not moved, etc - clicking connect again works
+		- [FIXED] Clicking 'Black' doesnt always fade in black overlay
+		- [FIXED] HUGE memory leaks/problems with 12 megapixel images in SlideShowWindow - when running thru a list of 6x 12MP images, by the 4th image the computer is already out of RAM - out of 4 GB!! Crikey. 
+			- Memory usage grows each scene change - not sure why. Texture upload, sure - but I thought that would use GPU RAM. Need to investigate and add some sort of scaling-down.
+			- Converted GLImageDrawable to use a BUFFER_POINTEr video frame - still uses memory each time it goes visible tho
+			- Are images not getting removed from the screen when faded off?
+			- Free buffer_pointer when off screen?
+			- Implemented aggressive memory management in GLImageDrawable by freeing memory by overriding GLDrawalle::setGLWidget. Only frees memory that has an m_imageFile to reload it as needed.
+		- [FIXED] Player: QtVidSrc videos should fade out volume when cross-fading to a different video in the playlist
+		- [FIXED] Director: Length of videos from QtVideoSource aren't automatically detected for use in playlists
+		- [FIXED] Director: Duration box bug - duration of previous item seems to propogate to the next item selected, instead of the new item updating the box correctly
+			- Totally reworked the playlist area - changed the list to an editable table
+		- [FIXED] Icons bad - toolbars going bad
+			- Just deleted .build/qrc_* and re-built
+		- [FIXED] Text shadow rendering outside box
+			- Added 12px padding internally to RichTextRenderer's output 
+		- [FIXED] GLTextDrawable scroller code for some reason is reporting the first image's width as WAY too large (like 100x or 1000x)
+			- Problem was in the ScrollableItem constructor - it was reading the width from the 'img' field, not the _img argument - crikey!
+		- [CANTREPEAT] Changing scenes doesnt always work in player - I'd say 1/10th of the timer, it stays black
+		- [FIXED] Director: When GLVideoInputDrawable used in director tries to switch to a videoinput (local /dev/video0) that is already being used by a 
+				player on the same local machine as the director, director locks for a few moments till the read times out and defaults to
+				network read. 
+			- Need to change GLVideoInputDrawable to 'remember' that the dev is 'locked' and default to network faster
+		- [FIXED] Crossfade speed not being applied to items when set speed in director then change playlist item
+			- Fixed by just proactivly setting xfade speed on all video drawables in PlayerWindow::setCrossfadeSpeed
+		- [FIXED] Editor: Extreem errors when LMB-dragging - frequently jumps way out of place
+		- [FIXED] Editor: CPU usage seems to increase when dragging or clicking by a huge amount
+		- [FIXED] Editor: New items get a zero Z index - should be max+1
+		- [FIXED] Text "load from image" - well, it loads from image but it still re-renders the text, causing a wierd cross fade when the re-rendered text is slightly "off" from the transmitted image
+			- Needs to do one or the other
+			- Several areas changed: Took out the 'image' property on GLImageDrawable, RichTextRenderer wasnt honoring updatesLocked flag, and it didnt turn off the update timer if updates were locked
+		- [WONTFIX] Make the Video Input control panel in director default to last network source
+			- [DONE] Consider removing "(This Machine)" as an option
+				- Dont put a message box - just a simple QLabel
+			- Director UI changed making this bug irrelevant 
+		- [WONTFIX] Make the video input control panel automatically update when players are connected
+			- Director UI changed making this bug irrelevant 
+		- [DONE] Finish DViz HTTP image poller
+			- Functions as an interface to DViz by polling the dviz ViewServer (see ../http/ViewServer.cpp)
+			- Also can poll images from any URL via HTTP
+		
+		- [TMP-FIX] Video Encoding "problems"
+			- Way to much CPU usage - 157%-ish on a dual-core 2.4 GHz...causing live video to stutter
+			- Consider putting it either in another thread or in a whole other process with shared memory
+				- Can we push it off onto the network somehow??
+			- Temporarily disabled encoder in PlayerWindow till this is addressed.
+		
+		- Director: playlist text looses formatting when playing?
+			
+		- If player errors out during connect, button stays grayed out till close and re-open dialog
+		
+		- Player cant crossfade between two scenes that each have a videoinput drawable on them
+			- E.g. if only one of the two scenes in the crossfade have a videoinput drawable, crossfade executes fine
+			- But if both scenes have a vidinput on them, then the eventloop appears to get overwhelmed (or something is)
+			  that causes all other events (including the crossfade timer events) to be ignored
+			  
+		- Director: QtVidSrc videos play only a few seconds in director preview
+			- This seems due to gstreamer problems on linux:
+				- When the low-level gstreamer code cannot play audio for some reason (audio subsystem locked by another app maybe), it only 
+				  sends a few seconds of video up to QtVideoSource before the audio thread times out and the video playback stops
+				- The fix is just to ensure audio playback in linux general is working (maybe do lsof | grep pcm and kill the apps that have it open?)
+				- Longterm, need someway to detect this error condition and give a nice pleasant UI to user...?
+		- Director: QtVidSrc videos are behind the player - need to sync
+		- GLPlaylist: When erasing duration (user set duration to 0 to re-enable auto-dur), need a way to re-calc the auto dur, say get length of video, etc.
+		
+		- Director: When text drawable in scroller mode, adding an item to the playlist after typing in th text box does not work
+		- Director: Cannot pause playlist while scroller mode active
+		
+		- Editor: SVG item (and others) imgage jumps when resize (resize, image moves correctly, stop resize, image "jumps" back to old spot, then jumps to correct new spot)
+		
+		- Player: Show/Hide fadein/fadeouts are jumpy when done over live video (and even can cause live video to stutter)
+			- Nedt o integrate to use the "updateAnimations()" call or something similar like that
+		
+		- Cross-fading from a BMD capture device freezes "old" stream, but new stream works fine
+		
+		- [FIXED] Histogram window severaly broken - really, the HistogramFilter or the drawable - not sure wich
+		
+		- GLVideoDrawable: when m_levelsEnabled, opacity fade *in* (not fade out) causes white flash at start -- ????? Why??? 
+		- DViz integration in GLImageHttpDrawable: Messes up on slides with '%' in their names from encoding things like ':' 
+			
+		
+	NEEDED FEATURES:
+		- GLSL Sharpening filter
+		- GLSL blur filter
+			- Render to intermediat FBO
+		- GLSL color curve/color contrast adjustments
+			- Not value contrast, but hue contrast and brightness adjustment for projection system
+		- Store textureid in VideoFrame for duplicate rendering 
+			- So we can render the scene twice - of course, we could do that at a "system" level ...
+				- Reasoning:
+					- For projection on a screen, we want to apply color curves and brightness adjustments, but not on the S-Video out we send for recording
+					- So setup S-Video out and VGA out as a dual-screen output, render the VGA half with color curves, etc, then render S-Video "plain"
+					- But that would requre render-to-FBO...
+						Would it be better to apply curves to the GLVideoDrawable shader?
+						- Then we would need two separate scenes, two separate GLVIdeoDrawables
+						- Then we would need the texture ID in the video frame so both video drawables dont upload the same frame to the GPU
+		
+		- Audio delay module
+			- When recording via S-Video cloned output, the final recording was 200ms out of sync
+			- Need to add an audio delay module that can buffer the audio and before it gets to the recording system by an adjustable amount
+		
+		- SwitcherWindow in Director needs little icons on the buttons or below the buttons as to what input is what
+		- DirectorWindow should store window geometry by a WindowID of some sort
+		
+		- Convert VideoSurfaceAdapter in QtVideoSource to allow YUV formats thru as raw frames inorder to reduce CPU usage
+			- Same with VideoThread
+		- Use GL to:
+			- Flip image prior to readback for output for output to an encoder
+			- Convert buffer TO YUV422 (UYVY) for output (or just use libwswscale for now...)
+			- Output preview RGB image of camera input for transmission to director
+				- Draw off screen somewhere...?
+				- Draw to a framebuffer ...?
+					- Has the advantage of downscaling and formatconversion all on the GPU...
+					- Could be put in a separate thread (see qq06-...)
+					- See YUV format conversion FROM RGB to YUV on line 322, symbol 'text_shader_download_YUY2_UYVY' from: 
+						gstreamer-gl-plugins-0.10.1/gst-libs/gst/gl/gstgldisplay.c
+					
+			
+		- Border/Dropshadow control for items
+			- Right now, text and images
+			- Really needed
+		- Add copy/paste to editor
+		- RSS "engine" to drive news and other uses
+		- [DONE] Weather - dim background at night?
+		- Random Video scenetype
+		
+		- Transmit slide group changes to player when editor window closed
+			- Need to cross fade between slides
+			- Prompt to send?
+		
+		- UI in DirectorWindow to control scene playlist playing functionality
+		
+		- UI in DirectorWindow to play/pause/stop/seek/volume-adjust a local/remote QtVideoSource
+			- Should be easy since all those are properties on QtVideoSource, just use the GLPLayer_SetUserProperty command to handle the network transmission
+			- Just need to update DrawableDirectorWidget as time allows
+		
+		- CameraThread-related Revisions:
+			- CameraThread:
+				- Add 'flip H/V' properties
+				- Add BCHS properties to CameraThread and get/set using v4l API on linux, noop on windows
+				- Add methods to CameraThread to load/save flip, BCHS, and deint props based on the device name
+			- Misc:
+				- Adapt drawables to honor camera's flip H/V props (Consider: Override the drawables flip H/V?)
+				- Adapt VideoSender thread to use the CameraThread BCHS API instead of calling out directly to command line
+			- Director:
+				- Add UI in Director to set the flip, BCHS, and de-int props on remote player using VideoReceiver API
+				- Integrate VideoInputColorBalance widget with Director
+					- Add ability to select master/slaves (right now, they are hardcoded to PHC's test cameras!!)
+		
+		- Sharpening Filter (GLSL or image based, scaled up)
+		
+		- Need a way to enable/disable encoding from the director
+		- Need to set the AR of the encoder from director
+			
+		- When an item is edited in the editor, it needs to update the filtered item list in the director
+		- Need to drag/drop to re-arrange slide list
+		- Add 'setup' options to the video switcher to configure the video feed from director
+			- Input
+			- Should these be part of the editor?
+				- Flip
+				- BHCS
+				- Crop
+		- [STARTED] Need to add controls to the VideoSender to remotly control transmission size/fps
+			- The code is there to control size, but possibly need UI for it...maybe...
+		- Either (a) integrate with DViz songs.db and Bible functionality or (b) integrate VideoSender with DViz
+			- Add a GroupType and SceneType to GLSceneGroup and GLScene, respectively.
+				 - SceneTypes are a SceneTypeID, and the SceneTypeFactory gives a SceneTypeEngine which:
+				 	- Lists the needed item names/types
+				 		E.g. for a WeatherScene, it might need:
+				 			#WeatherIcon	- SVG
+				 			#Temp		- Text
+				 			#MinTemp 	- Text
+				 			#MaxTemp	- Text
+				 	- Audit the scene to make sure the names above are present
+				 	- Apply the content to tthe scene before going live with the scene
+				 	- Generate a ControlWidget which emits a 'setProperty' signal to change settings in the director
+				 	- (Maybe) Generate an EditorWidget to setup the scene in the editor
+				- GroupTypes are a GroupTypeID and the GroupTypeFactor gives a GroupTypeEngine which:
+					- GroupTypes use scenes as templates for generating multiple scenes 
+						- Similar to above, they look for required elements in the template
+						- Then they duplicate the template to make scenes in a new group
+					- The new group has its GroupType set to the id of the engine
+					- The engine is then responsible for generating the QAbstractListModel for the list of scenes in the group
+					- The engine also gets a pointer to the list view so it can reconfig the list view as it desires
+						- The default engine must be sure to reset the list view
+					- Group engines can generate slides that either use the default SceneType or a custom scene type
+		- MUST have per-camera BCHS controls
+		- Durations on groups
+			- Auto calced based on durations of all the scenes
+		- Add a play interface to collection to loop thru groups
+		
+		- [DONE] Scene overlay - for stuff that doesnt change
+		- [DONE] Add an 'assign scene type' feature in editor
+		- [DONE] Figure out how to set parameters in UI
+		- [DONE] Add more scenetype subclasses, possibly based on Gogle News API and/or RSS reader
+			- Added a weather, random image, and google news type
+		- [DONE] Slide types - for rendering the automatic slides
+		- [DONE] Slides auto change - for changing automatically
+		- [DONE] Text crawler - for showing RSS feeds
+		- [DONE] JSON interface for web API
+		- [DONE]  Durations on scenes
+			- [DONE] Auto calced based on max length playlist of items
+			- [DONE] Or manually set
+		- [DONE] Add a "play" interface to groups to loop thru scenes
+			- [DONE] Some how emit a signal when need to change scenes?
+		- [DONE] Make an "option" to reconfig the item control area as mini windows...?
+			- [DONE] So you can access the video switcher and text settings without switching between the two...?
+			- Not optional, just redesigned the UI
+		- [DONE] Add a 'remove from playlist' button
+		- [DONE] Crossfading between scenes
+		- [DONE] Add a simple rectangle item to draw boxes, panels, lines with
+		- [DONE] Make "Test Connection" just TEST in player setup
+		- [DONE] Make a checkbox for "connect on startup"
+		- [DONE] Add button to "Connect To" beside "Test"
+		- [DONE] Transmit slide group to player when connected
+		- [DONE] Add Item autofit to editor
+		- [DONE] Allow player to run playlists on items by itself without being connected to the director
+		- [DONE] SVG animation playback/rendering
+			- Not the smoothest thing around, but it works...
+		- [DONE] Some method to auto-balance/tune camera's HSV so they match each other?
+			- VideoInputColorBalancer.cpp
+		- [DONE] Add a Weather Item based on Google API code in $QT_HOME/qt/demos/embedded/weatherinfo.cpp
+			GLSceneTypeCurrentWeather.cpp
+		- [DONE] Text scroller
+			- Renders a playlist of text items 
+			- Calc the current # of items to fill the screen layed out H or V, then render that many + 1 as a QImage
+				- Use QImage::copy() to render a moving rectangle
+				- When one item falls off the "left", re-render
+				- OR just thought of this - upload the entire rendered QImage (many+1) to a texture, then only render the subrect part of the texture by adjusting the 
+				  texture coordinates of the render output (the sourc rect in updateRects())
+		
+	IDEAS:
+		- Stream using FFMPEG to Justin.TV at rtmp://live.justin.tv/app 
+			cf http://community.justin.tv/mediawiki/index.php/Desktop_Broadcasting_using_VH_ScreenCap
+			cf http://forums.adobe.com/message/2903163?tstart=0
+			
+			Code for streaming via ffmpeg/libav code:
+			cf http://libav-users.943685.n4.nabble.com/problem-opening-a-UDP-multicast-stream-with-av-open-input-file-td946200.html
+			
+			One mans attempt of streaming with ffmpeg/audio/video/other programs to an icecast server:
+			http://workingdirectory.net/posts/2010/video4linux-and-audio/
+			
+			FFMPEG rtmp url spec docs:
+			http://www.ffmpeg.org/ffmpeg-doc.html#SEC42
+			
+			
+		- Adapt PlayerWindow to enable it to remotely start/stop ffmpeg.
+			Here's the command I used to record video and audio from the vloopback pipe:
+				fmpeg -async 24 -f oss -i /dev/dsp -f video4linux -r 60000/1001 -i /dev/video3 -s 640x480 -r 24 -b 2Mb -ab 128k /root/livemix-dir-demo4.mpg
+				
+				-async 		needed for audio sync
+				-r 60000... 	needed to get ffmpeg to read from vloopback
+				-s 640...	ffmpeg scales the stream down for us
+				-r 24		fps of the recorded video
+				-b 2Mb		bitrate - needed to make better quality output
+				-ab 128k	audio bitrate - not sure if it helps or not
+		
+		- Next few steps:
+			- Try to put scene type subclasses in a namespace
+			- Add an 'import scene' function because related to:
+			- Add an 'add scene from template' function which...
+				- Lists templates based on directory
+				- Directory name based on ID of scene type
+			- Get a sample group type working
+				- Slideshow...?
+				- ...?
+		
+		- Adapt the weather scenetype to use this possibly?
+			http://m.wund.com/cgi-bin/findweather/getForecast?query=47390
+			
+			
+		- Content List from a TV at a bank:
+			- Weather conditions
+				Right Now its XYZ
+			- Weather forecast
+				Next few days
+			- Promo vid for bank
+			- Business news (htitle, headline, text)
+			- Logo vid
+				Logo of bank?
+			- Holiday animated
+				Animation of holiday greetings
+			- Major markets
+			- Sports news
+			- Positive news
+		- RSS Feeds:
+			- Happy News: http://www.happynews.com/rss/.aspx
+			- Top News: http://news.google.com/news?ned=us&topic=h&output=rss
+			- Google News Feeds List: http://www.google.com/support/news/bin/answer.py?hl=en&answer=59255
+			- Good News: http://www.goodnewsnetwork.org/feed/rss/all-content.html
+			- Yahoo Top News: http://rss.news.yahoo.com/rss/topstories
+				- http://news.yahoo.com/page/rss
+			- CNN: http://www.cnn.com/services/rss/
+			- BBC Top News: http://newsrss.bbc.co.uk/rss/newsonline_world_edition/front_page/rss.xml
+			
+			- Reuters RSS Mobile: http://www.reuters.com/tools/mobile/rss
+			- AP News: http://hosted2.ap.org/APDEFAULT/APNewsFeeds
+				- Fairly clean, just has location at start of text
+			
+			
+		- Players need to communicate with each other if in a "group"
+			- E.g. part of a wall display
+			- Elect one as the master coorinator for timing/sync of video playback, etc
+		- Add an "output analysis" to the PlayerSetupDialog
+			- Auto-updated histogram when connected
+			- Need a histo of rgb values not just grayscale
+			- Add graphs of min/max/avg for hue/sat/value
+		- Add image slow-zoom animation (zoom in/out, setc)
+		- Adjust color curves wtih matrixes? (Not just shift entire hues/sats, but curves.)
+		- Add in "Levels"/Gamma adjustment vis a vi:
+			outPixel = (pow(((inPixel * 255.0) - inBlack) / (inWhite - inBlack),
+                		inGamma) * (outWhite - outBlack) + outBlack) / 255.0;
+                	From Graphics Gems ch 22, Fig 22-2, http://http.developer.nvidia.com/GPUGems/gpugems_ch22.html
+
+                	cf http://www.cise.ufl.edu/~awhig/vision/vision_projects.html
+
+                - Add method to VideoFrame to store a GLuint textureId so multiple GLVideoDrawables rendering the same VideoFrame don't have to upload the buffer/QImage to the video card multiple times
+                	- the first drawable to get the frame checks for a textureId - if none is set, then upload the texture and set the textureId on the frame. But if one is set,
+                		then use that textureId to paint the frame
+                	- Necessary if we do GPU conversion to RGB for raw frames for use in the VideoSender - a second thread will want to repaint the YUV texture to a smaller quad for download from the GPU  
+		- HTML snippet widget
+			- Embed a QWebKit widget's output for view-only content
+		- Store pixmaps/images of scenes, groups, and drawables in the GLScene/GLSceneGroup/GLDrawable for rendering as icon in the appros list models
+		- Get layouts working
+		- Integrate with the three most used "generators" from DViz:
+			- Bible
+			- Songs
+			- Image Slideshows
+			- Each generates a GLSceneGroup containing multiple GLScenes with appros GLDrawables to represent the content
+		- Undo/redo
+		- Idea: Can we reduce network latency by breaking the frame apart into subsections and transmitting them in parallel over seperate sockets?
+		 
+
+	DIRECTOR REDESIGN:
+		
+			On startup, give list of outputs....
+				Combined list of:
+					Screens on this computer
+					Players registered
+				
+				[Combobox--------\/]
+				[Setup]       [Open]
+				
+			On connect...
+				[If local, open local player binary automatically and connect via IP]
+				
+				- Query for list of video inputs
+					- Create video windows for each input
+				
+				- Create program window (monitor live output feed from player...?)
+				- Create preview window 
+					Local GLWidget composits selected preview options
+				
+				- User can use menu to add multiple Overlay windows
+					- Overlay windows load a group collection file/first group
+						- Combox in overlay window selects current overlay to use
+				
+					- If overlay window contains text box that is user controllable,
+						overlay window should present text input
+						+ Advanced btn
+						
+				- User can add Video Player windows
+
+TARGET DATE: 12/11 9am
+	Features Required by 12/11 9am:
+		[DONE] - Network Control of a player binary
+		- Player Binary must:
+			- Load scene groups and play the required group/scene/layout on demand over network
+				- TASKS:
+					[DONE] Create a GLPlayerServer class, feature bullets:
+						Listen on a port
+						Accept data "frames", similar to the way the VideoReceiver accepts input (header + data block)
+							Data block is a byte array for a QVariantMap
+							Required Map Keys:
+								- Sequence # (auto incremented number)
+								- Command (e.g. loadSlideGroup, etc. - compile a list of valid comments)
+								- QVariantMap is passed enmass as a ref (&) to the command
+								- Command should be a slot that accepts a QVariantMap 
+							Think of commands as slot calls
+						Responds to conected client ala a signal
+							GLPlayerServer should have a slot that can be called with a QVariantMap 
+								One of the keys should be a "responseName"
+								The client should function like the server, responses are slots that accept a QVariantMap
+					[DONE] Create command slots for the GLPlayerServer class:
+						- Functions needed:
+							[TODO] - SetBlackout
+								- Black out the output 
+							- LoadSlideGroup
+								- Only one slide group is "Active" in the player at once
+								- Dont add items if items not in the viewport
+							- SetSlide
+								- Set the slide by ID
+							[TODO - implement layouts] - SetLayout
+								- Set the layout on the slide by ID
+							- SetUserProperty
+								- Set the user prop on a GLDrawable by drawable ID
+							- SetVisibility
+								- Set visiblility flag on a drawable by ID
+							[TODO] - DownloadFile
+								- Transmit a file from the controller to the player over the network so it can be loaded
+								- Need to adjust the file-based classes to load files from the "network download" location if not on disk
+									- GLImageDrawable
+									- GLVideoLoopDrawable
+									- GLVideoFileDrawable
+									- Others?
+							- QueryProperty
+								- Query a Q_PROPERTY on a drawable by drawable ID & property name
+								- Response is emitted as a "signal" (see above)
+							- QuerySlide
+							- QueryLayout
+								- Query the active slide/layout
+								- Response is emitted as a "signal" (see above)
+							- SetAlphaMask
+							- SetKeystone
+							- SetWindow
+							- SetFlip
+							- SetIgnoreAR
+							- SetViewport
+							- SetCanvasSize
+							- SetBCHS
+								- The above set various player parameters ala the INI file reading in the PlayerWindow.cpp class
+								- Provide corresponding query methods to read those player parameters back
+							[TODO] - FUTURE:
+								- Add commands to set up system (OS) methods such as 
+									Time/Date
+									IP Address
+									Users/Passwords
+									etc
+					[TODO] Add properties to GLTextDrawable for the text color/outlines/etc
+					
+						
+			[DONE] - Set visibility/user props over network on demand
+			[DONE] - IF TIME: Send back video
+			[DONE] - IF TIME: Run playlists
+		- Director Screen
+			[DONE] - TASKS:
+				- Create GLPlayerClient class
+					- Client half of the server above
+					- Sends command packets
+					- Accepts incoming response packets
+			- Must connect to more than one player for control
+				- For target date, we need at least two players:
+					- FoH (front of house, cloned output or double wide - not sure yet)
+					- Wash (player with double-wide canvas for output to two projectors)
+			[DONE] - Player Setup UI:
+				- Player "Code"/Title
+				- IP Address/Port
+				- Alpha Mask
+					- Paintbrush-esque UI with simple rects/polygons....???
+				- Keystoning
+				- Window Pos/Size
+				- Flip H/V
+				- Ignore AR
+				- Viewport/Canvas (loaded from slide group...)
+				- BCHS Adjustments
+				- Control Option:
+					- Control player individually
+						- UI will display player with List UI(below) in a "tab" ala firefox webpage
+					- Combined Player Control 
+						- Viewport rectangle selection
+						
+				- TASKS:
+					[DONE] - Create UI for this setup screen in designer
+					[DONE] - Create a simple widget for keystoning
+						- Widget displays a rectangle with four corners that are draggable
+						- Sends keystoning coordinates to player in real time
+						- Be sure to provide numerical inputs below the widget for manual entry of keystone values
+					[DONE] - IMPORTANT:
+						- Try to integrate the cvFindPlanarHomagraphy function
+					[DONE] - Create data structure to store player settings
+						- Some sort of orm class
+						- From/To bytearray
+						- PlayerList class
+							- Derive from a AbstractITemList
+							- Write/Load from byte array
+							- Save to QSettings?
+			[DONE] - List UI:
+				[DONE] - 1. List of slide groups available
+				[DONE] - 2. List of slides in selected slide group
+				[DONE] - 3. List of layouts in selected slide (selecting slide goes live)
+				[DONE] - 4. List of user-conrollable items on current slide/layout
+				[DONE] - 5. Panel for:
+					- Top: Layouts
+					- Mid: Live area
+					- Lower: Left: List of items, right: Top: Visible btn, Bottom: Value input
+			[TODO] - Black/unblack Master UI btn
+			[DONE] - All players get the live slide, Editor indexes viewports by player 
+				- E.g.  Player "FOH"  viewport (0,0)-(2048x768)
+					Player "Wash" viewport (0,1024)-(2048x768)
+				So canvas would be 2048x1536, with 1024x768 quads for each projector
+		[DONE] - Editor Screen
+			[DONE] - Edit one slidegroup at a time
+			[DONE] - List of slides on left
+			[*TODO*] - List of key frames on top
+				- Horizontal row of icons
+				- Always a blank icon on the right to edit
+				- Always editing the currently-selected icon
+			[DONE] - Main editing area in center
+			[DONE] - Toolbar for adding items
+			[DONE] - Setup canvas size
+			[DONE] - Property editor on right to change the main property 
+			
+			- TASKS:
+				- [DONE] Add AbstractListModel methods to the GLSceneGroup and GLScene classes
+				[DONE] - Add a user property flag to GLDrawables
+				[DONE] - Create property editor panels based on the old livelayer work
+				[DONE] - Create UI in Qt Creator
+				[DONE] - Create GLSceneGroupCollection as a meta-group of scenes
+					- [DONE] From/to byte array methods
+					- [DONE] Write/read from file
+					- [DONE] Index scene groups by ID as well
+					- Add a "editSequence" value to collection->group->scene classes for tracking edits and when to re-transmit changed slides
+				
+		[DONE] - Need a document type containing multiple slide groups
+		- Need to consider not sending GLDrawables/slides to players that dont need them
+
+
+
+Note: Video Conversion Example:
+	for i in `ls .`; do(mencoder $i -ofps 23.976 -oac mp3lame -lameopts abr:br=92 -ovc xvid -xvidencopts bitrate=2000 -o $i-xvid.avi);done;
+
+
+Target: pixelrevo-player
+	Components:
+		Core:
+			GLWidget / GLDrawable
+				Drawable Items:
+					GLVideoInputDrawable (done)
+						- TODO:
+							Crossfading doesnt *quite* work smoothly enough -
+							I think this is due to the initaliztion of the V4L subsystem for the second camera - if the V4L input is already open, it *should* crossfade fine....
+					GLVideoLoopDrawable (done)
+					GLVideoFileDrawable (done)
+						- TODO: 
+							Add properties for:
+								- play/pause/ff/rw/etc
+								- Add seek method/slots
+								- Query play time for remote controllers
+					GLVideoReceiverDrawable (done)
+					GLImageDrawable (done)
+					GLTextDrawable (done)
+						- TODO:
+							Add properties for text shadow / color etc
+					GLRectDrawable
+					GLVideoMjpegDrawable (done)
+				Todo Items:
+					- (done) Add native cross fading support in GLVideoDrawable (since all items above will probably derive from GLVideoDrawable)
+					- (done) Add a 'transmit video' property to Video(input|file) drawables
+						- Called it 'videoSenderEnabled' - automatically allocates port if none set explicitly, starting from 7755 and up (tests to see if port is in use.) Port used can be queried from 'videoSenderPort' property, or set using same proprty.
+					- Add dropshadow support for image/text/rect
+					- Add outline support for image/text/rect/videos
+					- Add (explicit?) property animations for GLDrawable rect/opac props
+					- Consider adding a GLWebDrawable .. ? (idea: Use the proxy method used in DViz to render using QWebView off screen and feed frames as a video source...?)
+					
+			Data Structure:
+				Schedule
+					Each Schedule Entry Specifies a:
+						- SceneGroup
+							- Scene in that group
+								- Layout in that scene
+									- Sets the 'user' property on one or more drawables in that scene
+									- Set the visibility of an item
+						- The duration of that schedule entry can be either:
+							- A. Automatically Calculated (Implicit Duration)
+								- The longest explicit or implicit duration of the media in every user property set in this Schedule Entry is the automatic/Implicit duration of the schedule entry
+								- If this schedule entry is assigned a date/time, and the next entry assigned a datetime is closer than the automatic duration, this entry will only "play" until
+								  the next date/time schedule entry is scheduled to "play"
+							- B. Manually Set
+								- If no implicit duration can be calculated, or the user desires to override the duration, the duration can be manualy set
+								- However, the next hard-scheduled (date/time assigned) schedule item to come up will go live, even if this entry still has manually-specified time left to play
+						- The date/time the Schedule Entry ("Item") is to play
+							- The date/time can be implicit or manual ("locked")
+								- If implicit, it will still be assigned a date/time, but only for human reference, based on the cumulative duration of the previously scheduled items added from the last "locked" schedule item
+									- Implicit date/timed items will play immediately following the previously playing entry
+									- Implicit items will NOT cut into a previously playing item - they will allow the full duration of the previous item to occur
+								- Locked date/time items will cut into previously playing items to play when that date/time occurs
+						
+						- If, when the duration of the item playing is completed, and the next item is a "locked"/manually-set date/time item, and it is not yet that date/time, then the last implicit item following the most recet locked date/time items should play, in essence "looping" until the next "locked" date/time item
+						
+						- Since the Schedule Entry can specify the user property of even just one item and leave the rest unchanged, a previously playing drawable will retain its existing user property even though another drawables' user prop is scheduled to change, in effect creating overlapping schedule items.
+				
+				The SchedulePlayer reads the list of ScheduleItems from the active Schedule and implements the required timing logic, honoring implicit/explicit duratiosn and date/times, effecting the property/visibility changes and scenegroup/scene/layout changes as needed
+					SchedulePlayer therefore needs the ability to:
+						- Locate SceneGroups
+							- By 'ID' or File, however they are specified in the schedule
+				
+				SceneGroup
+					- <list of drawables>
+					Scene
+						- <list of drawables>
+						- <list of layouts, one or more>
+							- each layout contains a list of properties for each drawable in the Scene
+								- rect
+								- visible/not visible
+								- opacity
+								- (other related visual properties)
+								- a qvariant 'user' property (for the user controllable property value, such as the image file to show, etc)
+								
+		
+		Playing Functionality:
+			- Two things to 'play':
+				- inputs for the drawables (videos/images/etc)
+				- the entire layout
+					- Structure Concept:
+						- Scene
+							- All the elements as a bulk collection
+							- Layout
+								- Positions elements, shows/hides elements
+			- Need a controller which:
+				- loads playlists for each item and for layout
+				- syncs changes to clock
+				- listens for changes to playlist object and reloads accordingly
+				
+			- Need playlist object:
+				- list of playlist items
+					- item:
+						- drawableId & propName/value
+						- 
+						
+			
+					
+
+
+
+
+
+Update GLDrawable to either support:
+	- Blue Alpha Blending
+		- Already supports alpha masks
+		- Use the blue channel (or some other channel) to control blending the pixel between BLACK and the texture color
+		- This would allow drawing black lines on top of the texture using the alpha mask, instead of requiring a third texture for an overlay (in addition to the alpha mask)
+	- Or a third texture for overlay on top of the alpha mask
+		
+Update VideoThread to support HD
+	Need to create a variable length buffer
+	Move timing code into buffer control
+	Selectivly hold frames if falling behind 
+	
+	Also, get YUV420P working in raw format to allow YUV conversion on the GPU

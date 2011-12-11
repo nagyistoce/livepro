@@ -1,6 +1,6 @@
 #include "BMDOutput.h"
 
-#include "../livemix/VideoSource.h"
+#include "VideoSource.h"
 	
 
 #ifdef ENABLE_DECKLINK_CAPTURE

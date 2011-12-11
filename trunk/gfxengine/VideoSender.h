@@ -10,8 +10,8 @@
 #include <QMutex>
 
 class SimpleV4L2;
-#include "../livemix/VideoFrame.h"
-#include "../livemix/VideoSource.h"
+#include "VideoFrame.h"
+#include "VideoSource.h"
 
 
 

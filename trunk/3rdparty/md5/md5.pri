@@ -1,0 +1,7 @@
+
+INCLUDEPATH += $$PWD
+DEPENDPATH += $$PWD
+
+HEADERS += qtmd5.h
+SOURCES += qtmd5.cpp
+

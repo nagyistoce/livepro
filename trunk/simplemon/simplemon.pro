@@ -10,6 +10,8 @@ INCLUDEPATH += .
 
 QT += network
 
+include(../gfxengine/gfxengine.pri)
+
 # Input
 HEADERS += \
 	MainWindow.h

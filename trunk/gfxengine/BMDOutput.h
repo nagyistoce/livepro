@@ -3,7 +3,7 @@
 
 #include <QtGui>
 
-#include "../livemix/VideoFrame.h"
+#include "VideoFrame.h"
 #include "VideoConsumer.h"
 
 class BMDOutputDelegate;

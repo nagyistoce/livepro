@@ -23,7 +23,7 @@ extern "C" {
 #define NATIVE_PIX_FMT PIX_FMT_RGB32
 //PIX_FMT_YUV420P /* default pix_fmt */
 
-#include "../livemix/VideoSource.h"
+#include "VideoSource.h"
 
 class VideoEncoderData
 {

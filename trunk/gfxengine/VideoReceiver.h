@@ -15,8 +15,8 @@
   #include <QLabel>
 #endif
 
-#include "../livemix/VideoSource.h"
-#include "../livemix/VideoFrame.h"
+#include "VideoSource.h"
+#include "VideoFrame.h"
 
 #include <QMutex>
 

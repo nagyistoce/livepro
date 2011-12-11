@@ -2,8 +2,8 @@
 
 #include <QtGui>
 
-#include "../livemix/VideoWidget.h"
-#include "../livemix/EditorUtilityWidgets.h"
+#include "VideoWidget.h"
+#include "EditorUtilityWidgets.h"
 #include "HistogramFilter.h"
 #include "VideoReceiver.h"
 

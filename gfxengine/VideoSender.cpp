@@ -2,7 +2,7 @@
 #include "VideoSenderCommands.h"
 
 // for setting hue, color, etc
-#include "../livemix/CameraThread.h"
+#include "CameraThread.h"
 
 #include <QNetworkInterface>
 #include <QTime>

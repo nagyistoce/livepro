@@ -4,8 +4,8 @@
 #include <QtGui>
 
 #include "VideoConsumer.h"
-#include "../livemix/VideoSource.h"
-#include "../livemix/VideoFrame.h"
+#include "VideoSource.h"
+#include "VideoFrame.h"
 
 class VideoFilter : public VideoSource,
 		    public VideoConsumer

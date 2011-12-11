@@ -1,5 +1,5 @@
 #include "VideoInputSenderManager.h"
-#include "../livemix/CameraThread.h"
+#include "CameraThread.h"
 #include "VideoSender.h"
 #include <QNetworkInterface>
 

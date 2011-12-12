@@ -10,6 +10,51 @@ INCLUDEPATH += $$PWD
 QT += opengl multimedia network svg
 
 
+# Low-level V4L capture and output support for linux
+unix: {
+	HEADERS += \
+		SimpleV4L2.h \
+		V4LOutput.h
+		
+	SOURCES += \
+		SimpleV4L2.cpp \
+		V4LOutput.cpp
+}
+
+# CentOS fix - see http://theitdepartment.wordpress.com/2009/03/15/centos-qt-fcfreetypequeryface/
+unix: {
+	LIBS += -L/opt/fontconfig-2.4.2/lib
+}
+
+# OpenCV not required - but it nice to have.
+# It's used to calculate deformation matrices in GLWidget for keystoning.
+# Without OpenCV, the keystone deformations are downright ugly.
+# Specify via: qmake CONFIG+=opencv 
+opencv: {
+	DEFINES += OPENCV_ENABLED
+	LIBS += -L/usr/local/lib -lcv -lcxcore
+			
+	#HEADERS += EyeCounter.h
+	#SOURCES += EyeCounter.cpp
+
+}
+
+# Blackmagic DeckLink Capture Support
+# Currently, only supported on linux - should be easily 
+# adaptable to windows though.
+blackmagic: {
+
+	BMD_SDK_HOME = /opt/DeckLink-SDK-7.9.5/Linux
+	
+	#message("Blackmagic DeckLink API enabled, using: $$BMD_SDK_HOME")
+	DEFINES += ENABLE_DECKLINK_CAPTURE
+		
+	INCLUDEPATH += $$BMD_SDK_HOME/include
+	SOURCES     += $$BMD_SDK_HOME/include/DeckLinkAPIDispatch.cpp
+}
+
+
+# Set the mobility location on windows/linux
 win32 {
     QT_MOBILITY_HOME = C:/Qt/qt-mobility-opensource-src-1.0.2
 }
@@ -85,8 +130,12 @@ include(../3rdparty/ffmpeg/ffmpeg.pri)
 #}
 
 
+# MD5 is used to cache scaled images by GLImageDrawable
 include(../3rdparty/md5/md5.pri)
 
+# EXIV2 is optional and not currently in subversion.
+# (but the code is in DViz if you *really* want to build with it.)
+# Used by GLImageDrawable to extract rotation information. 
 exiv2-qt: {
 	DEFINES += HAVE_EXIV2_QT
 	
@@ -94,6 +143,8 @@ exiv2-qt: {
 	include(3rdparty/exiv2-0.18.2-qtbuild/qt_build_root.pri)
 }
 
+# qrencode used by the 'news' scene type to add a QR code to the scene.
+# Not currently in subversion.
 qrcode: {
 	DEFINES += HAVE_QRCODE
 	

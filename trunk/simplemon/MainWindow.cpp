@@ -4,6 +4,9 @@
 #include "GLSceneGroup.h"
 #include "GLVideoInputDrawable.h"
 
+// Debugging
+#include "GLSpinnerDrawable.h"
+
 #define SETTINGS_FILE "inputs.ini"
 #define GetSettingsObject() QSettings settings(SETTINGS_FILE,QSettings::IniFormat);
 
@@ -151,6 +154,18 @@ MainWindow::MainWindow()
 	
 	// Add the drawables to the GLWidget
 	scene->setGLWidget(glw);
+	
+	GLSpinnerDrawable *spinner = new GLSpinnerDrawable();;
+	spinner->setCycleDuration(1000);
+	int spinSize = 28;
+	QRectF spinnerRect(10,10, spinSize, spinSize);
+	spinner->setRect(spinnerRect);
+// 	spinner->setFlipVertical(true);
+// 	spinner->setFlipHorizontal(true);
+	spinner->setZIndex(10.);
+	spinner->start();	
+	
+	glw->addDrawable(spinner);
 }
 
 // Why? Just for easier setting the win-width/-height in the .ini file.

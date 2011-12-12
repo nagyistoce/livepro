@@ -505,7 +505,7 @@ void GLWidget::initializeGL()
 	//m_useShaders = (strstr((const char *)str, "GL_ARB_fragment_shader") != NULL);
 	m_useShaders = extensionList.indexOf("GL_ARB_fragment_shader") > -1;
 
-        if(1)
+        if(0)
 	{
 		qDebug() << "GLWidget::initGL: Forcing NO GLSL shaders";
 		m_useShaders = false;

@@ -25,6 +25,10 @@
 #define GL_BGRA 0x80E1
 #endif
 
+#ifndef GL_BGR
+#define GL_BGR 0x80E0
+#endif
+
 #include "GLCommonShaders.h"
 
 // function pointers for PBO Extension
@@ -501,7 +505,7 @@ void GLWidget::initializeGL()
 	//m_useShaders = (strstr((const char *)str, "GL_ARB_fragment_shader") != NULL);
 	m_useShaders = extensionList.indexOf("GL_ARB_fragment_shader") > -1;
 
-	if(0)
+        if(1)
 	{
 		qDebug() << "GLWidget::initGL: Forcing NO GLSL shaders";
 		m_useShaders = false;
@@ -515,7 +519,8 @@ void GLWidget::initializeGL()
 
 	qDebug() << "GLWidget::initGL: GLSL Shaders Enabled: "<<m_useShaders;
 
-	initShaders();
+        if(m_useShaders)
+            initShaders();
 
 	m_glInited = true;
 

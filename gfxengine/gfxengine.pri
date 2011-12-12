@@ -59,28 +59,30 @@ else: {
 }
 
 # FFMPEG is needed for looped videos and video input on Win32
-unix {
-	LIBS += -lavdevice -lavformat -lavcodec -lavutil -lswscale -lbz2 
-	INCLUDEPATH += /usr/include/ffmpeg
-}
+include(../3rdparty/ffmpeg/ffmpeg.pri)
 
-win32 {
-	INCLUDEPATH += \
-		../external/ffmpeg/include/msinttypes \
-		../external/ffmpeg/include/libswscale \
-		../external/ffmpeg/include/libavutil \
-		../external/ffmpeg/include/libavdevice \
-		../external/ffmpeg/include/libavformat \
-		../external/ffmpeg/include/libavcodec \
-		../external/ffmpeg/include
-	
-	LIBS += -L"../external/ffmpeg/lib" \
-		-lavcodec-51 \
-		-lavformat-52 \
-		-lavutil-49 \
-		-lavdevice-52 \
-		-lswscale-0
-}
+#unix {
+#	LIBS += -lavdevice -lavformat -lavcodec -lavutil -lswscale -lbz2
+#	INCLUDEPATH += /usr/include/ffmpeg
+#}
+#
+#win32 {
+#	INCLUDEPATH += \
+#		../external/ffmpeg/include/msinttypes \
+#		../external/ffmpeg/include/libswscale \
+#		../external/ffmpeg/include/libavutil \
+#		../external/ffmpeg/include/libavdevice \
+#		../external/ffmpeg/include/libavformat \
+#		../external/ffmpeg/include/libavcodec \
+#		../external/ffmpeg/include
+#
+#	LIBS += -L"../external/ffmpeg/lib" \
+#		-lavcodec-51 \
+#		-lavformat-52 \
+#		-lavutil-49 \
+#		-lavdevice-52 \
+#		-lswscale-0
+#}
 
 
 include(../3rdparty/md5/md5.pri)
@@ -140,7 +142,6 @@ HEADERS += BMDOutput.h \
            MjpegThread.h \
            RichTextRenderer.h \
            RssParser.h \
-           SimpleV4L2.h \
            VideoConsumer.h \
            VideoDifferenceFilter.h \
            VideoEncoder.h \
@@ -187,7 +188,6 @@ SOURCES += BMDOutput.cpp \
            MjpegThread.cpp \
            RichTextRenderer.cpp \
            RssParser.cpp \
-           SimpleV4L2.cpp \
            VideoConsumer.cpp \
            VideoDifferenceFilter.cpp \
            VideoEncoder.cpp \

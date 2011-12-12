@@ -1,4 +1,7 @@
-
+unix {
+        LIBS += -lavdevice -lavformat -lavcodec -lavutil -lswscale -lbz2
+        INCLUDEPATH += /usr/include/ffmpeg
+}
 win32 {
 	VPATH += $$PWD
 	DEPENDPATH += $$PWD

@@ -37,6 +37,8 @@ void GLVideoInputDrawable::setVideoConnection(const QString& con)
 {
 	m_videoConnection = con;
 
+	//qDebug() << "GLVideoInputDrawable::setVideoConnection: con:"<<con;
+	
 	// Example: dev=/dev/video0,input=S-Video0,net=10.0.1.70:8877
 	if(con.isEmpty())
 		return;
@@ -60,13 +62,13 @@ void GLVideoInputDrawable::setVideoConnection(const QString& con)
 
 	setNetworkSource(map["net"]);
 
-	if(m_isLocal[map["net"]] &&
+	//qDebug() << "GLVideoInputDrawable::setVideoConnection: dev:"<<map["dev"];
+	if(!map["dev"].isEmpty() &&
+	    m_isLocal[map["net"]] &&
 	   !m_localHasError[map["dev"]])
 		setVideoInput(map["dev"]);
 
 	setCardInput(map["input"]);
-
-	//qDebug() << "GLVideoInputDrawable::setVideoConnection: Unknown option:"<<name<<", value:"<<value<<", ignored.";
 }
 
 void GLVideoInputDrawable::setNetworkSource(const QString& src)

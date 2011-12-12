@@ -9,7 +9,8 @@ class MainWindow : public QWidget
 public:
 	MainWindow();
 	
-
+protected:
+	void resizeEvent(QResizeEvent*);
 
 };
 

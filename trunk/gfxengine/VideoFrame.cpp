@@ -1,5 +1,56 @@
 #include "VideoFrame.h"
 
+
+QImage::Format VideoFrame::imageFormatFromPixelFormat(QVideoFrame::PixelFormat format)
+{
+    switch (format) {
+    case QVideoFrame::Format_Invalid:
+	return QImage::Format_Invalid;
+    case QVideoFrame::Format_ARGB32:
+	return QImage::Format_ARGB32;
+    case QVideoFrame::Format_ARGB32_Premultiplied:
+	return QImage::Format_ARGB32_Premultiplied;
+    case QVideoFrame::Format_RGB32:
+	return QImage::Format_RGB32;
+    case QVideoFrame::Format_RGB24:
+	return QImage::Format_RGB888;
+    case QVideoFrame::Format_RGB565:
+	return QImage::Format_RGB16;
+    case QVideoFrame::Format_RGB555:
+	return QImage::Format_RGB555;
+    case QVideoFrame::Format_ARGB8565_Premultiplied:
+	return QImage::Format_ARGB8565_Premultiplied;
+    case QVideoFrame::Format_BGRA32:
+    case QVideoFrame::Format_BGRA32_Premultiplied:
+    case QVideoFrame::Format_BGR32:
+    case QVideoFrame::Format_BGR24:
+	return QImage::Format_Invalid;
+    case QVideoFrame::Format_BGR565:
+    case QVideoFrame::Format_BGR555:
+    case QVideoFrame::Format_BGRA5658_Premultiplied:
+    case QVideoFrame::Format_AYUV444:
+    case QVideoFrame::Format_AYUV444_Premultiplied:
+    case QVideoFrame::Format_YUV444:
+    case QVideoFrame::Format_YUV420P:
+    case QVideoFrame::Format_YV12:
+    case QVideoFrame::Format_UYVY:
+    case QVideoFrame::Format_YUYV:
+    case QVideoFrame::Format_NV12:
+    case QVideoFrame::Format_NV21:
+    case QVideoFrame::Format_IMC1:
+    case QVideoFrame::Format_IMC2:
+    case QVideoFrame::Format_IMC3:
+    case QVideoFrame::Format_IMC4:
+    case QVideoFrame::Format_Y8:
+    case QVideoFrame::Format_Y16:
+	return QImage::Format_Invalid;
+    case QVideoFrame::Format_User:
+	return QImage::Format_Invalid;
+    }
+    return QImage::Format_Invalid;
+}
+
+
 VideoFrame::VideoFrame()
 {
 	m_holdTime = -1; 
@@ -203,7 +254,7 @@ QImage VideoFrame::toImage(bool detachImage)
 	if(!isValid())
 		return QImage();
 			
-	const QImage::Format imageFormat = QVideoFrame::imageFormatFromPixelFormat(pixelFormat());
+	const QImage::Format imageFormat = imageFormatFromPixelFormat(pixelFormat());
 	if(imageFormat != QImage::Format_Invalid)
 	{
 		m_image = QImage( pointer(),

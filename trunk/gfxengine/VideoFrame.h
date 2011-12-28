@@ -26,6 +26,8 @@ class VideoFrame //: public QObject
 {
 // 	//Q_OBJECT
 public:
+	static QImage::Format imageFormatFromPixelFormat(QVideoFrame::PixelFormat format);
+
 	VideoFrame(); 
 	
 	VideoFrame(int holdTime, const QTime &captureTime = QTime());

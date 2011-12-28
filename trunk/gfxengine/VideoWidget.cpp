@@ -1,5 +1,9 @@
 #include <QtGui/QApplication>
+
+#ifndef NO_OPENGL
 #include <QtOpenGL/QGLWidget>
+#endif
+
 #include <QDebug>
 
 #include "VideoWidget.h"
@@ -10,7 +14,12 @@
 #include <QMessageBox>
 
 VideoWidget::VideoWidget(QWidget *parent)
-	: QGLWidget(parent)
+	: 
+	#ifdef NO_OPENGL
+		QWidget(parent)
+	#else
+		QGLWidget(parent)
+	#endif
 	, m_thread(0)
 	, m_frameCount(0)
 	, m_opacity(1)

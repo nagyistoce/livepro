@@ -1,6 +1,6 @@
 #include "VideoSource.h"
 
-#include "VideoWidget.h"
+//#include "VideoWidget.h"
 
 //////////////
 
@@ -16,7 +16,7 @@
 #define UINT64_C(c) (c ## ULL)
 #endif
 
-
+#ifdef HAS_LIBAV
 
 extern "C" {
 #include "libswscale/swscale.h"
@@ -41,6 +41,8 @@ void VideoSource::initAV()
 	av_register_all();
 }
 
+#endif
+
 //////////////
 
 VideoSource::VideoSource(QObject *parent)
@@ -54,7 +56,9 @@ VideoSource::VideoSource(QObject *parent)
 				         *   64 // 64 MB
 				   );
 
+	#ifdef HAS_LIBAV
 	initAV();
+	#endif
 }
 
 void VideoSource::registerConsumer(QObject *consumer)

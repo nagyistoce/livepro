@@ -156,7 +156,7 @@ MainWindow::MainWindow()
 	scene->setGLWidget(glw);
 	
 	GLSpinnerDrawable *spinner = new GLSpinnerDrawable();;
-	spinner->setCycleDuration(1000);
+	spinner->setCycleDuration(1);
 	int spinSize = 28;
 	QRectF spinnerRect(10,10, spinSize, spinSize);
 	spinner->setRect(spinnerRect);

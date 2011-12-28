@@ -1,0 +1,44 @@
+This app is based off the ../simplemon code, but even simpler.
+
+What?
+- Choose a server (host input with connect button)
+- Enumerate video outputs on server (using ../legacy/glvidtex/PlayerConnection)
+	- Or use json:
+		GET http://localhost:9979/ListVideoInputs
+		RESPONSE:
+			{ "cmd" : "ListVideoInputs", "list" : [ "dev=/dev/video0,input=Composite1,net=10.10.9.90:7755", "dev=/dev/video1,input=Composite1,net=10.10.9.90:7756" ] }
+
+- Receive video emitted by a VideoSender (../gfxengine/VideoSender)
+- Display video in a custom QWidget (non-OpenGL since simple devices such as Android-based devices currently dont support OpenGL in Qt yet.)
+- Send command to server to switch video input on current video input drawable (using "setVideoConnection" property)
+	- Todo: Assuming a vid input drawable is active in current scene on server, how do we find the ID?
+		- GET http://localhost:9979/ExamineCurrentScene
+		- RESPONSE:
+			{ "cmd" : "ExamineCurrentScene", 
+				"items" : 
+				[ 
+					{ 
+						"id" : 1293, "name" : "", "playlist" : [  ], 
+						"props" : 
+						[ 
+							{ "name" : "objectName", "type" : "QString", "value" : "" }
+							, { "name" : "id", "type" : "int", "value" : "1293" }
+							...
+							, { "name" : "videoConnection", "type" : "QString", "value" : "dev=/dev/video0,input=Composite1,net=10.10.9.90:7755" }
+							, { "name" : "videoInput", "type" : "QString", "value" : "/dev/video0" }
+						]
+						, "type" : "VideoInput" 
+					}
+				]
+				, "status" : "true" 
+			}
+			
+			var item = obj.items[0];
+			var vidItemID = item.id if item.type == "VideoInput";
+			 
+			
+	- To switch to 2nd video input, based on enumeration above and Examine*Scene above:
+		http://localhost:9979/SetUserProperty?drawableid=1293&name=videoInput&value=/dev/video1&type=string
+
+Why?
+The goal is to be able to run this app on an Android device such as the Kindle Fire or Droid 2. I've already got a simple MJPEG viewer running on both of those, thanks to the Necessitas framework.

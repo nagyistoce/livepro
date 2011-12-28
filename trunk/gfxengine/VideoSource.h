@@ -75,8 +75,10 @@ protected:
 	
 	bool m_killed;
 	
+	#ifdef HAS_LIBAV
 	static void initAV();
 	static bool isLibAVInit;
+	#endif
 
 	//QQueue<VideoFrame> m_frameQueue;
 	VideoFrameQueue m_frameQueue;

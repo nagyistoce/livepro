@@ -9,14 +9,25 @@
 #include <QPointer>
 
 #include <QMouseEvent>
+
+#ifdef NO_OPENGL
+#include <QWidget>
+#else
 #include <QGLWidget>
+#endif
 
 #include "VideoFrame.h"
 
 class VideoSource;
 class VideoFrame;
 // class CameraServer;
-class VideoWidget  : public QGLWidget
+class VideoWidget  :
+	#ifdef NO_OPENGL
+	public QWidget
+	#else
+	public QGLWidget
+	#endif
+	
 {
 	Q_OBJECT
 public:

@@ -1,3 +1,5 @@
+DEFINES += HAS_LIBAV
+
 unix {
         LIBS += -lavdevice -lavformat -lavcodec -lavutil -lswscale -lbz2
         INCLUDEPATH += /usr/include/ffmpeg

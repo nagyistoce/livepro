@@ -7,7 +7,10 @@
 #include <QDebug>
 
 #include "VideoWidget.h"
+#ifdef HAVE_LIBAV
 #include "CameraThread.h"
+#endif
+#include "VideoSource.h"
 //#include "CameraServer.h"
 #include <QPainter>
 #include <QApplication>
@@ -597,7 +600,7 @@ void VideoWidget::paintEvent(QPaintEvent*)
 				if(m_frame->bufferType() == VideoFrame::BUFFER_POINTER) // assume from SimpleV4L2 in ARGB32 format
 				{
 					//QImage image((const uchar*)m_frame->byteArray().constData(),m_frame->size().width(),m_frame->size().height(),QImage::Format_RGB32);
-					const QImage::Format imageFormat = QVideoFrame::imageFormatFromPixelFormat(m_frame->pixelFormat());
+					const QImage::Format imageFormat = VideoFrame::imageFormatFromPixelFormat(m_frame->pixelFormat());
 					if(imageFormat != QImage::Format_Invalid)
 					{
 						QImage image(m_frame->pointer(),

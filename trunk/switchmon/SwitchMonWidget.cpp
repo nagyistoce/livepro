@@ -16,7 +16,7 @@ SwitchMonWidget::SwitchMonWidget(QWidget *parent)
 {
 	QSettings settings;
 	
-	setStyleSheet("background-color:rgb(50,50,50); color:#FFFFFFFF");
+	//setStyleSheet("background-color:rgb(50,50,50); color:#FFFFFFFF");
 	
 	// Setup the layout of the window
 	m_vbox = new QVBoxLayout(this);
@@ -25,7 +25,9 @@ SwitchMonWidget::SwitchMonWidget(QWidget *parent)
 	
 	QHBoxLayout *conLay = new QHBoxLayout();
 	conLay->addWidget(new QLabel("Server: "));
-	
+	conLay->setContentsMargins(5,5,5,5);
+	conLay->setSpacing(3);
+
 	m_serverBox = new QLineEdit();
 	m_serverBox->setText(settings.value("lastServer","10.10.9.90").toString());
 	connect(m_serverBox, SIGNAL(textChanged(QString)), this, SLOT(textChanged(QString)));

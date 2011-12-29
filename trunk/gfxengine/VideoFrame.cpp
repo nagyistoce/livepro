@@ -50,6 +50,46 @@ QImage::Format VideoFrame::imageFormatFromPixelFormat(QVideoFrame::PixelFormat f
     return QImage::Format_Invalid;
 }
 
+/*!
+    Returns an video pixel format equivalent to an image \a format.  If there is no equivalent
+    format QVideoFrame::InvalidType is returned instead.
+*/
+
+QVideoFrame::PixelFormat VideoFrame::pixelFormatFromImageFormat(QImage::Format format)
+{
+    switch (format) {
+    case QImage::Format_Invalid:
+    case QImage::Format_Mono:
+    case QImage::Format_MonoLSB:
+    case QImage::Format_Indexed8:
+        return QVideoFrame::Format_Invalid;
+    case QImage::Format_RGB32:
+        return QVideoFrame::Format_RGB32;
+    case QImage::Format_ARGB32:
+        return QVideoFrame::Format_ARGB32;
+    case QImage::Format_ARGB32_Premultiplied:
+        return QVideoFrame::Format_ARGB32_Premultiplied;
+    case QImage::Format_RGB16:
+        return QVideoFrame::Format_RGB565;
+    case QImage::Format_ARGB8565_Premultiplied:
+        return QVideoFrame::Format_ARGB8565_Premultiplied;
+    case QImage::Format_RGB666:
+    case QImage::Format_ARGB6666_Premultiplied:
+        return QVideoFrame::Format_Invalid;
+    case QImage::Format_RGB555:
+        return QVideoFrame::Format_RGB555;
+    case QImage::Format_ARGB8555_Premultiplied:
+        return QVideoFrame::Format_Invalid;
+    case QImage::Format_RGB888:
+        return QVideoFrame::Format_RGB24;
+    case QImage::Format_RGB444:
+    case QImage::Format_ARGB4444_Premultiplied:
+        return QVideoFrame::Format_Invalid;
+    case QImage::NImageFormats:
+        return QVideoFrame::Format_Invalid;
+    }
+    return QVideoFrame::Format_Invalid;
+}
 
 VideoFrame::VideoFrame()
 {

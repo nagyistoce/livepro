@@ -1,5 +1,5 @@
-#ifndef MainWindow_H
-#define MainWindow_H
+#ifndef SwitchMonWidget_H
+#define SwitchMonWidget_H
 
 #include <QtGui>
 
@@ -11,12 +11,12 @@ namespace QJson
 }
 
 
-class MainWindow : public QWidget
+class SwitchMonWidget : public QWidget
 {
 	Q_OBJECT
 public:
-	MainWindow();
-	~MainWindow();
+	SwitchMonWidget(QWidget *parent=0);
+	~SwitchMonWidget();
 	
 protected slots:
 	void vidWidgetClicked();
@@ -30,8 +30,11 @@ protected:
 	
 	void processInputEnumReply(const QByteArray&);
 	void processExamineSceneReply(const QByteArray&);
+	void processSetPropReply(const QByteArray&);
 	
 	void loadUrl(const QString &location);
+	
+	void sendCon(const QString& con);
 
 private:
 	enum LastRequestType {
@@ -57,6 +60,9 @@ private:
 	int m_drawableId;
 		
 	QJson::Parser *m_parser;
+	
+	QString m_lastCon;
+	bool m_resendLastCon;
 	
 };
 

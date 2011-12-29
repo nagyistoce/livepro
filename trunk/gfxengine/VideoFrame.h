@@ -26,7 +26,8 @@ class VideoFrame //: public QObject
 {
 // 	//Q_OBJECT
 public:
-	static QImage::Format imageFormatFromPixelFormat(QVideoFrame::PixelFormat format);
+	static QImage::Format           imageFormatFromPixelFormat(QVideoFrame::PixelFormat format);
+	static QVideoFrame::PixelFormat pixelFormatFromImageFormat(QImage::Format format);
 
 	VideoFrame(); 
 	

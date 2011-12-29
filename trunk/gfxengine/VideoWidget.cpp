@@ -7,7 +7,7 @@
 #include <QDebug>
 
 #include "VideoWidget.h"
-#ifdef HAVE_LIBAV
+#ifdef HAS_LIBAV
 #include "CameraThread.h"
 #endif
 #include "VideoSource.h"

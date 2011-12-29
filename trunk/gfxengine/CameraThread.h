@@ -12,11 +12,13 @@
 # define INT64_C(c) c ## LL
 #endif
 
+#ifdef HAS_LIBAV
 extern "C" {
 #include "libavcodec/avcodec.h"
 #include "libavformat/avformat.h"
 #include "libswscale/swscale.h"
 }
+#endif
 
 #include <QImage>
 #include <QTimer>
@@ -100,6 +102,7 @@ private:
 	
 	QTimer m_readTimer;
 
+#ifdef HAS_LIBAV
 	AVFormatContext * m_av_format_context;
 	AVCodecContext * m_video_codec_context;
 	AVCodecContext * m_audio_codec_context;
@@ -113,7 +116,9 @@ private:
 	int m_video_stream;
 	int m_audio_stream;
 
-	//QVideoBuffer * m_video_buffer;
+        AVRational m_timebase;
+#endif
+        //QVideoBuffer * m_video_buffer;
 	//QVideoBuffer * m_audio_buffer;
 
 	QImage * m_frame;
@@ -124,7 +129,6 @@ private:
 	//QVideo * m_video;
 	//QFFMpegVideoFrame m_current_frame;
 
-	AVRational m_timebase;
 
 	quint64 m_start_timestamp;
 	bool m_initial_decode;

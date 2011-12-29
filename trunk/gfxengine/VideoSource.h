@@ -56,6 +56,8 @@ public:
 	void setAutoDestroy(bool);
 	bool autoDestroy() { return m_autoDestroy; }
 	
+	virtual void destroySource();
+	
 signals:
 	void frameReady();
 
@@ -71,7 +73,6 @@ protected:
 	virtual void run();
 	virtual void enqueue(VideoFrame*);
 	virtual void enqueue(VideoFramePtr);
-	virtual void destroySource();
 	
 	bool m_killed;
 	

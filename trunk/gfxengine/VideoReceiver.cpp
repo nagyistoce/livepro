@@ -7,7 +7,7 @@
 #include <QMutex>
 #include <QMutexLocker>
 
-#define DEBUG
+//#define DEBUG
 
 QMap<QString,VideoReceiver *> VideoReceiver::m_threadMap;
 QMutex VideoReceiver::m_threadCacheMutex;
@@ -89,9 +89,6 @@ VideoReceiver::~VideoReceiver()
 	//qDebug() << "VideoReceiver::~VideoReceiver(): "<<this;
 	#endif
 	
-	QMutexLocker lock(&m_threadCacheMutex);
-	m_threadMap.remove(cacheKey());
-
 	if(m_socket)
 		exit();
 		
@@ -99,7 +96,15 @@ VideoReceiver::~VideoReceiver()
 	wait();
 }
 
-  
+
+void VideoReceiver::destroySource()
+{
+	QMutexLocker lock(&m_threadCacheMutex);
+	m_threadMap.remove(cacheKey());
+	
+	VideoSource::destroySource();
+}
+
 bool VideoReceiver::connectTo(const QString& host, int port, QString url, const QString& user, const QString& pass)
 {
 	if(url.isEmpty())

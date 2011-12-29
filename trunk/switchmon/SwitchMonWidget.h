@@ -37,6 +37,9 @@ protected:
 	void sendCon(const QString& con);
 
 private:
+	void clearViewerLayout();
+	void createViewers();
+	
 	enum LastRequestType {
 		T_UNKNOWN = 0,
 		T_EnumInputs,
@@ -50,17 +53,26 @@ private:
 	
 	LastRequestType m_lastReqType;
 	
-	QHBoxLayout *m_hbox;
+	// Various layout items
+	QVBoxLayout *m_vbox;
+	QLayout *m_viewerLayout;
 	QLineEdit *m_serverBox;
 	QPushButton *m_connectBtn;
 	
+	// for re-creating viewers after changing size of window (from Horizontal to Vertical, etc)
+	QVariantList m_inputList;
+	
+	// not really used - set, but not used
 	bool m_isConnected;
 	
+	// used in sending URL commands
 	QString m_host;
 	int m_drawableId;
 		
+	// Parser for responses from server 
 	QJson::Parser *m_parser;
 	
+	// Used to resend last 'switch' command if needed
 	QString m_lastCon;
 	bool m_resendLastCon;
 	

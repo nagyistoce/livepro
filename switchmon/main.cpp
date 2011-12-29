@@ -1,4 +1,4 @@
-#include "MainWindow.h"
+#include "SwitchMonWidget.h"
 #include <QApplication>
 
 int main(int argc, char **argv)
@@ -9,7 +9,7 @@ int main(int argc, char **argv)
 	app.setOrganizationName("Josiah Bryan");
 	app.setOrganizationDomain("mybryanlife.com");
 	
-	MainWindow *mw = new MainWindow;
+	SwitchMonWidget *mw = new SwitchMonWidget();
 	mw->show();
 	
 	return app.exec();

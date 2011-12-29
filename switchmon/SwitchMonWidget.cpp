@@ -1,16 +1,17 @@
-#include "MainWindow.h"
+#include "SwitchMonWidget.h"
 
 #include "VideoWidget.h"
 #include "VideoReceiver.h"
 
 #include "../3rdparty/qjson/parser.h"
 
-MainWindow::MainWindow()
-	: QWidget()
+SwitchMonWidget::SwitchMonWidget(QWidget *parent)
+	: QWidget(parent)
 	, m_ua(0)
 	, m_lastReqType(T_UNKNOWN)
 	, m_isConnected(false)
 	, m_parser(new QJson::Parser)
+	, m_resendLastCon(false)
 {
 	QSettings settings;
 	
@@ -70,12 +71,12 @@ MainWindow::MainWindow()
 // 	}
 }
 
-MainWindow::~MainWindow()
+SwitchMonWidget::~SwitchMonWidget()
 {
 	delete m_parser;	
 }
 
-void MainWindow::connectToServer()
+void SwitchMonWidget::connectToServer()
 {
 	m_isConnected = false;
 	m_host = m_serverBox->text();
@@ -89,33 +90,39 @@ void MainWindow::connectToServer()
 	QSettings().setValue("lastServer",m_host);
 }
 
-void MainWindow::textChanged(const QString&)
+void SwitchMonWidget::textChanged(const QString&)
 {
 	m_connectBtn->setEnabled(true);
 	m_connectBtn->setText("Connect");
 }
 
-void MainWindow::vidWidgetClicked()
+void SwitchMonWidget::vidWidgetClicked()
 {
 	QObject *obj = sender();
 	//qDebug() << "vidWidgetClicked: clicked num: "<<obj->property("num").toInt();
 	QString con = obj->property("con").toString();
-	QString escapedCon = con; //QString::fromUtf8(con.toUtf8().toPercentEncoding());
 	qDebug() << "vidWidgetClicked: clicked connection: "<<con;
-	
-	m_lastReqType = T_SetProperty;
+	sendCon(con);
+}
+
+void SwitchMonWidget::sendCon(const QString& con)
+{
 	//http://localhost:9979/SetUserProperty?drawableid=1293&name=videoInput&value=/dev/video1&type=string
-	loadUrl(tr("http://%1:9979/SetUserProperty?drawableid=%2&name=videoConnection&value=%3&type=string").arg(m_host).arg(m_drawableId).arg(escapedCon));
+	
+	// Store con so we can re-send if we encounter a fixable error
+	m_lastCon = con;
+	m_lastReqType = T_SetProperty;
+	loadUrl(tr("http://%1:9979/SetUserProperty?drawableid=%2&name=videoConnection&value=%3&type=string").arg(m_host).arg(m_drawableId).arg(con));
 }
 
 // Why? Just for easier setting the win-width/-height in the .ini file.
-void MainWindow::resizeEvent(QResizeEvent*)
+void SwitchMonWidget::resizeEvent(QResizeEvent*)
 {
 	//qDebug() << "Window Size: "<<width()<<" x "<<height(); 
 }
 
 
-void MainWindow::loadUrl(const QString &location) 
+void SwitchMonWidget::loadUrl(const QString &location) 
 {
 	QUrl url(location);
 	
@@ -130,7 +137,7 @@ void MainWindow::loadUrl(const QString &location)
 	m_ua->get(QNetworkRequest(url));
 }
 
-void MainWindow::handleNetworkData(QNetworkReply *networkReply) 
+void SwitchMonWidget::handleNetworkData(QNetworkReply *networkReply) 
 {
 	QUrl url = networkReply->url();
 	if (!networkReply->error())
@@ -146,7 +153,7 @@ void MainWindow::handleNetworkData(QNetworkReply *networkReply)
 				processExamineSceneReply(bytes);
 				break;
 			case T_SetProperty:
-				// assume successful
+				processSetPropReply(bytes);
 				break;
 			default:
 				// nothing right now
@@ -159,7 +166,37 @@ void MainWindow::handleNetworkData(QNetworkReply *networkReply)
 	//networkReply->manager()->deleteLater();
 }
 
-void MainWindow::processInputEnumReply(const QByteArray &bytes)
+void SwitchMonWidget::processSetPropReply(const QByteArray &bytes)
+{
+	bool ok = false;
+	QVariant reply = m_parser->parse(bytes,&ok);
+	
+	// Check for error condition from switch request:
+	// 	<< "cmd" << cmd
+	// 	<< "status" << "error"
+	// 	<< "message" << "Invalid DrawableID");
+		
+	QVariantMap replyMap = reply.toMap();
+	if(replyMap["status"].toString()  == "error" &&
+	   replyMap["message"].toString() == "Invalid DrawableID")
+	{
+		qDebug() << "Unable to change video input due to scene change on server, re-examining scene.";
+		
+		// Scene may have changed, find a new video drawable to control
+		m_connectBtn->setEnabled(false);
+		m_connectBtn->setText("Checking...");
+		
+		// processExamineSceneReply() will use this flag to re-send the connection string after receiving examine response
+		m_resendLastCon = true;
+		
+		// Request scene breakdown
+		m_lastReqType = T_ExamineScene;
+		loadUrl(tr("http://%1:9979/ExamineCurrentScene").arg(m_host));
+		
+	}
+}
+
+void SwitchMonWidget::processInputEnumReply(const QByteArray &bytes)
 {
 	// Clear the slider grid of old controls
 	while(m_hbox->count() > 0)
@@ -183,9 +220,10 @@ void MainWindow::processInputEnumReply(const QByteArray &bytes)
 	bool ok = false;
 	QVariant reply = m_parser->parse(bytes,&ok);
 	// Sample: { "cmd" : "ListVideoInputs", "list" : [ "dev=/dev/video0,input=Composite1,net=10.10.9.90:7755", "dev=/dev/video1,input=Composite1,net=10.10.9.90:7756" ] }
+	
 	QVariantMap replyMap = reply.toMap();
 	QVariantList inputList = replyMap["list"].toList();
-	int idx =0;
+	int idx = 0;
 	foreach(QVariant entry, inputList)
 	{
 		QString con = entry.toString();
@@ -197,7 +235,7 @@ void MainWindow::processInputEnumReply(const QByteArray &bytes)
 			QStringList values = pair.split("=");
 			if(values.size() < 2)
 			{
-				qDebug() << "MainWindow::processInputEnumReply: Parse error for option:"<<pair;
+				qDebug() << "SwitchMonWidget::processInputEnumReply: Parse error for option:"<<pair;
 				continue;
 			}
 	
@@ -235,7 +273,7 @@ void MainWindow::processInputEnumReply(const QByteArray &bytes)
 	m_connectBtn->setText("Checking...");
 }
 
-void MainWindow::processExamineSceneReply(const QByteArray &bytes)
+void SwitchMonWidget::processExamineSceneReply(const QByteArray &bytes)
 {
 	bool ok = false;
 	QVariant reply = m_parser->parse(bytes,&ok);
@@ -267,17 +305,31 @@ void MainWindow::processExamineSceneReply(const QByteArray &bytes)
 // 			
 	QVariantList itemList = replyMap["items"].toList();
 	
+	//qDebug() << "SwitchMonWidget::processExamineSceneReply: found "<<itemList.size()<<" items";
+	
 	m_drawableId = -1;
 	foreach(QVariant itemData, itemList)
 	{
 		if(m_drawableId < 0)
 		{
 			QVariantMap itemMap = itemData.toMap();
-			if(itemMap["type"].toString() == "VideoInput")
-				m_drawableId = itemMap["id"].toInt();
+			
+			QString type = itemMap["type"].toString();
+			int id = itemMap["id"].toInt();
+			
+			if(type == "VideoInput")
+				m_drawableId = id;
+			
+			//qDebug() << "SwitchMonWidget::processExamineSceneReply: checking itemId:"<<id<<", type:"<<type<<", final m_drawableId:"<<m_drawableId;
 		}
 	}
 		
 	m_connectBtn->setEnabled(false);
 	m_connectBtn->setText("Connected");
+	
+	if(m_resendLastCon)
+	{
+		m_resendLastCon = false;
+		sendCon(m_lastCon);
+	}
 }

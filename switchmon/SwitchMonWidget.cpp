@@ -16,8 +16,13 @@ SwitchMonWidget::SwitchMonWidget(QWidget *parent)
 {
 	QSettings settings;
 	
+	setStyleSheet("background-color:rgb(50,50,50); color:#FFFFFFFF");
+	
 	// Setup the layout of the window
 	m_vbox = new QVBoxLayout(this);
+	m_vbox->setContentsMargins(0,0,0,0);
+	m_vbox->setSpacing(0);
+	
 	QHBoxLayout *conLay = new QHBoxLayout();
 	conLay->addWidget(new QLabel("Server: "));
 	
@@ -140,6 +145,7 @@ void SwitchMonWidget::resizeEvent(QResizeEvent*)
 		
 		m_viewerLayout = new QHBoxLayout();
 		m_viewerLayout->setContentsMargins(0,0,0,0);
+		m_viewerLayout->setSpacing(0);
 		m_vbox->addLayout(m_viewerLayout);
 		
 		createViewers();
@@ -168,6 +174,7 @@ void SwitchMonWidget::resizeEvent(QResizeEvent*)
 		
 		m_viewerLayout = new QVBoxLayout();
 		m_viewerLayout->setContentsMargins(0,0,0,0);
+		m_viewerLayout->setSpacing(0);
 		m_vbox->addLayout(m_viewerLayout);
 		
 		createViewers();
@@ -263,6 +270,7 @@ void SwitchMonWidget::createViewers()
 	{
 		m_viewerLayout = width() > height() ? (QLayout*)(new QHBoxLayout()) : (QLayout*)(new QVBoxLayout());
 		m_viewerLayout->setContentsMargins(0,0,0,0);
+		m_viewerLayout->setSpacing(0);
 		m_vbox->addLayout(m_viewerLayout);
 	}
 	
@@ -296,6 +304,7 @@ void SwitchMonWidget::createViewers()
 		VideoWidget *widget = new VideoWidget();
 		VideoReceiver *receiver = VideoReceiver::getReceiver(host,port);
 		
+		//widget->setVideoBackgroundColor(QColor(50,50,50));
 		widget->setVideoSource(receiver);
 		widget->setOverlayText(tr("Cam %1").arg(idx+1));
 		widget->setProperty("con", con);

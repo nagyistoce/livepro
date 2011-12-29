@@ -46,6 +46,8 @@ public:
 	
 	VideoSource *overlaySource() { return m_overlaySource; }
 	
+	QColor videoBackgroundColor() { return m_videoBgColor; }
+	
 signals:
 	void clicked();
 	void sourceDiscarded(VideoSource*);
@@ -70,6 +72,8 @@ public slots:
 	
 	void setOverlaySource(VideoSource*);
 	void disconnectOverlaySource();
+	
+	void setVideoBackgroundColor(QColor);
 
 	
 	
@@ -157,6 +161,8 @@ private:
 	
 	QRect m_overlayTargetRect;
 	QRect m_overlaySourceRect;
+	
+	QColor m_videoBgColor;
 };
 
 

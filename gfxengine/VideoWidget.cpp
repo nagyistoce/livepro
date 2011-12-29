@@ -44,6 +44,7 @@ VideoWidget::VideoWidget(QWidget *parent)
 	, m_oldThread(0)
 	, m_overlayFrame(0)
 	, m_overlaySource(0)
+	, m_videoBgColor(Qt::black)
 {
 	//setAttribute(Qt::WA_PaintOnScreen, true);
 	//setAttribute(Qt::WA_OpaquePaintEvent, true);
@@ -55,6 +56,12 @@ VideoWidget::VideoWidget(QWidget *parent)
 	connect(&m_fadeTimer, SIGNAL(timeout()), this, SLOT(fadeAdvance()));
 	
 	setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+}
+
+void VideoWidget::setVideoBackgroundColor(QColor color)
+{
+	m_videoBgColor = color;
+	update();
 }
 
 QSize VideoWidget::sizeHint () const { return QSize(160,120); }
@@ -574,7 +581,7 @@ void VideoWidget::paintEvent(QPaintEvent*)
 	//p.setRenderHint(QPainter::SmoothPixmapTransform);
 	//p.setRenderHint(QPainter::Antialiasing);
 
-	p.fillRect(rect(),Qt::black);
+	p.fillRect(rect(),m_videoBgColor);
 
 	if(!m_thread)
 	{

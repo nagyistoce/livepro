@@ -1,0 +1,46 @@
+<html>
+<head>
+	<title>Test Template</title>
+</head>
+<body>
+	<h1>Hello World!</h1>
+	
+	<p>The Time is Now: <b>%%time%%</b></p>
+	
+	
+	<form method=GET action='/test.html'>
+		<input type=hidden name=flag value=1>
+		
+		<input type='text' name=text value='hello'>
+		<input type='submit' name=submit value='button 1'>
+		<input type='submit' name=submit value='button 2'>
+	</form>
+	
+	
+	%%if:flag%%
+	<h2>Flag Value Set!!</h2>
+	
+	<table>
+		<thead>
+			<th>Key</th>
+			<th>Value</th>
+		</thead>
+		<tbody>
+		%%loop:query%%
+			<tr>
+				<td>%%key%%</td>
+				<td>%%value%%</td>
+			</tr>
+		%%/loop:query%%
+		</tbody>
+	</table>
+	
+	%%else%%
+	<h2>No Flag</h2>
+	%%/if:flag%%
+	
+	
+	
+	<!--<p>DViz Icon: <img src='/data/icon-d.png'></p>-->
+</body>
+</html>

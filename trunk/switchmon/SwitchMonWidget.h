@@ -45,6 +45,7 @@ private:
 		T_EnumInputs,
 		T_ExamineScene,
 		T_SetProperty,
+		T_ShowCon,
 		T_NUM_TYPES
 	} ;
 		
@@ -76,6 +77,8 @@ private:
 	QString m_lastCon;
 	bool m_resendLastCon;
 	
+	// API Version the server advertises
+	double m_serverApiVer;
 };
 
 

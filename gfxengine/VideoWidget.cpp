@@ -547,7 +547,7 @@ void VideoWidget::updateTimer()
 
 	if(m_paintTimer.interval() != fps)
 	{
-		qDebug() << "VideoWidget::updateTimer: new hold time: "<<fps;
+		//qDebug() << "VideoWidget::updateTimer: new hold time: "<<fps;
 
 		m_paintTimer.setInterval(fps);
 	}

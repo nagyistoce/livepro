@@ -33,8 +33,11 @@ private:
 	static QString cacheKey(const QString&,int);
 
 public:
+	static QList<VideoReceiver*> receivers() { return m_threadMap.values(); }
+	
 	static VideoReceiver * getReceiver(const QString& host, int port=-1);
 	~VideoReceiver();
+	
 	
 	
 	bool connectTo(const QString& host, int port=-1, QString url = "/", const QString& user="", const QString& pass="");
@@ -59,6 +62,9 @@ public:
 	void sendCommand(QVariantMap);
 	
 	bool isConnected() { return m_connected; }
+	
+	// VideoSource::
+	virtual void destroySource();
 	
 public slots:
 	void setHue(int);

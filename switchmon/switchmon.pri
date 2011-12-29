@@ -8,13 +8,13 @@ QT += network
 #include(../gfxengine/gfxengine.pri)
 DEFINES += NO_OPENGL
 
-# Used for the HTTP interface to the host
-include(../3rdparty/qjson/qjson.pri)
+INCLUDEPATH += $$PWD/../gfxengine
+DEPENDPATH += $$PWD/../gfxengine
 
 QT += multimedia
 
-INCLUDEPATH += ../gfxengine
-DEPENDPATH += ../gfxengine
+# Used for the HTTP interface to the host
+include(../3rdparty/qjson/qjson.pri)
 
 # Input
 HEADERS += \

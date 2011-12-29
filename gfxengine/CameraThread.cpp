@@ -17,10 +17,12 @@
 
 #include "CameraThread.h"
 
+#ifdef HAS_LIBAV
 extern "C" {
 #include "libswscale/swscale.h"
 #include "libavdevice/avdevice.h"
 }
+#endif
 
 #include "SimpleV4L2.h"
 

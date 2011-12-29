@@ -9,6 +9,7 @@ SwitchMonWidget::SwitchMonWidget(QWidget *parent)
 	: QWidget(parent)
 	, m_ua(0)
 	, m_lastReqType(T_UNKNOWN)
+	, m_viewerLayout(0)
 	, m_isConnected(false)
 	, m_parser(new QJson::Parser)
 	, m_resendLastCon(false)
@@ -16,7 +17,7 @@ SwitchMonWidget::SwitchMonWidget(QWidget *parent)
 	QSettings settings;
 	
 	// Setup the layout of the window
-	QVBoxLayout *vbox = new QVBoxLayout(this);
+	m_vbox = new QVBoxLayout(this);
 	QHBoxLayout *conLay = new QHBoxLayout();
 	conLay->addWidget(new QLabel("Server: "));
 	
@@ -30,16 +31,9 @@ SwitchMonWidget::SwitchMonWidget(QWidget *parent)
 	conLay->addWidget(m_connectBtn);
 	
 	conLay->addStretch(1);
-	
-	vbox->addLayout(conLay);
-	
-	m_hbox = new QHBoxLayout();
-	m_hbox->setContentsMargins(0,0,0,0);
-	
-	vbox->addLayout(m_hbox);
+	m_vbox->addLayout(conLay);
 	
 	setWindowTitle("Camera Monitor");
-	
 	
 	connectToServer();
 	
@@ -118,7 +112,68 @@ void SwitchMonWidget::sendCon(const QString& con)
 // Why? Just for easier setting the win-width/-height in the .ini file.
 void SwitchMonWidget::resizeEvent(QResizeEvent*)
 {
+	if(!m_viewerLayout)
+		return;
+		
 	//qDebug() << "Window Size: "<<width()<<" x "<<height(); 
+	if(width() > height())
+	{
+		QHBoxLayout *hboxTest = dynamic_cast<QHBoxLayout*>(m_viewerLayout);
+		if(hboxTest)
+			return;
+		
+		qDebug() << "Window changed to Horizontal, setting up UI";
+		
+		// Temporarily turn off the autoDestroy so that the video stream 
+		// doesn't disconnect/reconnect immediately - no need, since we know
+		// we're reusing the same receiver streams, just in a different layout
+		QList<VideoReceiver*> receivers = VideoReceiver::receivers();
+		foreach(VideoReceiver *rx, receivers)
+			rx->setAutoDestroy(false);
+		
+		clearViewerLayout();
+		
+		m_vbox->removeItem(m_viewerLayout);
+		delete m_viewerLayout;
+		
+		m_viewerLayout = new QHBoxLayout();
+		m_viewerLayout->setContentsMargins(0,0,0,0);
+		m_vbox->addLayout(m_viewerLayout);
+		
+		createViewers();
+		
+		foreach(VideoReceiver *rx, receivers)
+			rx->setAutoDestroy(true);
+	}
+	else
+	{
+		QVBoxLayout *vboxTest = dynamic_cast<QVBoxLayout*>(m_viewerLayout);
+		if(vboxTest)
+			return;
+			
+		qDebug() << "Window changed to Vertical, setting up UI";
+		
+		// Temporarily turn off the autoDestroy so that the video stream 
+		// doesn't disconnect/reconnect immediately - no need, since we know
+		// we're reusing the same receiver streams, just in a different layout
+		QList<VideoReceiver*> receivers = VideoReceiver::receivers();
+		foreach(VideoReceiver *rx, receivers)
+			rx->setAutoDestroy(false);
+		
+		clearViewerLayout();
+		
+		m_vbox->removeItem(m_viewerLayout);
+		delete m_viewerLayout;
+		
+		m_viewerLayout = new QVBoxLayout();
+		m_viewerLayout->setContentsMargins(0,0,0,0);
+		m_vbox->addLayout(m_viewerLayout);
+		
+		createViewers();
+		
+		foreach(VideoReceiver *rx, receivers)
+			rx->setAutoDestroy(false);
+	}
 }
 
 
@@ -196,35 +251,22 @@ void SwitchMonWidget::processSetPropReply(const QByteArray &bytes)
 	}
 }
 
-void SwitchMonWidget::processInputEnumReply(const QByteArray &bytes)
+void SwitchMonWidget::createViewers()
 {
-	// Clear the slider grid of old controls
-	while(m_hbox->count() > 0)
+	// If the layout isnt created yet, then we create it - 
+	// We've delayed initial creation of the layout till here in order that we can check
+	// the window orientation (Horizontal or Vertical) and use the appros layout.
+	// Note that if window orientation changes later, resizeEvent() will handle changing
+	// the layout type.
+	if(!m_viewerLayout)
 	{
-		QLayoutItem *item = m_hbox->itemAt(m_hbox->count() - 1);
-		m_hbox->removeItem(item);
-		if(QWidget *widget = item->widget())
-		{
-			// disconnect any slots
-			disconnect(widget, 0, this, 0);
-			
-			m_hbox->removeWidget(widget);
-			delete widget;
-		}
-			
-		delete item;
-		item = 0;
+		m_viewerLayout = width() > height() ? (QLayout*)(new QHBoxLayout()) : (QLayout*)(new QVBoxLayout());
+		m_viewerLayout->setContentsMargins(0,0,0,0);
+		m_vbox->addLayout(m_viewerLayout);
 	}
 	
-	
-	bool ok = false;
-	QVariant reply = m_parser->parse(bytes,&ok);
-	// Sample: { "cmd" : "ListVideoInputs", "list" : [ "dev=/dev/video0,input=Composite1,net=10.10.9.90:7755", "dev=/dev/video1,input=Composite1,net=10.10.9.90:7756" ] }
-	
-	QVariantMap replyMap = reply.toMap();
-	QVariantList inputList = replyMap["list"].toList();
 	int idx = 0;
-	foreach(QVariant entry, inputList)
+	foreach(QVariant entry, m_inputList)
 	{
 		QString con = entry.toString();
 		
@@ -248,7 +290,7 @@ void SwitchMonWidget::processInputEnumReply(const QByteArray &bytes)
 		QStringList parts = map["net"].split(":");
 		QString host = parts[0];
 		int port = parts[1].toInt();
-		qDebug() << "Input "<<idx<<": host:"<<host<<", port:"<<port;
+		//qDebug() << "Input "<<idx<<": host:"<<host<<", port:"<<port;
 		
 		VideoWidget *widget = new VideoWidget();
 		VideoReceiver *receiver = VideoReceiver::getReceiver(host,port);
@@ -259,12 +301,51 @@ void SwitchMonWidget::processInputEnumReply(const QByteArray &bytes)
 		
 		connect(widget, SIGNAL(clicked()), this, SLOT(vidWidgetClicked()));
 		
-		m_hbox->addWidget(widget);
+		m_viewerLayout->addWidget(widget);
 		
 		idx++;
 	}
 	
-	adjustSize();
+	//adjustSize();
+
+}
+
+void SwitchMonWidget::clearViewerLayout()
+{
+	if(!m_viewerLayout)
+		return;
+		
+	// Clear the slider grid of old controls
+	while(m_viewerLayout->count() > 0)
+	{
+		QLayoutItem *item = m_viewerLayout->itemAt(m_viewerLayout->count() - 1);
+		m_viewerLayout->removeItem(item);
+		if(QWidget *widget = item->widget())
+		{
+			// disconnect any slots
+			disconnect(widget, 0, this, 0);
+			
+			m_viewerLayout->removeWidget(widget);
+			delete widget;
+		}
+			
+		delete item;
+		item = 0;
+	}	
+}
+
+void SwitchMonWidget::processInputEnumReply(const QByteArray &bytes)
+{
+	clearViewerLayout();
+	
+	bool ok = false;
+	QVariant reply = m_parser->parse(bytes,&ok);
+	// Sample: { "cmd" : "ListVideoInputs", "list" : [ "dev=/dev/video0,input=Composite1,net=10.10.9.90:7755", "dev=/dev/video1,input=Composite1,net=10.10.9.90:7756" ] }
+	
+	QVariantMap replyMap = reply.toMap();
+	m_inputList = replyMap["list"].toList();
+	
+	createViewers();
 	
 	m_lastReqType = T_ExamineScene;
 	loadUrl(tr("http://%1:9979/ExamineCurrentScene").arg(m_host));

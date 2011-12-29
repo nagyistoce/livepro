@@ -1,0 +1,33 @@
+<html>
+<head>
+	<title>DMX Lighting Control</title>
+	<style>
+	body
+	{
+		font-size: 69%;
+		font-family: Sans-Serif;
+		font-size: 12px;
+	}
+	
+	</style>
+</head>
+<body>
+	<h1>DMX Lighting Control - Presets</h1>
+	
+	<table border=0>
+		%%loop:presets%%
+			<tr>
+				<td>
+					%%if:on%%<b>%%/if:on%%
+					<a href='/?action=play_preset&amp;num=%%num%%'>%%name%%</a>
+					%%if:on%%</b>%%/if:on%%
+				</td>
+			</tr>
+		%%/loop:presets%%
+	</table>
+	
+	<script>
+	setTimeout(function() { window.location.reload() }, 1000);
+	</script>
+</body>
+</html> 

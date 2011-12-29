@@ -1,0 +1,20 @@
+LiveMix is the core of the engine. It handles the following functions:
+	- CAPTURE
+		- Capturing video streams from capture interfaces
+			- Adjust capture FPS based on whether or not the stream is live 
+			- Transmit preview streams to monitor/switcher controls
+				- Scale down prior to transmission
+		- QUESTION:
+			- During capture, can we upload directly to the graphics card?
+			- Why, how would that benefit?
+				- Start the PBUF DMA copy earlier...?
+			- Can we DMA all the way from the V4L capture interface to the GPU, no main CPU involved?
+	- OUTPUT
+		- Need to plan on being able to output to more than one independent output (same GPU) ..? 
+			- What if system has two or more GPUs ?
+			- Need to detect multi-GPU and manage uploading/sharing textures appros
+	- REMOTE CONTROL
+		- LiveMix is designed to run "UI-less" (no control UI)
+		- Therefore, it must have an appros R/C API
+	
+	

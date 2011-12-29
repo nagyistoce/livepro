@@ -13,6 +13,7 @@ SwitchMonWidget::SwitchMonWidget(QWidget *parent)
 	, m_isConnected(false)
 	, m_parser(new QJson::Parser)
 	, m_resendLastCon(false)
+	, m_serverApiVer(-1)
 {
 	QSettings settings;
 	
@@ -44,32 +45,8 @@ SwitchMonWidget::SwitchMonWidget(QWidget *parent)
 	
 	connectToServer();
 	
-// 	// Finally, get down to actually creating the drawables 
-// 	// and setting their positions
-// 	for(int i=0; i<numItems; i++)
-// 	{
-// 		// Load the connection string
-// 		QString con = settings.value(tr("input%1").arg(i)).toString();
-// 		//if(con.indexOf("=") < 0)
-// 		//	con = tr("net=%1").arg(con);
-// 			
-// 		//qDebug() << "Input "<<i<<": "<<con;
-// 		QStringList parts = con.split(":");
-// 		QString host = parts[0];
-// 		int port = parts[1].toInt();
-// 		qDebug() << "Input "<<i<<": host:"<<host<<", port:"<<port;
-// 		
-// 		VideoWidget *widget = new VideoWidget();
-// 		VideoReceiver *receiver = VideoReceiver::getReceiver(host,port);
-// 		
-// 		widget->setVideoSource(receiver);
-// 		widget->setOverlayText(tr("Cam %1").arg(i+1));
-// 		widget->setProperty("num", i);
-// 		
-// 		connect(widget, SIGNAL(clicked()), this, SLOT(vidWidgetClicked()));
-// 		
-// 		hbox->addWidget(widget);
-// 	}
+	// TODO
+	// Add viewer for the live output on port 9978
 }
 
 SwitchMonWidget::~SwitchMonWidget()
@@ -87,6 +64,11 @@ void SwitchMonWidget::connectToServer()
 	
 	QSettings().setValue("lastServer",m_host);
 
+	// This will create at least one viewer (the live monitor)
+	// It will automatically update the list of viewers once
+	// we receive the list of video inputs
+	createViewers();
+	
 	// Query the server for a list of video inputs that we
 	// can then display in a set of VideoWidgets
 	m_lastReqType = T_EnumInputs;
@@ -103,6 +85,9 @@ void SwitchMonWidget::vidWidgetClicked()
 {
 	QObject *obj = sender();
 	QString con = obj->property("con").toString();
+	if(con.isEmpty())
+		return;
+		
 	qDebug() << "vidWidgetClicked: clicked connection: "<<con;
 	sendCon(con);
 }
@@ -111,10 +96,20 @@ void SwitchMonWidget::sendCon(const QString& con)
 {
 	//http://localhost:9979/SetUserProperty?drawableid=1293&name=videoInput&value=/dev/video1&type=string
 	
-	// Store con so we can re-send if we encounter a fixable error
-	m_lastCon = con;
-	m_lastReqType = T_SetProperty;
-	loadUrl(tr("http://%1:9979/SetUserProperty?drawableid=%2&name=videoConnection&value=%3&type=string").arg(m_host).arg(m_drawableId).arg(con));
+	if(m_serverApiVer >= 0.6)
+	{
+		m_lastReqType = T_ShowCon;
+		// TODO ShowVideoConnection supports an 'ms' argument, applicable to just this crossfade - designed to allow 'cutting' to a source.
+		// TODO Implement a 'cut' button in the UI, then add the 'ms' argument conditionally to the URL
+		loadUrl(tr("http://%1:9979/ShowVideoConnection?con=%2").arg(m_host).arg(con));
+	}
+	else
+	{
+		// Store con so we can re-send if we encounter a fixable error
+		m_lastCon = con;
+		m_lastReqType = T_SetProperty;
+		loadUrl(tr("http://%1:9979/SetUserProperty?drawableid=%2&name=videoConnection&value=%3&type=string").arg(m_host).arg(m_drawableId).arg(con));
+	}
 }
 
 // Adjust for changes in orientation of the window (e.g. from Portrait to Landscape, etc.)
@@ -207,8 +202,11 @@ void SwitchMonWidget::handleNetworkData(QNetworkReply *networkReply)
 	QUrl url = networkReply->url();
 	if (!networkReply->error())
 	{
+		// TODO Pass a QVariantMap to all the process* functions instead of a QByteArray
+		
 		QByteArray bytes = networkReply->readAll();
 		//m_isConnected = true;
+		
 		switch(m_lastReqType)
 		{
 			case T_EnumInputs:
@@ -236,11 +234,17 @@ void SwitchMonWidget::processSetPropReply(const QByteArray &bytes)
 	bool ok = false;
 	QVariant reply = m_parser->parse(bytes,&ok);
 	
+	// In 0.6, we added the "ShowVideoConnection" command,
+	// so the error code below is no longer applicable since we
+	// don't need a drawable ID to show the camera
+	if(m_serverApiVer >= 0.6)
+		return;
+	
 	// Check for error condition from switch request:
 	// 	<< "cmd" << cmd
 	// 	<< "status" << "error"
 	// 	<< "message" << "Invalid DrawableID");
-		
+	
 	QVariantMap replyMap = reply.toMap();
 	if(replyMap["status"].toString()  == "error" &&
 	   replyMap["message"].toString() == "Invalid DrawableID")
@@ -276,6 +280,9 @@ void SwitchMonWidget::createViewers()
 		m_vbox->addLayout(m_viewerLayout);
 	}
 	
+	// Add in the "Live" output
+	m_inputList.prepend(tr("net=%1:9978").arg(m_host));
+	
 	int idx = 0;
 	foreach(QVariant entry, m_inputList)
 	{
@@ -308,8 +315,8 @@ void SwitchMonWidget::createViewers()
 		
 		//widget->setVideoBackgroundColor(QColor(50,50,50));
 		widget->setVideoSource(receiver);
-		widget->setOverlayText(tr("Cam %1").arg(idx+1));
-		widget->setProperty("con", con);
+		widget->setOverlayText(idx == 0 ? tr("Live") : tr("Cam %1").arg(idx));
+		widget->setProperty("con", idx == 0 ? "" : con);
 		
 		connect(widget, SIGNAL(clicked()), this, SLOT(vidWidgetClicked()));
 		
@@ -355,6 +362,14 @@ void SwitchMonWidget::processInputEnumReply(const QByteArray &bytes)
 	// Sample: { "cmd" : "ListVideoInputs", "list" : [ "dev=/dev/video0,input=Composite1,net=10.10.9.90:7755", "dev=/dev/video1,input=Composite1,net=10.10.9.90:7756" ] }
 	
 	QVariantMap replyMap = reply.toMap();
+	
+	QString apiString = replyMap["api"].toString();
+	if(apiString.isEmpty()) // assume older code (pre-0.6 didn't advertise API ver)
+		apiString = "0.5";
+	
+	m_serverApiVer = apiString.toDouble();
+	qDebug() << "SwitchMonWidget::processInputEnumReply: Server API Version: "<<m_serverApiVer;
+	
 	m_inputList = replyMap["list"].toList();
 	
 	createViewers();

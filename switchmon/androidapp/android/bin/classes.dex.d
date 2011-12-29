@@ -1,0 +1,23 @@
+C:\Users\JosiahBryan\Devel\livepro\switchmon\androidapp\android\bin\classes.dex : \
+C:\Users\JosiahBryan\Devel\livepro\switchmon\androidapp\android\bin\classes\org\kde\necessitas\example\LiveProSwitchMonAndroid\R$array.class \
+C:\Users\JosiahBryan\Devel\livepro\switchmon\androidapp\android\bin\classes\org\kde\necessitas\example\LiveProSwitchMonAndroid\R$attr.class \
+C:\Users\JosiahBryan\Devel\livepro\switchmon\androidapp\android\bin\classes\org\kde\necessitas\example\LiveProSwitchMonAndroid\R$drawable.class \
+C:\Users\JosiahBryan\Devel\livepro\switchmon\androidapp\android\bin\classes\org\kde\necessitas\example\LiveProSwitchMonAndroid\R$layout.class \
+C:\Users\JosiahBryan\Devel\livepro\switchmon\androidapp\android\bin\classes\org\kde\necessitas\example\LiveProSwitchMonAndroid\R$string.class \
+C:\Users\JosiahBryan\Devel\livepro\switchmon\androidapp\android\bin\classes\org\kde\necessitas\example\LiveProSwitchMonAndroid\R.class \
+C:\Users\JosiahBryan\Devel\livepro\switchmon\androidapp\android\bin\classes\org\kde\necessitas\ministro\IMinistro$Stub$Proxy.class \
+C:\Users\JosiahBryan\Devel\livepro\switchmon\androidapp\android\bin\classes\org\kde\necessitas\ministro\IMinistro$Stub.class \
+C:\Users\JosiahBryan\Devel\livepro\switchmon\androidapp\android\bin\classes\org\kde\necessitas\ministro\IMinistro.class \
+C:\Users\JosiahBryan\Devel\livepro\switchmon\androidapp\android\bin\classes\org\kde\necessitas\ministro\IMinistroCallback$Stub$Proxy.class \
+C:\Users\JosiahBryan\Devel\livepro\switchmon\androidapp\android\bin\classes\org\kde\necessitas\ministro\IMinistroCallback$Stub.class \
+C:\Users\JosiahBryan\Devel\livepro\switchmon\androidapp\android\bin\classes\org\kde\necessitas\ministro\IMinistroCallback.class \
+C:\Users\JosiahBryan\Devel\livepro\switchmon\androidapp\android\bin\classes\org\kde\necessitas\origo\QtActivity$1.class \
+C:\Users\JosiahBryan\Devel\livepro\switchmon\androidapp\android\bin\classes\org\kde\necessitas\origo\QtActivity$2.class \
+C:\Users\JosiahBryan\Devel\livepro\switchmon\androidapp\android\bin\classes\org\kde\necessitas\origo\QtActivity$3$1$1.class \
+C:\Users\JosiahBryan\Devel\livepro\switchmon\androidapp\android\bin\classes\org\kde\necessitas\origo\QtActivity$3$1.class \
+C:\Users\JosiahBryan\Devel\livepro\switchmon\androidapp\android\bin\classes\org\kde\necessitas\origo\QtActivity$3.class \
+C:\Users\JosiahBryan\Devel\livepro\switchmon\androidapp\android\bin\classes\org\kde\necessitas\origo\QtActivity$4.class \
+C:\Users\JosiahBryan\Devel\livepro\switchmon\androidapp\android\bin\classes\org\kde\necessitas\origo\QtActivity$5.class \
+C:\Users\JosiahBryan\Devel\livepro\switchmon\androidapp\android\bin\classes\org\kde\necessitas\origo\QtActivity$6.class \
+C:\Users\JosiahBryan\Devel\livepro\switchmon\androidapp\android\bin\classes\org\kde\necessitas\origo\QtActivity.class \
+C:\Users\JosiahBryan\Devel\livepro\switchmon\androidapp\android\bin\classes\org\kde\necessitas\origo\QtApplication.class \

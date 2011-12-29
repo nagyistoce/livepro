@@ -75,13 +75,15 @@ void SwitchMonWidget::connectToServer()
 	m_isConnected = false;
 	m_host = m_serverBox->text();
 	
-	m_lastReqType = T_EnumInputs;
-	loadUrl(tr("http://%1:9979/ListVideoInputs").arg(m_host));
-	
 	m_connectBtn->setEnabled(false);
 	m_connectBtn->setText("Connecting...");
 	
 	QSettings().setValue("lastServer",m_host);
+
+	// Query the server for a list of video inputs that we
+	// can then display in a set of VideoWidgets
+	m_lastReqType = T_EnumInputs;
+	loadUrl(tr("http://%1:9979/ListVideoInputs").arg(m_host));
 }
 
 void SwitchMonWidget::textChanged(const QString&)
@@ -93,7 +95,6 @@ void SwitchMonWidget::textChanged(const QString&)
 void SwitchMonWidget::vidWidgetClicked()
 {
 	QObject *obj = sender();
-	//qDebug() << "vidWidgetClicked: clicked num: "<<obj->property("num").toInt();
 	QString con = obj->property("con").toString();
 	qDebug() << "vidWidgetClicked: clicked connection: "<<con;
 	sendCon(con);
@@ -109,17 +110,18 @@ void SwitchMonWidget::sendCon(const QString& con)
 	loadUrl(tr("http://%1:9979/SetUserProperty?drawableid=%2&name=videoConnection&value=%3&type=string").arg(m_host).arg(m_drawableId).arg(con));
 }
 
-// Why? Just for easier setting the win-width/-height in the .ini file.
+// Adjust for changes in orientation of the window (e.g. from Portrait to Landscape, etc.)
 void SwitchMonWidget::resizeEvent(QResizeEvent*)
 {
 	if(!m_viewerLayout)
 		return;
+
+	QString layoutClassName = m_viewerLayout->metaObject()->className();
 		
 	//qDebug() << "Window Size: "<<width()<<" x "<<height(); 
 	if(width() > height())
 	{
-		QHBoxLayout *hboxTest = dynamic_cast<QHBoxLayout*>(m_viewerLayout);
-		if(hboxTest)
+		if(layoutClassName == "QHBoxLayout")
 			return;
 		
 		qDebug() << "Window changed to Horizontal, setting up UI";
@@ -147,9 +149,8 @@ void SwitchMonWidget::resizeEvent(QResizeEvent*)
 	}
 	else
 	{
-		QVBoxLayout *vboxTest = dynamic_cast<QVBoxLayout*>(m_viewerLayout);
-		if(vboxTest)
-			return;
+		if(layoutClassName == "QVBoxLayout")
+		    return;
 			
 		qDebug() << "Window changed to Vertical, setting up UI";
 		

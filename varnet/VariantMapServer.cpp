@@ -27,14 +27,23 @@ QString VariantMapServer::myAddress()
 	{
 		if (ipAddressesList.at(i) != QHostAddress::LocalHost &&
 		    ipAddressesList.at(i).toIPv4Address())
-			ipAddress = ipAddressesList.at(i).toString();
-	}
+                {
+                        QString tmp = ipAddressesList.at(i).toString();
+
+                        // TODO: Need a way to find the *names* of the adapters - these
+                        // IPs are prefixes my VirtualBox/VMWare installs are using for their
+                        // virtual adapters. Need a way to skip virtual interfaces.
+                        if(!tmp.startsWith("192.168.122.") &&
+                           !tmp.startsWith("192.168.56."))
+                                ipAddress = tmp;
+                }
+        }
 
 	// if we did not find one, use IPv4 localhost
 	if (ipAddress.isEmpty())
 		ipAddress = QHostAddress(QHostAddress::LocalHost).toString();
 
-	return QString("dviz://%1:%2/").arg(ipAddress).arg(serverPort());
+        return QString("%1:%2").arg(ipAddress).arg(serverPort());
 }
 
 void VariantMapServer::incomingConnection(int socketDescriptor)

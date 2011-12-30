@@ -11,17 +11,19 @@ VideoInputSenderManager::VideoInputSenderManager(QObject *parent)
 	QStringList devs = CameraThread::enumerateDevices();
 	foreach(QString dev, devs)
 	{
+                //qDebug() << "VideoInputSenderManager::ctor: Creating thread for device: "<<dev;
 		VideoSender *sender = new VideoSender();
-		CameraThread *source = CameraThread::threadForCamera(dev);
-		source->setFps(30);
+                CameraThread *source = CameraThread::threadForCamera(dev);
+                source->setFps(30);
 		source->registerConsumer(sender);
-		#ifndef Q_OS_WINDOWS
+                #ifndef Q_OS_WIN
 		source->enableRawFrames(true);
 		#endif
-		sender->setVideoSource(source);
-		
-		m_videoSenders[dev] = sender;
+                sender->setVideoSource(source);
+                m_videoSenders[dev] = sender;
 	}
+
+        //qDebug() << "VideoInputSenderManager::ctor: Done constructing";
 }
 
 VideoInputSenderManager::~VideoInputSenderManager()
@@ -93,7 +95,12 @@ QStringList VideoInputSenderManager::videoConnections(bool justNetString)
 		    ipAddressesList.at(i).toIPv4Address())
 		{
 			QString tmp = ipAddressesList.at(i).toString();
-			if(!tmp.startsWith("192.168.122."))
+
+                        // TODO: Need a way to find the *names* of the adapters - these
+                        // IPs are prefixes my VirtualBox/VMWare installs are using for their
+                        // virtual adapters. Need a way to skip virtual interfaces.
+                        if(!tmp.startsWith("192.168.122.") &&
+                           !tmp.startsWith("192.168.56."))
 				ipAddress = tmp;
 		}
 	}

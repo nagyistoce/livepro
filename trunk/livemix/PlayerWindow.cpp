@@ -212,15 +212,20 @@ void PlayerWindow::loadConfig(const QString& configFile, bool verbose)
 	bool vidSendEnab = READ_STRING("input-monitor-enabled","true") == "true";
 	//WinXP - m_vidSendMgr causes the app to freeze
 	#ifdef Q_OS_WIN
-		if(READ_STRING("force-input-monitor-enabled","false") == "false")
-			vidSendEnab = false;
+        //	if(READ_STRING("force-input-monitor-enabled","false") == "false")
+        //		vidSendEnab = false;
  	#endif
  	
  	if(vidSendEnab)
  	{
+                qDebug() << "PlayerWindow: Starting Video Input Manager...";
  		m_vidSendMgr = new VideoInputSenderManager();
  		m_vidSendMgr->setSendingEnabled(true);
  	}
+        else
+        {
+                qDebug() << "PlayerWindow: NOT starting input manager.";
+        }
 
 	m_useGLWidget = READ_STRING("compat","false") == "false";
 	if(m_useGLWidget)

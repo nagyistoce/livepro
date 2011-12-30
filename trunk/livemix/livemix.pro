@@ -31,6 +31,6 @@ SOURCES += \
 	main.cpp \
 	PlayerWindow.cpp 
 
-win32 {
-	CONFIG += console
-}
+#win32 {
+#        CONFIG += console
+#}

@@ -49,7 +49,7 @@ VideoWidget::VideoWidget(QWidget *parent)
 	//setAttribute(Qt::WA_PaintOnScreen, true);
 	//setAttribute(Qt::WA_OpaquePaintEvent, true);
 	//setAttribute(Qt::WA_PaintOutsidePaintEvent);
-	srand ( time(NULL) );
+//	srand ( time(NULL) );
 	connect(&m_paintTimer, SIGNAL(timeout()), this, SLOT(callUpdate()));
 	m_paintTimer.setInterval(1000/30);
 	

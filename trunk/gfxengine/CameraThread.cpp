@@ -11,7 +11,7 @@
 #include <QImageWriter>
 #include <QColor>
 
-//#define DEBUG
+#define DEBUG
 
 //#undef ENABLE_DECKLINK_CAPTURE
 
@@ -279,6 +279,10 @@ CameraThread * CameraThread::threadForCamera(const QString& camera)
 		v->start(QThread::NormalPriority); //QThread::HighPriority);
 		usleep(750 * 1000); // give it half a sec or so to init
 
+#ifdef DEBUG
+                qDebug() << "Started thread for camera "<<camera;
+#endif
+
 		return v;
 	}
 }
@@ -317,6 +321,8 @@ QStringList CameraThread::enumerateDevices(bool forceReenum)
 			QString file = QString("/dev/video%1").arg(i);
 		#endif
 
+                //qDebug() << "CameraThread::enumerateDevices: Checking device "<<file;
+
 		inFmt = av_find_input_format(qPrintable(formatName));
 		if( !inFmt )
 		{
@@ -340,11 +346,12 @@ QStringList CameraThread::enumerateDevices(bool forceReenum)
 		if(av_open_input_file(&formatCtx, qPrintable(file), inFmt, 0, &formatParams) != 0)
 		//if(av_open_input_file(&m_av_format_context, "1", inFmt, 0, NULL) != 0)
 		{
-			//qDebug() << "[WARN] CameraThread::load(): av_open_input_file() failed, file:"<<file;
+                        //qDebug() << "[WARN] CameraThread::load(): av_open_input_file() failed, file:"<<file;
 			break;
 		}
 		else
 		{
+                        //qDebug() << "CameraThread::enumerateDevices: Success with device "<<file;
 			list << QString("%1%2").arg(deviceBase).arg(i);
 			av_close_input_file(formatCtx);
 		}
@@ -354,9 +361,9 @@ QStringList CameraThread::enumerateDevices(bool forceReenum)
 	list << BMDCaptureDelegate::enumDeviceNames(forceReenum);
 	#endif
 	
-	#ifdef DEBUG
+        //#ifdef DEBUG
 	qDebug() << "CameraThread::enumerateDevices: Found: "<<list;
-	#endif
+        //#endif
 
 	m_enumeratedDevices = list;
 	
@@ -724,22 +731,25 @@ void CameraThread::run()
 	qDebug() << "CameraThread::run: "<<this<<" In Thread ID "<<QThread::currentThreadId();
 	#endif
 	
-// 	int counter = 0;
+        int counter = 0;
 	while(!m_killed)
 	{
+                //qDebug() << "CameraThread::run: "<<this<<" counter:"<<counter++;
 		#ifdef ENABLE_DECKLINK_CAPTURE
 		if(!m_bmd)
 		#endif
 			readFrame();
 
-// 		counter ++;
-// 		if(m_singleFrame.holdTime>0)
-// 		{
-// 			QString file = QString("frame-%1.jpg").arg(counter %2 == 0?"even":"odd");
-// 			qDebug() << "CameraThread::run(): frame:"<<counter<<", writing to file:"<<file;
-// 			QImageWriter writer(file, "jpg");
-// 			writer.write(m_singleFrame.image);
-// 		}
+                /*
+                counter ++;
+                if(m_singleFrame->holdTime()>0)
+                {
+                        QString file = QString("frame-%1.jpg").arg(counter %2 == 0?"even":"odd");
+                        qDebug() << "CameraThread::run(): frame:"<<counter<<", writing to file:"<<file;
+                        QImageWriter writer(file, "jpg");
+                        writer.write(m_singleFrame->image());
+                }
+                */
 
 		msleep(int(1000 / m_fps / 1.5 / (m_deinterlace ? 1 : 2)));
 		//msleep(int(1000 / m_fps / 1.5));// (m_deinterlace ? 1 : 2)));
@@ -960,7 +970,7 @@ void CameraThread::readFrame()
 	QMutexLocker lock(&m_readMutex);
 
 	QTime capTime = QTime::currentTime();
-	//qDebug() << "CameraThread::readFrame(): My Frame Count # "<<m_frameCount ++;
+        //qDebug() << "CameraThread::readFrame(): My Frame Count # "<<m_frameCount ++;
 	m_frameCount ++;
 
 	#if defined(Q_OS_LINUX)
@@ -1014,7 +1024,7 @@ void CameraThread::readFrame()
 	}
 	#endif
 	
-	return;
+        //return;
 
 	if(!m_inited)
 	{
@@ -1025,24 +1035,22 @@ void CameraThread::readFrame()
 	AVPacket pkt1, *packet = &pkt1;
 	double pts;
 
-
-
-	int frame_finished = 0;
+        int frame_finished = 0;
 	while(!frame_finished && !m_killed)
 	{
-		if(av_read_frame(m_av_format_context, packet) >= 0)
+                if(av_read_frame(m_av_format_context, packet) >= 0)
 		{
-			// Is this a packet from the video stream?
+                        // Is this a packet from the video stream?
 			if(packet->stream_index == m_video_stream)
 			{
-				//global_video_pkt_pts = packet->pts;
+                                //global_video_pkt_pts = packet->pts;
 
 //				mutex.lock();
 				avcodec_decode_video(m_video_codec_context, m_av_frame, &frame_finished, packet->data, packet->size);
 // 				mutex.unlock();
 
 				if(packet->dts == (uint)AV_NOPTS_VALUE &&
-						  m_av_frame->opaque &&
+                                                    m_av_frame->opaque &&
 				  *(uint64_t*)m_av_frame->opaque != (uint)AV_NOPTS_VALUE)
 				{
 					pts = *(uint64_t *)m_av_frame->opaque;
@@ -1051,7 +1059,7 @@ void CameraThread::readFrame()
 				{
 					pts = packet->dts;
 				}
-				else
+                                else
 				{
 					pts = 0;
 				}
@@ -1062,7 +1070,6 @@ void CameraThread::readFrame()
 				//frame_finished = 1;
 				if(frame_finished)
 				{
-
 // 					if(m_rawFrames)
 // 					{
 //  						//qDebug() << "Decode Time: "<<capTime.msecsTo(QTime::currentTime())<<" ms";
@@ -1127,22 +1134,19 @@ void CameraThread::readFrame()
 								//QImage::Format_RGB16);
 								QImage::Format_ARGB32); //_Premultiplied);
 
-							//qDebug() << "CameraThread::enqueue call: QImage ARGB32 frame";
+                                                        //qDebug() << "CameraThread::enqueue call: QImage ARGB32 frame";
 							enqueue(new VideoFrame(frame.copy(),1000/m_fps,capTime));
 						}
 					}
 
 					av_free_packet(packet);
-
-
 				}
-
 			}
 			else if(packet->stream_index == m_audio_stream)
 			{
 				//decode audio packet, store in queue
 				av_free_packet(packet);
-			}
+                        }
 			else
 			{
 				av_free_packet(packet);

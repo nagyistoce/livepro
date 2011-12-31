@@ -17,4 +17,10 @@ LiveMix is the core of the engine. It handles the following functions:
 		- LiveMix is designed to run "UI-less" (no control UI)
 		- Therefore, it must have an appros R/C API
 	
+---
 	
+	Bugs to work thru:
+	
+		- using switchmon:
+			- tap on same cam (cam 1 in testing) goes thru black
+			- tap on same cam (cam 2 in testing) goes thru cam 1 then blue again

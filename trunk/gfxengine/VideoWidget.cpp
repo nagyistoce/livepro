@@ -64,6 +64,12 @@ void VideoWidget::setVideoBackgroundColor(QColor color)
 	update();
 }
 
+void VideoWidget::setVideoBorderColor(QColor color)
+{
+	m_videoBorderColor = color;
+	update();
+}
+
 QSize VideoWidget::sizeHint () const { return QSize(160,120); }
 
 void VideoWidget::fadeToBlack(bool flag)
@@ -703,6 +709,12 @@ void VideoWidget::paintEvent(QPaintEvent*)
 					m_latencyAccum = 0;
 					qDebug() << "FPS: "<<QString("%1 fps %2").arg(framesPerSecond).arg(latencyString);
 				}
+			}
+			
+			if(m_videoBorderColor.isValid())
+			{
+				p.setPen(QPen(m_videoBorderColor,3.0));
+				p.drawRect(m_targetRect.adjusted(1,0,-2,0));
 			}
 		}
 	}

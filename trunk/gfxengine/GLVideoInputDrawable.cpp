@@ -222,10 +222,20 @@ bool GLVideoInputDrawable::setVideoInput(const QString& camera)
 	m_source = source;
 	m_source->setFps(30);
 	m_source->registerConsumer(this);
-// 	if(camera == "/dev/video1")
-// 		source->setInput("S-Video");
+
+	// Just for testing...
+	//if(camera == "/dev/video1")
+	//	source->setInput("S-Video");
+	
 	//usleep(750 * 1000); // This causes a race condition to manifist itself reliably, which causes a crash every time instead of intermitently.
 	// With the crash reproducable, I can now work to fix it.
+	
+	// The 'raw frames' mode uses V4L to get the frames instead of LibAV
+	// Of course, V4L isn't supported on windows, so we don't enable raw frames on windows.
+	// In the future, I suppose I could find code to use the appros Windows API to
+	// connect to the capture card - but I just don't have a need for that level of performance
+	// on windows right now, so I'll put it off until I need it or someone really wants it.
+	// For now, the high-performance capture use is on Linux (for me), so that's where I'll focus. 
 	#ifndef Q_OS_WINDOWS
 	m_source->enableRawFrames(true);
 	#endif

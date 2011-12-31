@@ -18,6 +18,10 @@ public:
 	SwitchMonWidget(QWidget *parent=0);
 	~SwitchMonWidget();
 	
+public slots:	
+	void setFadeSpeed(int);
+	void setCutFlag(bool);
+
 protected slots:
 	void vidWidgetClicked();
 	void connectToServer();
@@ -79,6 +83,18 @@ private:
 	
 	// API Version the server advertises
 	double m_serverApiVer;
+	
+	// For re-adding when window orientation changes
+	QHBoxLayout *m_bottomRow;
+	
+	// fade speed
+	QSpinBox *m_fadeSpeedBox;
+	
+	// cut or fade?
+	bool m_cutFlag;
+	
+	// saved so we can reset the border color when we switch to a new widget
+	QObject *m_lastLiveWidget;
 };
 
 

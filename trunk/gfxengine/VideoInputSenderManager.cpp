@@ -16,9 +16,17 @@ VideoInputSenderManager::VideoInputSenderManager(QObject *parent)
                 CameraThread *source = CameraThread::threadForCamera(dev);
                 source->setFps(30);
 		source->registerConsumer(sender);
-                #ifndef Q_OS_WIN
+		
+                // The 'raw frames' mode uses V4L to get the frames instead of LibAV
+		// Of course, V4L isn't supported on windows, so we don't enable raw frames on windows.
+		// In the future, I suppose I could find code to use the appros Windows API to
+		// connect to the capture card - but I just don't have a need for that level of performance
+		// on windows right now, so I'll put it off until I need it or someone really wants it.
+		// For now, the high-performance capture use is on Linux (for me), so that's where I'll focus. 
+		#ifndef Q_OS_WIN
 		source->enableRawFrames(true);
 		#endif
+		
                 sender->setVideoSource(source);
                 m_videoSenders[dev] = sender;
 	}

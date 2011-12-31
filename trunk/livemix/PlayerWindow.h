@@ -112,12 +112,12 @@ public:
 public slots:
 	void setCollection(GLSceneGroupCollection*);
 	bool setGroup(GLSceneGroup*);
-	void setScene(GLScene*);
+	void setScene(GLScene*, int fadeSpeedOverride=-1);
 	
 	void addOverlay(GLScene*);
 	void removeOverlay(GLScene*);
 	
-	void showVideoConnection(const QString& con);
+	void showVideoConnection(const QString& con, int fadeSpeedOverride=-1);
 	
 
 private slots:
@@ -164,7 +164,7 @@ protected slots:
 private:
 	void sendReply(QVariantList);
 	
-	void displayScene(GLScene*);
+	void displayScene(GLScene*, int fadeSpeedOverride=-1);
 	void addScene(GLScene*, int layer=1, bool fadeInOpac=true);
 	void removeScene(GLScene*);
 
@@ -218,6 +218,8 @@ private:
 	GLSceneGroup *m_overlays;
 	
 	GLScene *m_testScene;
+	
+	QPointer<GLSceneGroup> m_lastConGroup;
 	
 	
 };

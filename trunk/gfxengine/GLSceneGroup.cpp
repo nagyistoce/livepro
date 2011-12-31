@@ -9,6 +9,9 @@
 
 #include "GLEditorGraphicsScene.h"
 
+// A crossfade speed less than this amount will disable crossfading
+#define MIN_FADE_DURATION -1
+
 // ****************************
 // GLSceneLayoutItem
 // ****************************
@@ -753,7 +756,8 @@ void GLScene::setPixmap(const QPixmap& pixmap)
 
 void GLScene::setOpacity(double d, bool animate, double animDuration)
 {
-	if(animate)
+	if(animate && 
+	   animDuration >= MIN_FADE_DURATION)
 	{
 // 		QPropertyAnimation *anim = new QPropertyAnimation(this, "opacity");
 // 		anim->setDuration(animDuration);
@@ -764,7 +768,7 @@ void GLScene::setOpacity(double d, bool animate, double animDuration)
 		if(m_fadeTimer.isActive())
 			m_fadeTimer.stop();
 			
- 		//qDebug() << "GLScene::setOpacity: "<<this<<" opac:"<<d<<", duration:"<<animDuration<<", current opac:"<<opacity();
+		//qDebug() << "GLScene::setOpacity: "<<this<<" opac:"<<d<<", duration:"<<animDuration<<", current opac:"<<opacity();
 
 		m_fadeTimer.setInterval(1000 / 25); // 25fps fade
 		m_crossfadeSpeed = (int)animDuration;
@@ -786,6 +790,7 @@ void GLScene::setOpacity(double d, bool animate, double animDuration)
 	}
 	
 	//qDebug() << "GLScene::setOpacity: "<<d;
+	
 	m_opacity = d;
 	emit opacityChanged(d);
 	if(m_rootObj)
@@ -799,6 +804,12 @@ void GLScene::setOpacity(double d, bool animate, double animDuration)
 		//qDebug() << "GLScene::setOpacity: Calling updateGL in hopes they honor our opacity "<<d;
 		foreach(GLDrawable *d, m_itemList)
 			d->updateGL();
+	}
+	
+	if(animate && 
+	   animDuration < MIN_FADE_DURATION)
+	{
+		emit opacityAnimationFinished();
 	}
 }
 

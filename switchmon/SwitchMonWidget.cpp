@@ -132,6 +132,7 @@ void SwitchMonWidget::vidWidgetClicked()
 	
 	obj->setProperty("videoBorderColor",QColor(Qt::red));
 	m_lastLiveWidget = obj;
+	m_lastLiveCon = con;
 }
 
 void SwitchMonWidget::setCutFlag(bool flag)
@@ -357,9 +358,6 @@ void SwitchMonWidget::createViewers()
 		m_vbox->addLayout(m_bottomRow);
 	}
 	
-	// Add in the "Live" output
-	m_inputList.prepend(tr("net=%1:9978").arg(m_host));
-	
 	int idx = 0;
 	foreach(QVariant entry, m_inputList)
 	{
@@ -394,6 +392,12 @@ void SwitchMonWidget::createViewers()
 		widget->setVideoSource(receiver);
 		widget->setOverlayText(idx == 0 ? tr("Live") : tr("Cam %1").arg(idx));
 		widget->setProperty("con", idx == 0 ? "" : con);
+		
+		if(con == m_lastLiveCon)
+		{
+			widget->setVideoBorderColor(QColor(Qt::red));
+			m_lastLiveWidget = widget;
+		}
 		
 		connect(widget, SIGNAL(clicked()), this, SLOT(vidWidgetClicked()));
 		
@@ -448,6 +452,9 @@ void SwitchMonWidget::processInputEnumReply(const QByteArray &bytes)
 	qDebug() << "SwitchMonWidget::processInputEnumReply: Server API Version: "<<m_serverApiVer;
 	
 	m_inputList = replyMap["list"].toList();
+	
+	// Add in the "Live" output
+	m_inputList.prepend(tr("net=%1:9978").arg(m_host));
 	
 	createViewers();
 	

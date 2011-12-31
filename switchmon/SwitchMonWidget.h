@@ -97,6 +97,9 @@ private:
 	QPointer<QObject> m_lastLiveWidget;
 	// used to re-set border color after orientation changed
 	QString m_lastLiveCon;
+	
+	// store ptr so we can change text on btn face
+	QPushButton *m_cutBtn;
 };
 
 

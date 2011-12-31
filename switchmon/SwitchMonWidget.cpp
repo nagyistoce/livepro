@@ -47,10 +47,11 @@ SwitchMonWidget::SwitchMonWidget(QWidget *parent)
 	m_bottomRow->setContentsMargins(5,5,5,5);
 	m_bottomRow->setSpacing(3);
 	
-	QPushButton *cutBtn = new QPushButton("Cut");
-	cutBtn->setCheckable(true);
-	connect(cutBtn, SIGNAL(toggled(bool)), this, SLOT(setCutFlag(bool)));
-	m_bottomRow->addWidget(cutBtn);
+	m_cutBtn = new QPushButton("Hard Cut");
+	m_cutBtn->setCheckable(true);
+	m_cutBtn->setFont(QFont ( "", 20 ));
+	connect(m_cutBtn, SIGNAL(toggled(bool)), this, SLOT(setCutFlag(bool)));
+	m_bottomRow->addWidget(m_cutBtn);
 	
 	m_bottomRow->addStretch(1);
 	
@@ -138,6 +139,9 @@ void SwitchMonWidget::vidWidgetClicked()
 void SwitchMonWidget::setCutFlag(bool flag)
 {
 	m_cutFlag = flag;
+	
+	m_cutBtn->setText(flag ? "Cross-Fade" : "Hard Cut");
+	
 	if(m_serverApiVer < 0.6)
 	{
 		m_lastReqType = T_UNKNOWN;

@@ -94,7 +94,9 @@ private:
 	bool m_cutFlag;
 	
 	// saved so we can reset the border color when we switch to a new widget
-	QObject *m_lastLiveWidget;
+	QPointer<QObject> m_lastLiveWidget;
+	// used to re-set border color after orientation changed
+	QString m_lastLiveCon;
 };
 
 

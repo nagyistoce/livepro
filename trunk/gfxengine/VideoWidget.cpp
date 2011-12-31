@@ -714,7 +714,7 @@ void VideoWidget::paintEvent(QPaintEvent*)
 			if(m_videoBorderColor.isValid())
 			{
 				p.setPen(QPen(m_videoBorderColor,3.0));
-				p.drawRect(m_targetRect.adjusted(1,0,-2,0));
+				p.drawRect(m_targetRect.adjusted(1,1,-2,-2));
 			}
 		}
 	}

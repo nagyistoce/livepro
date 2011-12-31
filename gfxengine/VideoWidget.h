@@ -30,6 +30,9 @@ class VideoWidget  :
 	
 {
 	Q_OBJECT
+	
+	Q_PROPERTY(QColor videoBorderColor READ videoBorderColor WRITE setVideoBorderColor);
+	
 public:
 	VideoWidget(QWidget *parent=0);
 	~VideoWidget();
@@ -47,6 +50,7 @@ public:
 	VideoSource *overlaySource() { return m_overlaySource; }
 	
 	QColor videoBackgroundColor() { return m_videoBgColor; }
+	QColor videoBorderColor() { return m_videoBorderColor; }
 	
 signals:
 	void clicked();
@@ -74,6 +78,7 @@ public slots:
 	void disconnectOverlaySource();
 	
 	void setVideoBackgroundColor(QColor);
+	void setVideoBorderColor(QColor);
 
 	
 	
@@ -163,6 +168,7 @@ private:
 	QRect m_overlaySourceRect;
 	
 	QColor m_videoBgColor;
+	QColor m_videoBorderColor;
 };
 
 

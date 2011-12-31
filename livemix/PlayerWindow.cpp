@@ -164,13 +164,14 @@ PlayerWindow::PlayerWindow(QWidget *parent)
 	, m_graphicsView(0)
 	, m_glWidget(0)
 	, m_useGLWidget(true)
+	, m_vidSendMgr(0)
 	, m_outputEncoder(0)
 	, m_xfadeSpeed(300)
 	, m_compatStream(0)
 	, m_isBlack(false)
 	, m_blackScene(new GLScene)
 	, m_configLoaded(false)
-	, m_vidSendMgr(0)
+	, m_lastConGroup(0)
 {
 	QVBoxLayout *layout = new QVBoxLayout(this);
 	layout->setContentsMargins(0,0,0,0);
@@ -1214,16 +1215,17 @@ void PlayerWindow::setIgnoreAR(bool flag)
 		m_glWidget->setAspectRatioMode(flag ? Qt::IgnoreAspectRatio : Qt::KeepAspectRatio);
 }
 
-void PlayerWindow::setScene(GLScene *scene)
+void PlayerWindow::setScene(GLScene *scene, int fadeSpeedOverride)
 {
 	if(m_isBlack)
 		m_scenePreBlack = scene;
 	else
-		displayScene(scene);
+		displayScene(scene, fadeSpeedOverride);
 }
 
 void PlayerWindow::setCrossfadeSpeed(int ms)
 {
+	//qDebug() << "PlayerWindow::setCrossfadeSpeed: "<<ms;
 	if(m_glWidget)
 		m_glWidget->setCrossfadeSpeed(ms);
 
@@ -1265,8 +1267,31 @@ void PlayerWindow::setBlack(bool flag)
 
 // Given a video connection string, display it on screen
 // Used by the JSON server
-void PlayerWindow::showVideoConnection(const QString& con)
+void PlayerWindow::showVideoConnection(const QString& con, int fadeSpeedOverride)
 {
+	// Don't create a new group/scene if the last one we made matches this con
+	if(m_lastConGroup &&
+	   m_lastConGroup->at(0) && // get first scene
+	   m_lastConGroup->at(0)->at(0) && // get first drawable
+	   m_lastConGroup
+	   	->at(0) // scene
+	   	->at(0) // drawable
+	   	->property("videoConnection") // load videoConnection property
+	   	 .toString() == con) // convert to string and compare
+	{
+		// Don't re-call setGroup() if this con's group is already live
+		if(m_group &&
+		   m_lastConGroup == m_group &&
+		   m_lastConGroup->groupId() == m_group->groupId())
+		   	return;
+		
+		// Set this con's group live
+		if(setGroup(m_lastConGroup))
+			setScene(m_lastConGroup->at(0));
+		
+		return;
+	}
+	
 	GLSceneGroup *group = new GLSceneGroup();
 	GLScene *scene = new GLScene();
 	GLVideoInputDrawable *vidgld = new GLVideoInputDrawable();
@@ -1274,7 +1299,9 @@ void PlayerWindow::showVideoConnection(const QString& con)
 	scene->addDrawable(vidgld);
 	
 	if(setGroup(group))
-		setScene(scene);
+		setScene(scene, fadeSpeedOverride);
+		
+	m_lastConGroup = group;
 }
 
 // void PlayerWindow::sendTestMap()
@@ -1353,9 +1380,9 @@ bool PlayerWindow::setGroup(GLSceneGroup *group)
 	return true;
 }
 
-void PlayerWindow::displayScene(GLScene *scene)
+void PlayerWindow::displayScene(GLScene *scene, int fadeSpeedOverride)
 {
-	qDebug() << "PlayerWindow::displayScene: New scene:"<<scene;
+	//qDebug() << "PlayerWindow::displayScene: New scene:"<<scene;
 	if(scene == m_scene)
 	{
 		qDebug() << "PlayerWindow::displayScene: Scene pointers match, not setting new scene";
@@ -1380,8 +1407,18 @@ void PlayerWindow::displayScene(GLScene *scene)
 	if(m_group)
 		m_group->playlist()->setCurrentItem(m_scene);
 
+	int oldFadeSpeed = -1;
+	if(fadeSpeedOverride > -1)
+	{
+		oldFadeSpeed = m_xfadeSpeed; 
+		m_xfadeSpeed = fadeSpeedOverride;
+	}
+	
 	removeScene(m_oldScene);
 	addScene(m_scene);
+	
+	if(fadeSpeedOverride > -1)
+		m_xfadeSpeed = oldFadeSpeed;
 }
 
 void PlayerWindow::addOverlay(GLScene *scene)
@@ -1452,7 +1489,7 @@ void PlayerWindow::removeScene(GLScene *scene)
 	}
 }
 
-void PlayerWindow::addScene(GLScene *scene, int zmod, bool fadeInOpac)
+void PlayerWindow::addScene(GLScene *scene, int zmod/*=1*/, bool fadeInOpac/*=true*/)
 {
 	if(!scene)
 		return;
@@ -1789,19 +1826,11 @@ void PlayerJsonServer::dispatch(QTcpSocket *socket, const QStringList &pathEleme
 		QString con = map["con"];
 		
 		QString speedStr = map["ms"];
-		int oldSpeed = -1;
+		int fadeSpeedOverride = -1;
 		if(!speedStr.isEmpty())
-		{
-			oldSpeed = m_win->crossFadeSpeed();
-			
-			int ms = speedStr.toInt();
-			m_win->setCrossfadeSpeed(ms);
-		}
+			fadeSpeedOverride = speedStr.toInt();
 		
-		m_win->showVideoConnection(con);
-		
-		if(!speedStr.isEmpty())
-			m_win->setCrossfadeSpeed(oldSpeed);
+		m_win->showVideoConnection(con, fadeSpeedOverride);
 	}
 	else
 	if(cmd == Server_SetUserProperty    ||

@@ -11,7 +11,7 @@
 #include <QImageWriter>
 #include <QColor>
 
-#define DEBUG
+//#define DEBUG
 
 //#undef ENABLE_DECKLINK_CAPTURE
 
@@ -370,29 +370,36 @@ QStringList CameraThread::enumerateDevices(bool forceReenum)
 	return list;
 }
 
+#define GET_API_PTR(failureRval) \
+	SimpleV4L2 * api = m_v4l2; \
+	bool deleteIt = false; \
+	if(!api) \
+	{ \
+		api = new SimpleV4L2(); \
+		deleteIt = true; \
+		if(!api->openDevice(qPrintable(m_cameraFile))) \
+		{ \
+			delete api; \
+			return failureRval; \
+		} \
+	} 
+
+#define FREE_API_PTR() \
+	if(deleteIt) \
+		delete api;
+
 QStringList CameraThread::inputs()
 {
 	#if !defined(Q_OS_LINUX)
 		return QStringList() << "Default";
 	#endif
 
-	SimpleV4L2 * api = m_v4l2;
-	bool deleteIt = false;
-	if(!api)
-	{
-		api = new SimpleV4L2();
-		deleteIt = true;
-		if(!api->openDevice(qPrintable(m_cameraFile)))
-		{
-			delete api;
-			return QStringList() << "Default";
-		}
-	}
+	GET_API_PTR(QStringList() << "Default");
 
 	QStringList inputs = api->inputs();
 
-	if(deleteIt)
-		delete api;
+	FREE_API_PTR();
+	
 	return inputs;
 }
 
@@ -402,23 +409,11 @@ int CameraThread::input()
 		return 0;
 	#endif
 
-	SimpleV4L2 * api = m_v4l2;
-	bool deleteIt = false;
-	if(!api)
-	{
-		api = new SimpleV4L2();
-		deleteIt = true;
-		if(!api->openDevice(qPrintable(m_cameraFile)))
-		{
-			delete api;
-			return 0;
-		}
-	}
+	GET_API_PTR(0);
 
 	int idx = api->input();
 
-	if(deleteIt)
-		delete api;
+	FREE_API_PTR();
 
 	return idx;
 }
@@ -429,58 +424,31 @@ void CameraThread::setInput(int idx)
 		return;
 	#endif
 
-	SimpleV4L2 * api = m_v4l2;
-	bool deleteIt = false;
-	if(!api)
-	{
-		api = new SimpleV4L2();
-		deleteIt = true;
-		if(!api->openDevice(qPrintable(m_cameraFile)))
-		{
-			delete api;
-			return;
-		}
-	}
+	GET_API_PTR();
 
 	api->setInput(idx);
 	api->setStandard("NTSC");
 
-	if(deleteIt)
-		delete api;
+	FREE_API_PTR();
 }
 
 bool CameraThread::setInput(const QString& name)
 {
 	#if !defined(Q_OS_LINUX)
 		return false;
-	#else
+	#endif
 	
 	m_inputName = name;
 
-
-	SimpleV4L2 * api = m_v4l2;
-	bool deleteIt = false;
-	if(!api)
-	{
-		api = new SimpleV4L2();
-		deleteIt = true;
-		if(!api->openDevice(qPrintable(m_cameraFile)))
-		{
-			delete api;
-			return false;
-		}
-	}
+	GET_API_PTR(false);
 
 	bool flag = api->setInput(name);
 	if(flag)
 		api->setStandard("NTSC");
 
-	if(deleteIt)
-		delete api;
+	FREE_API_PTR();
 
 	return flag;
-
-	#endif
 }
 
 
@@ -871,10 +839,10 @@ void CameraThread::enableRawFrames(bool enable)
 			
 			m_initMutex.unlock(); // dont block init now
 			
-			//qDebug() << "CameraThread::enableRawFrames(): "<<this<<" mark1";
+			//qDebug() << "CameraThread::enableRawFrames(): "<<this<<", flag: "<<enable<<", start";
 			initCamera();
 			
-			//qDebug() << "CameraThread::enableRawFrames(): "<<this<<" finish";
+			//qDebug() << "CameraThread::enableRawFrames(): "<<this<<", flag: "<<enable<<", end";
 		}
 	}
 

@@ -14,6 +14,8 @@ SwitchMonWidget::SwitchMonWidget(QWidget *parent)
 	, m_parser(new QJson::Parser)
 	, m_resendLastCon(false)
 	, m_serverApiVer(-1)
+	, m_lastLiveWidget(0)
+	, m_cutFlag(false)
 {
 	QSettings settings;
 	
@@ -40,6 +42,40 @@ SwitchMonWidget::SwitchMonWidget(QWidget *parent)
 	
 	conLay->addStretch(1);
 	m_vbox->addLayout(conLay);
+	
+	m_bottomRow = new QHBoxLayout();
+	m_bottomRow->setContentsMargins(5,5,5,5);
+	m_bottomRow->setSpacing(3);
+	
+	QPushButton *cutBtn = new QPushButton("Cut");
+	cutBtn->setCheckable(true);
+	connect(cutBtn, SIGNAL(toggled(bool)), this, SLOT(setCutFlag(bool)));
+	m_bottomRow->addWidget(cutBtn);
+	
+	m_bottomRow->addStretch(1);
+	
+	m_bottomRow->addWidget(new QLabel("X-Speed: 0"));
+	
+	QSlider *slider = new QSlider(this);
+	slider->setMinimum(0);
+	slider->setMaximum(2000);
+	slider->setOrientation(Qt::Horizontal);
+	m_bottomRow->addWidget(slider);
+	
+	m_bottomRow->addWidget(new QLabel("2s"));
+	
+	m_fadeSpeedBox = new QSpinBox(this);
+	m_fadeSpeedBox->setMinimum(0);
+	m_fadeSpeedBox->setMaximum(2000);
+	m_fadeSpeedBox->setSuffix("ms");
+	connect(slider, SIGNAL(valueChanged(int)), m_fadeSpeedBox, SLOT(setValue(int)));
+	connect(m_fadeSpeedBox, SIGNAL(valueChanged(int)), slider, SLOT(setValue(int)));
+	connect(m_fadeSpeedBox, SIGNAL(valueChanged(int)), this, SLOT(setFadeSpeed(int)));
+	m_bottomRow->addWidget(m_fadeSpeedBox);
+	
+	m_fadeSpeedBox->setValue(settings.value("fadespeed",300).toInt());
+	
+	m_vbox->addLayout(m_bottomRow);
 	
 	setWindowTitle("Camera Monitor");
 	
@@ -88,8 +124,42 @@ void SwitchMonWidget::vidWidgetClicked()
 	if(con.isEmpty())
 		return;
 		
-	qDebug() << "vidWidgetClicked: clicked connection: "<<con;
+	//qDebug() << "vidWidgetClicked: clicked connection: "<<con;
 	sendCon(con);
+	
+	if(m_lastLiveWidget)
+		m_lastLiveWidget->setProperty("videoBorderColor",QColor()); // invalid color means dont draw a border
+	
+	obj->setProperty("videoBorderColor",QColor(Qt::red));
+	m_lastLiveWidget = obj;
+}
+
+void SwitchMonWidget::setCutFlag(bool flag)
+{
+	m_cutFlag = flag;
+	if(m_serverApiVer < 0.6)
+	{
+		m_lastReqType = T_UNKNOWN;
+		loadUrl(tr("http://%1:9979/SetCrossfadeSpeed?ms=%3").arg(m_host).arg(m_cutFlag ? 0 : m_fadeSpeedBox->value()));
+	}
+}
+
+void SwitchMonWidget::setFadeSpeed(int value)
+{
+	if(m_fadeSpeedBox->value() != value)
+		m_fadeSpeedBox->setValue(value);
+		
+	QSettings settings;
+	settings.setValue("fadespeed",value);
+		
+	if(m_serverApiVer < 0.6)
+	{
+		if(!m_cutFlag)
+		{
+			m_lastReqType = T_UNKNOWN;
+			loadUrl(tr("http://%1:9979/SetCrossfadeSpeed?ms=%3").arg(m_host).arg(m_fadeSpeedBox->value()));
+		}
+	}
 }
 
 void SwitchMonWidget::sendCon(const QString& con)
@@ -99,9 +169,7 @@ void SwitchMonWidget::sendCon(const QString& con)
 	if(m_serverApiVer >= 0.6)
 	{
 		m_lastReqType = T_ShowCon;
-		// TODO ShowVideoConnection supports an 'ms' argument, applicable to just this crossfade - designed to allow 'cutting' to a source.
-		// TODO Implement a 'cut' button in the UI, then add the 'ms' argument conditionally to the URL
-		loadUrl(tr("http://%1:9979/ShowVideoConnection?con=%2").arg(m_host).arg(con));
+		loadUrl(tr("http://%1:9979/ShowVideoConnection?con=%2&ms=%3").arg(m_host).arg(con).arg(m_cutFlag ? 0 : m_fadeSpeedBox->value()));
 	}
 	else
 	{
@@ -138,12 +206,15 @@ void SwitchMonWidget::resizeEvent(QResizeEvent*)
 		clearViewerLayout();
 		
 		m_vbox->removeItem(m_viewerLayout);
+		m_vbox->removeItem(m_bottomRow);
 		delete m_viewerLayout;
 		
 		m_viewerLayout = new QHBoxLayout();
 		m_viewerLayout->setContentsMargins(0,0,0,0);
 		m_viewerLayout->setSpacing(0);
+		
 		m_vbox->addLayout(m_viewerLayout);
+		m_vbox->addLayout(m_bottomRow);
 		
 		createViewers();
 		
@@ -167,12 +238,15 @@ void SwitchMonWidget::resizeEvent(QResizeEvent*)
 		clearViewerLayout();
 		
 		m_vbox->removeItem(m_viewerLayout);
+		m_vbox->removeItem(m_bottomRow);
 		delete m_viewerLayout;
 		
 		m_viewerLayout = new QVBoxLayout();
 		m_viewerLayout->setContentsMargins(0,0,0,0);
 		m_viewerLayout->setSpacing(0);
+		
 		m_vbox->addLayout(m_viewerLayout);
+		m_vbox->addLayout(m_bottomRow);
 		
 		createViewers();
 		
@@ -186,7 +260,7 @@ void SwitchMonWidget::loadUrl(const QString &location)
 {
 	QUrl url(location);
 	
-	//qDebug() << "MjpegClient::loadUrl(): url:"<<url;
+	qDebug() << "SwitchMonWidget::loadUrl(): url:"<<url;
 
 	if(!m_ua)
 	{
@@ -274,10 +348,13 @@ void SwitchMonWidget::createViewers()
 	// the layout type.
 	if(!m_viewerLayout)
 	{
+		m_vbox->removeItem(m_bottomRow);
+		
 		m_viewerLayout = width() > height() ? (QLayout*)(new QHBoxLayout()) : (QLayout*)(new QVBoxLayout());
 		m_viewerLayout->setContentsMargins(0,0,0,0);
 		m_viewerLayout->setSpacing(0);
 		m_vbox->addLayout(m_viewerLayout);
+		m_vbox->addLayout(m_bottomRow);
 	}
 	
 	// Add in the "Live" output

@@ -100,7 +100,7 @@ GLVideoDrawable::GLVideoDrawable(QObject *parent)
 	, m_source2(0)
 	, m_frameCount(0)
 	, m_latencyAccum(0)
-	, m_debugFps(false)
+	, m_debugFps(true)
 	, m_validShader(false)
 	, m_validShader2(false)
 	, m_uploadedCacheKey(0)
@@ -164,6 +164,11 @@ GLVideoDrawable::~GLVideoDrawable()
 		//qDebug() << "GLVideoDrawable::~GLVideoDrawable(): "<<(QObject*)this<<" In destructor, calling electUpdateLeader() to elect new leader";
 		electUpdateLeader(this); // reelect an update leader, ignore this drawable
 	} 
+	
+	// Free our texture memory
+	glDeleteTextures(1, &m_alphaTextureId);
+	glDeleteTextures(m_textureCount2, m_textureIds2);
+	glDeleteTextures(m_textureCount, m_textureIds);
 	
 	m_alphaMask = QImage(); // see if this frees the mask, because reported by valgrind...
 	//
@@ -464,9 +469,12 @@ void GLVideoDrawable::frameReady()
 	if(m_source)
 	{
 		VideoFramePtr f = m_source->frame();
-// 		qDebug() << "GLVideoDrawable::frameReady(): "<<objectName()<<" f:"<<f;
 		if(!f)
 			return;
+			
+		//VideoFrame *frame = (VideoFrame*)m_frame.data();
+ 		//qDebug() << "GLVideoDrawable::frameReady(): "<<objectName()<<" frame:"<<frame;
+ 		
 		if(f->isValid())
 			m_frame = f;
 	}
@@ -1247,12 +1255,14 @@ bool GLVideoDrawable::setVideoFormat(const VideoFormat& format, bool secondSourc
 				if(!secondSource)
 				{
 					m_frameSize = format.frameSize;
+					glDeleteTextures(m_textureCount, m_textureIds);
 					glGenTextures(m_textureCount, m_textureIds);
 					m_texturesInited = true;
 				}
 				else
 				{
 					m_frameSize2 = format.frameSize;
+					glDeleteTextures(m_textureCount2, m_textureIds2);
 					glGenTextures(m_textureCount2, m_textureIds2);
 					m_texturesInited2 = true;
 				}
@@ -1267,12 +1277,14 @@ bool GLVideoDrawable::setVideoFormat(const VideoFormat& format, bool secondSourc
 			if(!secondSource)
 			{
 				m_frameSize = format.frameSize;
+				glDeleteTextures(1, m_textureIds);
 				glGenTextures(1, m_textureIds);
 				m_texturesInited = true;
 			}
 			else
 			{
 				m_frameSize2 = format.frameSize;
+				glDeleteTextures(1, m_textureIds2);
 				glGenTextures(1, m_textureIds2);
 				m_texturesInited2 = true;
 			}
@@ -2199,6 +2211,7 @@ void GLVideoDrawable::updateTexture(bool secondSource)
  		//qDebug() << "GLVideoDrawable::updateTexture(): "<<objectName()<<" Got frame size:"<<m_frame->size();
 		//qDebug() << "GLVideoDrawable::updateTexture(): "<<(QObject*)this<<" Got frame size:"<<m_frame->size();
 
+		bool paramsChanged = false;
 		if(!secondSource ? (m_frameSize != m_frame->size()   || m_frame->rect() != m_sourceRect   || !m_texturesInited) :
 				   (m_frameSize2 != m_frame2->size() || m_frame2->rect() != m_sourceRect2 || !m_texturesInited2))
 		{
@@ -2221,12 +2234,23 @@ void GLVideoDrawable::updateTexture(bool secondSource)
 			resizeTextures(!secondSource ? m_frame->size() : m_frame2->size(), secondSource);
 			updateRects(secondSource);
 			updateAlignment();
+			
+			paramsChanged = true;
 		}
 
 		if(secondSource ? !m_validShader2 : !m_validShader)
 		{
 // 			if(property("-debug").toBool())
 // 				qDebug() << "GLVideoDrawable::updateTexture(): "<<(QObject*)this<<" No valid shader, not updating, secondSource:"<<secondSource;
+			return;
+		}
+		
+		if(!paramsChanged && 
+		  (!secondSource ? m_frame->hasTextureId() : m_frame2->hasTextureId()))
+		{
+			// GPU already has texture for this frame, dont upload
+			VideoFrame *frame = (VideoFrame*)m_frame.data();
+			//qDebug() << "GLVideoDrawable::updateTexture(): Frame already on GPU, frame ptr:"<<frame;
 			return;
 		}
 
@@ -2250,6 +2274,16 @@ void GLVideoDrawable::updateTexture(bool secondSource)
 			{
 				//qDebug() << "raw: "<<i<<m_textureWidths[i]<<m_textureHeights[i]<<m_textureOffsets[i]<<m_textureInternalFormat<<m_textureFormat<<m_textureType;
 				glBindTexture(GL_TEXTURE_2D, (!secondSource ? m_textureIds[i] : m_textureIds2[i]));
+				
+				// VideoFrame currently only supports one texture ID
+				if((!secondSource ? m_textureCount : m_textureCount2) == 1)
+				{
+					if(!secondSource)
+						m_frame->setTextureId(m_textureIds[i]);
+					else
+						m_frame2->setTextureId(m_textureIds2[i]);
+				}
+				
 				if(m_useShaders)
 				{
 					// Use different upload blocks because the
@@ -2694,6 +2728,7 @@ void GLVideoDrawable::paint(QPainter * painter, const QStyleOptionGraphicsItem *
 		QString latencyPerFrame;
 		latencyPerFrame.setNum((((double)m_latencyAccum) / ((double)m_frameCount)), 'f', 3);
 
+		//m_debugFps = true;
 		if(m_debugFps && framesPerSecond!="0.00")
 			qDebug() << "GLVideoDrawable::paint: "<<objectName()<<" FPS: " << qPrintable(framesPerSecond) << (m_frame->captureTime().isNull() ? "" : qPrintable(QString(", Latency: %1 ms").arg(latencyPerFrame)));
 		
@@ -2946,7 +2981,7 @@ void GLVideoDrawable::paintGL()
 				 opacity() :
 				(opacity() * (m_fadeActive ? m_fadeValue : 1.));
 
-	//qDebug() << "GLVideoDrawable::paintGL(): "<<(QObject*)this<<" opac used:"<<liveOpacity<<", m_:"<<opacity()<<", fade act:"<<m_fadeActive<<", fade val:"<<m_fadeValue;
+	//qDebug() << "GLVideoDrawable::paintGL(): "<<(QObject*)this<<" opac used:"<<liveOpacity<<", opacity():"<<opacity()<<", fade act:"<<m_fadeActive<<", fade val:"<<m_fadeValue;
 
 	//if(m_fadeActive)
 //		qDebug() << "GLVideoDrawable::paintGL: "<<(QObject*)this<<m_source<<" liveOpacity: "<<liveOpacity;
@@ -3068,8 +3103,11 @@ void GLVideoDrawable::paintGL()
 			}
 			else
 			{
+				
+				
 				glActiveTexture(GL_TEXTURE0);
-				glBindTexture(GL_TEXTURE_2D, m_textureIds[0]);
+				//glBindTexture(GL_TEXTURE_2D, m_textureIds[0]);
+				glBindTexture(GL_TEXTURE_2D, m_frame->hasTextureId() ? m_frame->textureId() : m_textureIds[0]);
 
 				glActiveTexture(GL_TEXTURE1);
 				glBindTexture(GL_TEXTURE_2D, m_alphaTextureId);
@@ -3121,7 +3159,8 @@ void GLVideoDrawable::paintGL()
 		glLoadIdentity(); // Reset The View
 		//glTranslatef(0.0f,0.0f,-3.42f);
 
-		glBindTexture(GL_TEXTURE_2D, m_textureIds[0]);
+		//glBindTexture(GL_TEXTURE_2D, m_textureIds[0]);
+		glBindTexture(GL_TEXTURE_2D, m_frame->hasTextureId() ? m_frame->textureId() : m_textureIds[0]);
 
 		QPolygonF points = transform.map(QPolygonF(target));
  		//qDebug() << "target: "<<target;
@@ -3306,8 +3345,8 @@ void GLVideoDrawable::paintGL()
 				else
 				{
 					glActiveTexture(GL_TEXTURE0);
-					glBindTexture(GL_TEXTURE_2D, m_textureIds2[0]);
-
+					glBindTexture(GL_TEXTURE_2D, m_frame2->hasTextureId() ? m_frame2->textureId() : m_textureIds2[0]);
+					
 					glActiveTexture(GL_TEXTURE1);
 					glBindTexture(GL_TEXTURE_2D, m_alphaTextureId);
 
@@ -3359,7 +3398,8 @@ void GLVideoDrawable::paintGL()
 			glLoadIdentity(); // Reset The View
 			//glTranslatef(0.0f,0.0f,-3.42f);
 
-			glBindTexture(GL_TEXTURE_2D, m_textureIds2[0]);
+			glBindTexture(GL_TEXTURE_2D, m_frame2->hasTextureId() ? m_frame2->textureId() : m_textureIds2[0]);
+			//glBindTexture(GL_TEXTURE_2D, m_textureIds2[0]);
 
 			target2 = transform.mapRect(target2);
 			//qDebug() << "target: "<<target;

@@ -106,7 +106,7 @@ public:
 	
 	double zIndexModifier();
 
-	double opacity();
+	inline double opacity();
 
 	enum AnimationType
 	{

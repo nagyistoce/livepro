@@ -2159,7 +2159,7 @@ void GLWidget::resizeGL(int width, int height)
 		QSize size(width,height);
 		m_fbo = new QGLFramebufferObject(size);
 
-		//qDebug() << "GLWidget::resizeGL(): New FBO size:"<<m_fbo->size();
+		qDebug() << "GLWidget::resizeGL(): New FBO size:"<<m_fbo->size();
 	}
 
 	if(height == 0)
@@ -2216,6 +2216,8 @@ void GLWidget::setupReadbackBuffers()
 		
 		makeCurrentIfNeeded();
 			
+		if(m_readbackTextureId)
+			glDeleteTextures(1, &m_readbackTextureId);
 		glGenTextures(1, &m_readbackTextureId);
 		glBindTexture(GL_TEXTURE_2D, m_readbackTextureId);
 		glTexImage2D(
@@ -2263,6 +2265,8 @@ void GLWidget::setupReadbackBuffers()
 
 			// create 2 pixel buffer objects, you need to delete them when program exits.
 			// glBufferDataARB with NULL pointer reserves only memory space.
+			if(m_pboIds[0])
+				glDeleteBuffersARB(2, m_pboIds);
 			glGenBuffersARB(2, m_pboIds);
 			glBindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, m_pboIds[0]);
 			glBufferDataARB(GL_PIXEL_PACK_BUFFER_ARB, dataSize, 0, GL_STREAM_READ_ARB);
@@ -2271,7 +2275,7 @@ void GLWidget::setupReadbackBuffers()
 
 			glBindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, 0);
 
-			//qDebug() << "GLWidget::setupReadbackBuffers(): Generated FBO size:"<<m_readbackSize<<", PBO data size: "<<dataSize/1024<<" Kb";
+			qDebug() << "GLWidget::setupReadbackBuffers(): Generated FBO size:"<<m_readbackSize<<", PBO data size: "<<dataSize/1024<<" Kb";
 		}
 		#endif
 	}

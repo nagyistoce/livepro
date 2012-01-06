@@ -486,7 +486,7 @@ void GLWidget::initializeGL()
 
 	glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
 	glEnable(GL_LINE_SMOOTH);
-
+	
 // 	glClearDepth(1.0f);						// Depth Buffer Setup
 // 	glEnable(GL_DEPTH_TEST);					// Enables Depth Testing
 // 	glDepthFunc(GL_LEQUAL);						// The Type Of Depth Testing To Do
@@ -527,10 +527,31 @@ void GLWidget::initializeGL()
 	foreach(GLWidgetSubview *view, m_subviews)
 		view->initGL();
 
-
 	//qDebug() << "GLWidget::initializeGL()";
 	foreach(GLDrawable *drawable, m_drawables)
 		drawable->initGL();
+		
+		
+	
+	// Try to determine maximum widget size (not for enforcment, just for info)
+	GLint dims[2];
+	glGetIntegerv(GL_MAX_VIEWPORT_DIMS, dims);
+	
+	GLint maxTextureSize = 0;
+// 	if(extensionList.indexOf("GL_EXT_texture_rectangle") > -1)
+// 	{
+// 		glGetIntegerv(GL_MAX_RECTANGLE_TEXTURE_SIZE_EXT, &maxTextureSize);
+// 	}
+// 	
+	if(!maxTextureSize) 
+	{
+		glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTextureSize);
+	}
+	
+	int maxWidth  = MIN(maxTextureSize, dims[0]) - 1;
+	int maxHeight = MIN(maxTextureSize, dims[1]) - 1;
+	//qDebug() << "GLWidget::initGL: FYI: max size:"<<maxWidth<<"x"<<maxHeight;
+
 
 	#ifdef Q_OS_WIN32
 		#if 0

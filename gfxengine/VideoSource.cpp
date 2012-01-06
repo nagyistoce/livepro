@@ -130,7 +130,8 @@ void VideoSource::enqueue(VideoFramePtr ptr)
 	//qDebug() << "VideoSource::enqueue(2): "<<ptr;
 	//QMutexLocker lock(&m_queueMutex);
 	m_queueMutex.lock();
-	if(m_isBuffered)
+	if(m_isBuffered &&
+	  !m_consumerList.isEmpty()) // only enqueue if we have a consumer so we dont endlessly buffer, TODO add max size to buffer? 
 		m_frameQueue.enqueue(ptr);
 	m_singleFrame = ptr;
 	

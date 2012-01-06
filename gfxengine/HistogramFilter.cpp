@@ -9,8 +9,11 @@ HistogramFilter::HistogramFilter(QObject* parent)
 	, m_frameAccumEnabled(false)
 	, m_frameAccumNum(10) // just a guess
 	, m_drawBorder(true)
+	, m_hsvStatsValid(false)
+	, m_manualFps(-1)
 {
 	//setIsThreaded(true);
+	connect(&m_generateHistoTimer, SIGNAL(timeout()), this, SLOT(generateHistogram()));
 }
 
 HistogramFilter::~HistogramFilter() {}
@@ -52,9 +55,39 @@ void HistogramFilter::setFrameAccumNum(int n)
 void HistogramFilter::processFrame()
 {
 	//qDebug() << "HistogramFilter::processFrame(): source:"<<m_source;
-	if(!m_frame)
+	
+	// dont call generateHistogram here if manual fps is set because the 
+	// m_generateHistoTimer will call it when it times out
+	if(m_manualFps > 0)
 		return;
 	
+	generateHistogram();
+}
+
+void HistogramFilter::setFps(int fps)
+{
+	m_manualFps = fps;
+	
+	if(m_manualFps > 0)
+	{
+		qDebug() << "HistogramFilter::setFps: New m_manualFps:"<<m_manualFps;
+		m_generateHistoTimer.setInterval(1000/m_manualFps);
+		
+		if(!m_generateHistoTimer.isActive())
+			m_generateHistoTimer.start();
+	}
+	else
+	{
+		if(m_generateHistoTimer.isActive())
+			m_generateHistoTimer.stop();
+	}
+}
+
+void HistogramFilter::generateHistogram()
+{
+	if(!m_frame)
+		return;
+		
 	QImage image = frameImage();
 	QImage histo = makeHistogram(image);
 	
@@ -90,8 +123,30 @@ void HistogramFilter::drawBarRect(QPainter *p, int min, int max, int avg, int st
 	p->drawRect(avgX1,startY,avgW,h);
 }
 	
+int HistogramFilter::hsvStatValue(int chan, int stat)
+{
+	// havn't received first frame
+	if(!m_hsvStatsValid)
+		return -1;
+		
+	if(chan<0)
+		chan = 0;
+	if(chan>2)
+		chan = 2;
+	switch(stat)
+	{
+		case HSV_STAT_MIN:
+			return m_hsvMin[chan];
+		case HSV_STAT_MAX:
+			return m_hsvMax[chan];
+		case HSV_STAT_AVG:
+			return m_hsvAvg[chan];
+		default:
+			return -1;
+	}
+}
 	
-QImage HistogramFilter::makeHistogram(const QImage& image)
+QImage HistogramFilter::makeHistogram(const QImage& image, bool alwaysMakeImage)
 {
 	if(image.isNull())
 		return image;
@@ -181,7 +236,7 @@ QImage HistogramFilter::makeHistogram(const QImage& image)
 					hsvConverter.setRgb(r,g,b);
 					hsvConverter.getHsv(&h,&s,&v);
 					
-					/// HACK scale Hue to be between 0-256 instead of 0-265
+					/// HACK scale Hue to be between 0-255 instead of 0-359
 					h = (int) ( (((double)h)/359.)*255 );
 					
 					histo[4][h]++;
@@ -224,11 +279,26 @@ QImage HistogramFilter::makeHistogram(const QImage& image)
 		
 		emit hsvStatsUpdated(hsvMin[0],hsvMax[0],hsvAvg[0],hsvMin[1],hsvMax[1],hsvAvg[1],hsvMin[2],hsvMax[2],hsvAvg[2]);
 		
+		for(int i=0;i<3;i++)
+		{
+			m_hsvMin[i] = hsvMin[i];
+			m_hsvMax[i] = hsvMax[i];
+			m_hsvAvg[i] = hsvAvg[i];
+		}
+		
+		m_hsvStatsValid = true;
+		
 // 		qDebug() << "HSV min/max/avg: " <<
 // 			"\t H: "<<hsvMin[0]<<hsvMax[0]<<hsvAvg[0]<<
 // 			"\t S: "<<hsvMin[1]<<hsvMax[1]<<hsvAvg[1]<<
 // 			"\t V: "<<hsvMin[2]<<hsvMax[2]<<hsvAvg[2];
 	
+	}
+	
+	if(!alwaysMakeImage &&
+	    m_consumerList.isEmpty())
+	{
+		return QImage();
 	}
 	
 /*	qDebug() << "HSV min/max/avg: " <<

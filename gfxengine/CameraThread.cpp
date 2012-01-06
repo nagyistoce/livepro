@@ -56,6 +56,8 @@ public:
 	
 	static QStringList enumDeviceNames(bool forceReload=false);
 	static BMDCaptureDelegate *openDevice(QString deviceName, CameraThread *api);
+	
+	bool hasSignal() { return m_hasSignal; }
 
 private:
 	static QStringList	s_knownDevices;
@@ -79,6 +81,8 @@ private:
 	AVFrame *		m_rgbPicture;
 	
 	bool			m_rawFrames;
+	
+	bool			m_hasSignal;
 };
 
 QStringList BMDCaptureDelegate::s_knownDevices = QStringList();
@@ -223,6 +227,7 @@ CameraThread::CameraThread(const QString& camera, QObject *parent)
 	, m_error(false)
 	, m_buffer(0)
 	, m_av_rgb_frame(0)
+	, m_hasSignal(true)
 {
 	m_time_base_rational.num = 1;
 	m_time_base_rational.den = AV_TIME_BASE;
@@ -233,6 +238,10 @@ CameraThread::CameraThread(const QString& camera, QObject *parent)
 	m_rawFrames = false;
 
 	setIsBuffered(false);
+	
+	connect(&m_checkSignalTimer, SIGNAL(timeout()), this, SLOT(checkForSignal()));
+	m_checkSignalTimer.setInterval(250); // check every quarter second
+	m_checkSignalTimer.start();
 }
 
 void CameraThread::destroySource()
@@ -387,6 +396,44 @@ QStringList CameraThread::enumerateDevices(bool forceReenum)
 #define FREE_API_PTR() \
 	if(deleteIt) \
 		delete api;
+
+
+bool CameraThread::hasSignal()
+{
+	bool hasSignal;
+	#ifdef ENABLE_DECKLINK_CAPTURE
+	if(m_bmd)
+	{
+		hasSignal = m_bmd->hasSignal();
+	}
+	else
+	#endif
+	{
+		GET_API_PTR(true); // assume we have signal 
+		hasSignal = api->hasSignal();
+		FREE_API_PTR();
+	}
+	return hasSignal;
+}
+
+void CameraThread::checkForSignal()
+{
+	bool flag = hasSignal();
+	
+	if(m_hasSignal != flag)
+	{
+		if(!flag)
+			emit signalLost();
+		else
+			emit signalFound();
+		
+		emit signalStatusChanged(flag);
+		
+		m_hasSignal = flag;
+		
+		qDebug() << "CameraThread::checkForSignal: "<<m_cameraFile<<": "<<(flag ? "+ found signal" : "- lost signal");
+	}
+}
 
 QStringList CameraThread::inputs()
 {
@@ -1403,11 +1450,14 @@ HRESULT BMDCaptureDelegate::VideoInputFrameArrived(IDeckLinkVideoInputFrame* vid
 			// Nice blue 'no signal' frame
 			QImage frame(320,240, QImage::Format_ARGB32);
 			frame.fill(QColor(0,0,198).rgba());
-			m_api->imageDataAvailable(frame, capTime);
+			m_api->imageDataAvailable(frame, capTime, false);
+			m_hasSignal= false;
 			
 		}
 		else
 		{
+			m_hasSignal = true;
+			
 // 			fprintf(stderr, "BMDCaptureDelegate::VideoInputFrameArrived: Frame received (#%lu) - Valid Frame - Size: %d bytes\n", 
 // 				m_frameCount,
 // 				videoFrame->GetRowBytes() * videoFrame->GetHeight());

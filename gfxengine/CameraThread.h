@@ -67,6 +67,9 @@ public:
 	
 	bool inputInitalized() { return m_inited; }
 	bool hasError() { return m_error; }
+	
+	// relies on SimpleV4L2, therefore only works on linux with V4L2 devices currently (or BlackMagic too, since it is trivial to get signal flags from their SDK as well)
+	bool hasSignal();
 
 public slots:
 	void setDeinterlace(bool);
@@ -80,6 +83,9 @@ public slots:
 signals:
 	//void newImage(QImage);
 	//void frameReady(int frameHoldTime);
+	void signalLost();
+	void signalFound();
+	void signalStatusChanged(bool flag);
 
 protected slots:
 	void start(QThread::Priority);
@@ -91,6 +97,9 @@ protected slots:
 	int initCamera();
 	
 	void destroySource();
+	
+	// uses SimpleV4L2::hasSignal(), emits signalLost() (or signalFound() if appros), and signalStatusChanged(bool flag),
+	void checkForSignal();
 	
 protected:
 	friend class BMDCaptureDelegate;
@@ -168,6 +177,9 @@ private:
 	QString m_inputName;
 	
 	bool m_error;
+	
+	QTimer m_checkSignalTimer;
+	bool m_hasSignal;
 	
 };
 

@@ -610,6 +610,17 @@ bool SimpleV4L2::openDevice(const char *dev_name)
 	return true;
 }
 
+bool SimpleV4L2::hasSignal()
+{
+	struct v4l2_input videoInput;
+	CLEAR(videoInput);
+	videoInput.index = input(); // returns index of current input using VIDIOC_G_INPUT
+	if (xioctl(m_fd, VIDIOC_ENUMINPUT, &videoInput))
+		return false;
+		
+	// check for the no signla flag
+	return !(videoInput.status & V4L2_IN_ST_NO_SIGNAL);
+}
 
 
 QStringList SimpleV4L2::inputs()

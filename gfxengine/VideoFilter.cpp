@@ -88,6 +88,7 @@ void VideoFilter::frameAvailable()
 
 void VideoFilter::processFrame()
 {
+	// default VideoFilter impl just is a pass-thru 
 	enqueue(m_frame);
 }
 

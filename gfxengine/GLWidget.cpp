@@ -548,9 +548,9 @@ void GLWidget::initializeGL()
 		glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTextureSize);
 	}
 	
-	int maxWidth  = MIN(maxTextureSize, dims[0]) - 1;
-	int maxHeight = MIN(maxTextureSize, dims[1]) - 1;
-	//qDebug() << "GLWidget::initGL: FYI: max size:"<<maxWidth<<"x"<<maxHeight;
+// 	int maxWidth  = MIN(maxTextureSize, dims[0]) - 1;
+// 	int maxHeight = MIN(maxTextureSize, dims[1]) - 1;
+//	qDebug() << "GLWidget::initGL: FYI: max size:"<<maxWidth<<"x"<<maxHeight;
 
 
 	#ifdef Q_OS_WIN32

@@ -700,7 +700,7 @@ double GLDrawable::opacity()
 	if(m_scene  && !m_scene->rootObj())
 		opac *= m_scene->opacity();
 	
-	//qDebug() << "GLDrawable::opacity(): "<<(QObject*)this<<opac;
+	//qDebug() << "GLDrawable::opacity(): "<<(QObject*)this<<opac<<", parent:"<<(QObject*)m_parent<<", scene:"<<(QObject*)m_scene<<", m_scene opac:"<<(m_scene?m_scene->opacity():-0.777);
 	
 	return opac;
 }

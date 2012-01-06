@@ -789,7 +789,7 @@ void GLScene::setOpacity(double d, bool animate, double animDuration)
 		//qDebug() << "GLScene::setOpacity: animate flag false";
 	}
 	
-	//qDebug() << "GLScene::setOpacity: "<<d;
+	qDebug() << "GLScene::setOpacity: "<<d;
 	
 	m_opacity = d;
 	emit opacityChanged(d);
@@ -840,6 +840,9 @@ void GLScene::fadeTick()
 
 void GLScene::recalcFadeOpacity(bool setOpac)
 {
+	if(!m_fadeClockActive)
+		return;
+		
 	int time = m_fadeClock.elapsed();
         
 	double progress = ((double)time) / ((double)m_crossfadeSpeed);
@@ -851,7 +854,10 @@ void GLScene::recalcFadeOpacity(bool setOpac)
 	if(setOpac)
 		setOpacity(fadeVal);
 	else
+	{
+		qDebug() << "GLScene::recalcFadeOpacity (!setOpac): "<<fadeVal;
 		m_opacity = fadeVal;
+	}
 }
 
 

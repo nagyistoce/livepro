@@ -31,8 +31,11 @@ public:
 	
 	QStringList inputs();
 	int input(); // return current input	
+	bool hasSignal(); // returns false if NO SIGNAL 
 	void setInput(int idx);
 	bool setInput(const QString& name); // Must match exactly one of the names from inputs()
+	
+	
 		
 	typedef unsigned long long v4l2_std_id;
 	

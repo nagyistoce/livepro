@@ -29,8 +29,11 @@ extern "C" {
 #include "VideoSource.h"
 class SimpleV4L2;
 
-// For capturing from a Blackmagic DeckLink-compatible device (such as the Intensity PRo)
+// For capturing from a Blackmagic DeckLink-compatible device (such as the Intensity Pro)
 class BMDCaptureDelegate;
+
+// For test signal generation
+class TestSignalGenerator;
 
 class CameraThread: public VideoSource
 {
@@ -103,6 +106,7 @@ protected slots:
 	
 protected:
 	friend class BMDCaptureDelegate;
+	friend class TestSignalGenerator;
 	void rawDataAvailable(uchar *bytes, int size, QSize pxSize, QTime captureTime = QTime());
 	void imageDataAvailable(QImage img, QTime captureTime = QTime());
 	
@@ -171,6 +175,7 @@ private:
 	
 	SimpleV4L2 * m_v4l2;
 	BMDCaptureDelegate *m_bmd;
+	TestSignalGenerator *m_testGen;
 	
 	QMutex m_initMutex;
 	

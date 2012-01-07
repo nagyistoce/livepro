@@ -589,7 +589,7 @@ bool SimpleV4L2::openDevice(const char *dev_name)
 	m_numBuffers = 0;
 	
 	if (-1 == stat (m_devName, &st)) {
-		fprintf (stderr, "Cannot identify '%s': %d, %s\n",
+		fprintf (stderr, "SimpleV4l2::openDevice: Cannot identify '%s': %d, %s\n",
 			 m_devName, errno, strerror (errno));
 		return false;
 	}

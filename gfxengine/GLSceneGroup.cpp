@@ -789,7 +789,7 @@ void GLScene::setOpacity(double d, bool animate, double animDuration)
 		//qDebug() << "GLScene::setOpacity: animate flag false";
 	}
 	
-	qDebug() << "GLScene::setOpacity: "<<d;
+	//qDebug() << "GLScene::setOpacity: "<<d;
 	
 	m_opacity = d;
 	emit opacityChanged(d);

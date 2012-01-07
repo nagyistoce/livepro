@@ -26,6 +26,8 @@ extern "C" {
 
 #include "SimpleV4L2.h"
 
+#define ENABLE_TEST_GENERATOR
+#define NUM_TEST_SIGNALS 3
 
 #ifdef ENABLE_DECKLINK_CAPTURE
 
@@ -87,6 +89,124 @@ private:
 
 QStringList BMDCaptureDelegate::s_knownDevices = QStringList();
 
+#endif
+
+#ifdef ENABLE_TEST_GENERATOR
+#include <QPainter>
+
+class TestSignalGenerator 
+{
+private:
+	TestSignalGenerator(QString name, CameraThread *api) 
+		: m_name(name)
+		, m_api(api)
+		, m_counter(0)
+	{
+// 		Qt:::HorPattern	9	Horizontal lines.
+// 		Qt::VerPattern	10	Vertical lines.
+// 		Qt::CrossPattern	11	Crossing horizontal and vertical lines.
+// 		Qt::BDiagPattern	12	Backward diagonal lines.
+// 		Qt::FDiagPattern	13	Forward diagonal lines.
+// 		Qt::DiagCrossPattern	14	Crossing diagonal lines.
+				
+		// See man rand # Notes re high-order bits
+		m_pattern = (int) (7.0 * (rand() / (RAND_MAX + 1.0)));
+	}
+	
+public: /* static */
+	static QStringList enumDeviceNames(bool)
+	{
+		srand(QTime::currentTime().msec());
+		QStringList list;
+		for(int i=0; i<NUM_TEST_SIGNALS; i++)
+			list << QString("test:%1").arg(i);
+		
+		return list;
+	}
+	
+	static TestSignalGenerator *getGenerator(QString name, CameraThread *api)
+	{
+		if(!m_genCache.contains(name))
+		{
+			m_genCache[name] = new TestSignalGenerator(name,api); 
+		}
+		
+		return m_genCache[name];
+	}
+	
+public:
+	void generateFrame()
+	{
+		QTime capTime = QTime::currentTime();
+		QImage frame(640,480, QImage::Format_ARGB32);
+		
+		QPainter p(&frame);
+		
+		// Fill the frame with bars of red/green/blue
+		//frame.fill(QColor(0,198,0).rgba());
+		int value = 198; //( ++ m_counter ) % 127 + 71; // range between 71 - 198
+		if(m_pattern == 0)
+		{
+			int third = frame.width()/3;
+			p.fillRect(0,       0, third, frame.height(), QColor(value,0,0).rgba());
+			p.fillRect(third,   0, third, frame.height(), QColor(0,value,0).rgba());
+			p.fillRect(third*2, 0, third, frame.height(), QColor(0,0,value).rgba());
+		}
+		else
+		{
+			p.fillRect(frame.rect(), QColor(0,198,0).rgba());
+			p.fillRect(frame.rect(), QBrush(QColor(value,0,0).rgba(), (Qt::BrushStyle)(m_pattern + 8)));
+		}
+		
+		
+		// Render test generator name at top of frame
+		p.setFont(QFont("Monospace",32, 600));
+		QString string = m_name;
+		string = string.replace("test:","Test Signal # ");
+		
+		// Calculate bounding rect of string at current font and center the rect in the image
+		QRectF rect = p.boundingRect(frame.rect(), string);
+		rect.moveCenter(QPoint(frame.rect().center().x(), 50)); // 50 px from top to stay in title safe
+		
+		// Draw white rectangle with 5px margin behind text
+		p.fillRect(rect.adjusted(-5,-5,10,10), Qt::white);
+		
+		// Render the name text
+		p.setPen(Qt::black);
+		p.drawText(rect.topLeft() + QPoint(0, rect.height() - 5), string);
+		
+		
+		// Generate a string with current time (including milliseconds)
+		string.sprintf("%02d:%02d:%02d.%03d", capTime.hour(), capTime.minute(), capTime.second(), capTime.msec());
+		
+		// Calculate bounding rect of string at current font and center the rect in the image
+		rect = p.boundingRect(frame.rect(), string);
+		rect.moveCenter(frame.rect().center());
+		
+		// Draw white rectangle with 5px margin behind text
+		p.fillRect(rect.adjusted(-5,-5,10,10), Qt::white);
+		
+		// Render the text
+		p.setPen(Qt::black);
+		p.drawText(rect.topLeft() + QPoint(0, rect.height() - 5), string);
+		
+		
+		// Release the painter from the image
+		p.end();
+		
+		m_api->imageDataAvailable(frame, capTime);
+	}
+	
+private:
+	static QMap<QString,TestSignalGenerator*> m_genCache;
+	QString m_name;
+	CameraThread *m_api;
+	int m_counter;
+	int m_pattern;
+	
+};
+
+QMap<QString,TestSignalGenerator*> TestSignalGenerator::m_genCache;
 #endif
 
 //#include "ccvt/ccvt.h"
@@ -224,6 +344,7 @@ CameraThread::CameraThread(const QString& camera, QObject *parent)
 	, m_deinterlace(false)
 	, m_v4l2(0)
 	, m_bmd(0)
+	, m_testGen(0)
 	, m_error(false)
 	, m_buffer(0)
 	, m_av_rgb_frame(0)
@@ -261,9 +382,12 @@ CameraThread * CameraThread::threadForCamera(const QString& camera)
 		return 0;
 
 	QStringList devices = enumerateDevices();
-
+	
 	if(!devices.contains(camera))
+	{
+		qDebug() << "CameraThread::threadForCamera: Device "<<camera<<" not in enumerated list, returning false";
 		return 0;
+	}
 
 	QMutexLocker lock(&threadCacheMutex);
 
@@ -370,6 +494,10 @@ QStringList CameraThread::enumerateDevices(bool forceReenum)
 	list << BMDCaptureDelegate::enumDeviceNames(forceReenum);
 	#endif
 	
+	#ifdef ENABLE_TEST_GENERATOR
+	list << TestSignalGenerator::enumDeviceNames(forceReenum);
+	#endif
+	
         //#ifdef DEBUG
 	qDebug() << "CameraThread::enumerateDevices: Found: "<<list;
         //#endif
@@ -408,6 +536,13 @@ bool CameraThread::hasSignal()
 	}
 	else
 	#endif
+	#ifdef ENABLE_TEST_GENERATOR
+	if(m_testGen)
+	{
+		return true;
+	}
+	else
+	#endif
 	{
 		GET_API_PTR(true); // assume we have signal 
 		hasSignal = api->hasSignal();
@@ -440,6 +575,15 @@ QStringList CameraThread::inputs()
 	#if !defined(Q_OS_LINUX)
 		return QStringList() << "Default";
 	#endif
+	
+	#ifdef ENABLE_DECKLINK_CAPTURE
+	if(m_bmd)
+		return QStringList() << "Default";
+	#endif
+	#ifdef ENABLE_TEST_GENERATOR
+	if(m_testGen)
+		return QStringList() << "Default";
+	#endif
 
 	GET_API_PTR(QStringList() << "Default");
 
@@ -456,6 +600,15 @@ int CameraThread::input()
 		return 0;
 	#endif
 
+	#ifdef ENABLE_DECKLINK_CAPTURE
+	if(m_bmd)
+		return 0;
+	#endif
+	#ifdef ENABLE_TEST_GENERATOR
+	if(m_testGen)
+		return 0;
+	#endif
+	
 	GET_API_PTR(0);
 
 	int idx = api->input();
@@ -468,6 +621,15 @@ int CameraThread::input()
 void CameraThread::setInput(int idx)
 {
 	#if !defined(Q_OS_LINUX)
+		return;
+	#endif
+	
+	#ifdef ENABLE_DECKLINK_CAPTURE
+	if(m_bmd)
+		return;
+	#endif
+	#ifdef ENABLE_TEST_GENERATOR
+	if(m_testGen)
 		return;
 	#endif
 
@@ -486,6 +648,15 @@ bool CameraThread::setInput(const QString& name)
 	#endif
 	
 	m_inputName = name;
+	
+	#ifdef ENABLE_DECKLINK_CAPTURE
+	if(m_ bmd)
+		return false;
+	#endif
+	#ifdef ENABLE_TEST_GENERATOR
+	if(m_testGen)
+		return false;
+	#endif
 
 	GET_API_PTR(false);
 
@@ -523,6 +694,15 @@ int CameraThread::initCamera()
 			qDebug() << "CameraThread::initCamera(): "<<this<<" Opened Blackmagic input:"<<m_cameraFile;
 			return 1;
 		}
+	}
+	#endif
+	
+	#ifdef ENABLE_TEST_GENERATOR
+	if(m_cameraFile.startsWith("test:"))
+	{
+		m_testGen = TestSignalGenerator::getGenerator(m_cameraFile, this);
+		m_fps = 5; 
+		return 1;
 	}
 	#endif
 	
@@ -753,7 +933,14 @@ void CameraThread::run()
 		#ifdef ENABLE_DECKLINK_CAPTURE
 		if(!m_bmd)
 		#endif
-			readFrame();
+			#ifdef ENABLE_TEST_GENERATOR
+			if(m_testGen)
+				m_testGen->generateFrame();
+			else
+			#endif
+				readFrame();
+		
+		
 
                 /*
                 counter ++;
@@ -778,6 +965,11 @@ void CameraThread::setDeinterlace(bool flag)
 
 void CameraThread::setFps(int fps)
 {
+	#ifdef ENABLE_TEST_GENERATOR
+	if(m_testGen)
+		return;
+	#endif
+	
 	m_fps = fps;
 }
 
@@ -801,6 +993,13 @@ CameraThread::~CameraThread()
 	{
 		delete m_bmd;
 		m_bmd = 0;
+	}
+	#endif
+	
+	#ifdef ENABLE_TEST_GENERATOR
+	if(m_testGen)
+	{
+		// umm....it's cached...deal with it later
 	}
 	#endif
 
@@ -875,6 +1074,12 @@ void CameraThread::enableRawFrames(bool enable)
 			m_bmd->enableRawFrames(enable);
 		}
 		else
+		#endif
+		#ifdef ENABLE_TEST_GENERATOR
+		if(m_testGen)
+		{
+			// test gen doesn't use raw frames
+		}
 		#endif
 		{
 			//qDebug() << "CameraThread::enableRawFrames(): "<<this<<" start, flag:"<<enable;
@@ -1450,7 +1655,7 @@ HRESULT BMDCaptureDelegate::VideoInputFrameArrived(IDeckLinkVideoInputFrame* vid
 			// Nice blue 'no signal' frame
 			QImage frame(320,240, QImage::Format_ARGB32);
 			frame.fill(QColor(0,0,198).rgba());
-			m_api->imageDataAvailable(frame, capTime, false);
+			m_api->imageDataAvailable(frame, capTime);
 			m_hasSignal= false;
 			
 		}

@@ -109,6 +109,7 @@ protected:
 	friend class TestSignalGenerator;
 	void rawDataAvailable(uchar *bytes, int size, QSize pxSize, QTime captureTime = QTime());
 	void imageDataAvailable(QImage img, QTime captureTime = QTime());
+	void frameAvailable(VideoFramePtr ptr);
 	
 private:
 	int m_fps;

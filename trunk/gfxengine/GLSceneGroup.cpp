@@ -844,18 +844,23 @@ void GLScene::recalcFadeOpacity(bool setOpac)
 		return;
 		
 	int time = m_fadeClock.elapsed();
-        
+
 	double progress = ((double)time) / ((double)m_crossfadeSpeed);
         double valueLength = fabs(m_endOpacity - m_startOpacity);
         double fadeVal = valueLength * progress;
         if(m_fadeDirection < 0)
         	fadeVal = m_startOpacity - fadeVal;
+	
+        if(fadeVal < 0)
+        	return;
+        if(fadeVal > 1.0)
+        	return;
 
 	if(setOpac)
 		setOpacity(fadeVal);
 	else
 	{
-		qDebug() << "GLScene::recalcFadeOpacity (!setOpac): "<<fadeVal;
+		//qDebug() << "GLScene::recalcFadeOpacity (!setOpac): "<<fadeVal;
 		m_opacity = fadeVal;
 	}
 }

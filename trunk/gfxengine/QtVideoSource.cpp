@@ -9,6 +9,8 @@
 #include <qmediaservice.h>
 #include <qvideorenderercontrol.h>
 
+//#define DEBUG
+
 VideoFormat QtVideoSource::videoFormat()
 { 
 	//qDebug() << "QtVideoSource::videoFormat()";
@@ -77,7 +79,9 @@ void QtVideoSource::setFile(const QString& file)
 		else
 			m_playlist->addMedia(url);
 			
-		//qDebug() << "QtVideoSource::setFile: Added file:"<<url;
+		#ifdef DEBUG
+		qDebug() << "QtVideoSource::setFile: Added file:"<<url;
+		#endif
 	} 
 	else 
 	{
@@ -100,7 +104,9 @@ void QtVideoSource::present(QImage image)
 {
 	//qDebug() << "QtVideoSource::present()";
 	// TODO is there some way to get the FPS from the QMediaPlayer or friends?
-	//qDebug()<< "QtVideoSource::present: Got image, size:"<<image.size();
+	#ifdef DEBUG
+	qDebug()<< "QtVideoSource::present: Got image, size:"<<image.size();
+	#endif
 	enqueue(new VideoFrame(image,1000/60));
 	emit frameReady();
 }
@@ -115,7 +121,9 @@ VideoSurfaceAdapter::VideoSurfaceAdapter(QtVideoSource *e, QObject *parent)
 	, m_pixelFormat(QVideoFrame::Format_Invalid)
 	, imageFormat(QImage::Format_Invalid)
 {
-	//qDebug() << "VideoSurfaceAdapter::ctor()";
+	#ifdef DEBUG
+	qDebug() << "VideoSurfaceAdapter::ctor()";
+	#endif
 	
 }
 
@@ -123,7 +131,9 @@ QList<QVideoFrame::PixelFormat> VideoSurfaceAdapter::supportedPixelFormats(QAbst
 {
 	if (handleType == QAbstractVideoBuffer::NoHandle) 
 	{
-// 		qDebug() << "VideoSurfaceAdapter::supportedPixelFormats() list";
+ 		#ifdef DEBUG
+ 		qDebug() << "VideoSurfaceAdapter::supportedPixelFormats() list";
+ 		#endif
 	
 		return QList<QVideoFrame::PixelFormat>()
 			<< QVideoFrame::Format_RGB32
@@ -134,7 +144,9 @@ QList<QVideoFrame::PixelFormat> VideoSurfaceAdapter::supportedPixelFormats(QAbst
 	} 
 	else 
 	{
-// 		qDebug() << "VideoSurfaceAdapter::supportedPixelFormats() empty list";
+ 		#ifdef DEBUG
+ 		qDebug() << "VideoSurfaceAdapter::supportedPixelFormats() empty list for handle:" <<handleType;
+ 		#endif
 	
 		return QList<QVideoFrame::PixelFormat>();
 	}
@@ -149,7 +161,9 @@ bool VideoSurfaceAdapter::isFormatSupported(
 	const QImage::Format imageFormat = VideoFrame::imageFormatFromPixelFormat(format.pixelFormat());
 	const QSize size = format.frameSize();
 	
+	#ifdef DEBUG
 	qDebug()<< "VideoSurfaceAdapter::isFormatSupported: got imageFormat:"<<imageFormat<<" for pixelFormat:"<<format.pixelFormat();
+	#endif
 	
 	return imageFormat != QImage::Format_Invalid
 		&& !size.isEmpty()
@@ -161,7 +175,9 @@ bool VideoSurfaceAdapter::start(const QVideoSurfaceFormat &format)
 	const QImage::Format imageFormat = VideoFrame::imageFormatFromPixelFormat(format.pixelFormat());
 	const QSize size = format.frameSize();
 	
-	//qDebug() << "VideoSurfaceAdapter::start()";
+	#ifdef DEBUG
+	qDebug() << "VideoSurfaceAdapter::start()";
+	#endif
 	
 	if (imageFormat != QImage::Format_Invalid && !size.isEmpty()) 
 	{
@@ -175,20 +191,26 @@ bool VideoSurfaceAdapter::start(const QVideoSurfaceFormat &format)
 		//widget->updateGeometry();
 		updateVideoRect();
 		
-		//qDebug()<< "VideoSurfaceAdapter::start: Started with imageFormat:"<<imageFormat<<", pixelFormat:"<<format.pixelFormat();
+		#ifdef DEBUG
+		qDebug()<< "VideoSurfaceAdapter::start: Started with imageFormat:"<<imageFormat<<", pixelFormat:"<<format.pixelFormat();
+		#endif
 	
 		return true;
 	} 
 	else 
 	{
+		#ifdef DEBUG
 		qDebug()<< "VideoSurfaceAdapter::start: NOT starting, either format invalid or size empty.";
+		#endif
 		return false;
 	}
 }
 
 void VideoSurfaceAdapter::stop()
 {
-	//qDebug() << "VideoSurfaceAdapter::stop()";
+	#ifdef DEBUG
+	qDebug() << "VideoSurfaceAdapter::stop()";
+	#endif
 	
 	currentFrame = QVideoFrame();
 	targetRect = QRect();
@@ -201,7 +223,9 @@ void VideoSurfaceAdapter::stop()
 
 bool VideoSurfaceAdapter::present(const QVideoFrame &frame)
 {
-	//qDebug() << "VideoSurfaceAdapter::present()";
+	#ifdef DEBUG
+	qDebug() << "VideoSurfaceAdapter::present()";
+	#endif
 	
 	if (surfaceFormat().pixelFormat() != frame.pixelFormat()
 	 || surfaceFormat().frameSize() != frame.size()) 
@@ -245,7 +269,9 @@ bool VideoSurfaceAdapter::present(const QVideoFrame &frame)
 				currentFrame.bytesPerLine(),
 				imageFormat);
 				
- 			//qDebug()<< "VideoSurfaceAdapter::present: Presenting image with "<<image.byteCount()<<" bytes";
+ 			#ifdef DEBUG
+ 			qDebug()<< "VideoSurfaceAdapter::present: Presenting image with "<<image.byteCount()<<" bytes";
+ 			#endif
 				
 			emitter->present(image); //.copy());
 		
@@ -257,6 +283,12 @@ bool VideoSurfaceAdapter::present(const QVideoFrame &frame)
 		
 			currentFrame.unmap();
 		}
+		else
+		{
+			#ifdef DEBUG
+			qDebug()<< "VideoSurfaceAdapter::present: Can't map frame";
+			#endif
+		}
 	
 		return true;
 	}
@@ -264,7 +296,9 @@ bool VideoSurfaceAdapter::present(const QVideoFrame &frame)
 
 void VideoSurfaceAdapter::updateVideoRect()
 {
-	//qDebug() << "VideoSurfaceAdapter::updateVideoRect()";
+	#ifdef DEBUG
+	qDebug() << "VideoSurfaceAdapter::updateVideoRect()";
+	#endif
 	
 	QSize size = surfaceFormat().sizeHint();
 // 	size.scale(widget->size().boundedTo(size), Qt::KeepAspectRatio);

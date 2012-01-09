@@ -362,7 +362,11 @@ void SwitchMonWidget::createViewers()
 		m_vbox->addLayout(m_bottomRow);
 	}
 	
-	// Add in the "Live" output
+	// Add in the "Live" output because when we generate a layout with 
+	// no viewers at all to start out with, the layout doesn't
+	// automatically expand when we receive the list of streams from the server.
+	// By adding in a known stream to start out with (which gets removed when
+	// we get the list from the server) we "prop up" the layout till the list arrives.
 	if(m_inputList.isEmpty())
 		m_inputList.append(tr("net=%1:9978").arg(m_host));
 	

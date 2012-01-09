@@ -893,7 +893,8 @@ QList<EyeCounterResult> EyeCounter::detectEyes(QImage image, bool includeFacesWi
 		int ms = t.elapsed();
 		QRect foundFace;
 		
-		qDebug() << "Debug: cvHarr detected"<<faces->total<<"faces in"<<ms<<"ms";
+		if(faces->total > 0)
+			qDebug() << "Debug: cvHarr detected"<<faces->total<<"faces in"<<ms<<"ms";
 		if(faces->total > 0)
 		{
 			//faces->total = 1;

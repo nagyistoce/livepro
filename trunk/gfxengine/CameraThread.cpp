@@ -94,6 +94,8 @@ QStringList BMDCaptureDelegate::s_knownDevices = QStringList();
 #ifdef ENABLE_TEST_GENERATOR
 #include <QPainter>
 #include "QtVideoSource.h"
+#include "GLVideoDrawable.h"
+#include "VideoThread.h"
 
 class TestSignalGenerator 
 {
@@ -103,6 +105,7 @@ private:
 		, m_api(api)
 		, m_counter(0)
 		, m_videoThread(0)
+		, m_started(false)
 	{
 // 		Qt:::HorPattern	9	Horizontal lines.
 // 		Qt::VerPattern	10	Vertical lines.
@@ -120,21 +123,30 @@ private:
 		{
 			name = name.replace("test:","");
 			
-			m_videoThread = new QtVideoSource();
-			m_videoThread->setFile(name);
-			//m_videoThread->start();
+// 			m_videoThread = new QtVideoSource();
+// 			//m_videoThread->setFile(name);
+// 			m_videoThread->setFile("../data/2012-01-08 SS Test/test1.mpg");
+// 			m_videoThread->start();
+			//m_videoThread->player()->play();
 			
-			m_videoThread->player()->play();
+			
+// 			GLVideoDrawable *drw = new GLVideoDrawable();
+// 			QtVideoSource *src = new QtVideoSource();
+// 			src->setFile("../data/2012-01-08 SS Test/test1.mpg");
+// 			src->start();
+			
 			//m_videoThread->player()->setVolume(100);
 			
-			/*m_videoThread = new VideoThread();
+			m_videoThread = new VideoThread();
 			m_videoThread->setVideo(name);
-			m_videoThread->start(true);*/ 
+			m_videoThread->start(); 
 			
 			//m_videoThread->setIsBuffered(false);
 			
 			qDebug() << "TestSignalGenerator: Starting video thread: "<<name;
 			//setObjectName(qPrintable(file));
+			
+			//m_start.start();
 		}
 	}
 	
@@ -143,11 +155,11 @@ public: /* static */
 	{
 		srand(QTime::currentTime().msec());
 		QStringList list;
-		for(int i=0; i<NUM_TEST_SIGNALS; i++)
-			list << QString("test:%1").arg(i+1);
-// 		list << "test:/opt/livepro/devel/data/2012-01-08 SS Test/test2.mpg";
-// 		list << "test:/opt/livepro/devel/data/2012-01-08 SS Test/test3.mpg";
-		//list << "test:/opt/livepro/devel/data/2012-01-08 SS Test/test1.mpg";
+// 		for(int i=0; i<NUM_TEST_SIGNALS; i++)
+// 			list << QString("test:%1").arg(i+1);
+ 		list << "test:/opt/livepro/devel/data/2012-01-08 SS Test/test2.mpg";
+ 		list << "test:/opt/livepro/devel/data/2012-01-08 SS Test/test3.mpg";
+		list << "test:/opt/livepro/devel/data/2012-01-08 SS Test/test1.mpg";
 		return list;
 	}
 	
@@ -169,25 +181,26 @@ public:
 		
 		if(m_videoThread)
 		{
-			//QImage image = m_videoThread->frame()->image();
-			//qDebug() << "TestSignalGenerator: Reading frame from video thread: "<<m_name<<", null? "<<image.isNull();
+			QImage image = m_videoThread->frame()->image();
+			if(image.isNull())
+				qDebug() << "TestSignalGenerator: Reading frame from video thread: "<<m_name<<", null? "<<image.isNull();
 			//m_api->imageDataAvailable(image, capTime);
 			m_api->frameAvailable(m_videoThread->frame());
 			
-			// Loop if at end
-			if(m_videoThread->player()->state() == QMediaPlayer::StoppedState)
-			{
-				qDebug() << "TestSignalGenerator: Video stopped, looping";
-				m_videoThread->player()->setPosition(0);
-				m_videoThread->player()->play();
-			}
-			else
-			{
-/*				m_videoThread->player()->setPosition(0);
-				qDebug() << "TestSignalGenerator: position: "<<m_videoThread->player()->position();
-				m_videoThread->player()->play(); */
-				//m_videoThread->start();
-			}
+// 			// Loop if at end
+// 			if(m_videoThread->player()->state() == QMediaPlayer::StoppedState)
+// 			{
+// 				qDebug() << "TestSignalGenerator: Video stopped, looping";
+// 				m_videoThread->player()->setPosition(0);
+// 				m_videoThread->player()->play();
+// 			}
+// 			else
+// 			{
+// /*				m_videoThread->player()->setPosition(0);
+// 				qDebug() << "TestSignalGenerator: position: "<<m_videoThread->player()->position();
+// 				m_videoThread->player()->play(); */
+// 				//m_videoThread->start();
+// 			}
 			
 			//m_api->frameAvailable(m_videoThread->frame());
 			return;
@@ -258,7 +271,8 @@ private:
 	CameraThread *m_api;
 	int m_counter;
 	int m_pattern;
-	QtVideoSource *m_videoThread;
+	VideoThread *m_videoThread;
+	bool m_started;
 	
 };
 
@@ -552,7 +566,7 @@ QStringList CameraThread::enumerateDevices(bool forceReenum)
 	
 	#ifdef ENABLE_TEST_GENERATOR
 	// NOTE: Only for testing!!!
-	list << TestSignalGenerator::enumDeviceNames(forceReenum);
+	list = TestSignalGenerator::enumDeviceNames(forceReenum);
 	#endif
 	
         //#ifdef DEBUG

@@ -362,6 +362,10 @@ void SwitchMonWidget::createViewers()
 		m_vbox->addLayout(m_bottomRow);
 	}
 	
+	// Add in the "Live" output
+	if(m_inputList.isEmpty())
+		m_inputList.append(tr("net=%1:9978").arg(m_host));
+	
 	int idx = 0;
 	foreach(QVariant entry, m_inputList)
 	{

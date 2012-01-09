@@ -38,9 +38,10 @@ QImage FaceDetectFilter::highlightFaces(QImage img)
 	QImage imageCopy = img.copy();
 	QPainter p(&imageCopy);
 	//qDebug() << "FaceDetectFilter::highlightFaces: Result size:"<<results.size();
-	if(results.isEmpty())
-		qDebug() << "No faces";
-	else
+// 	if(results.isEmpty())
+// 		qDebug() << "No faces";
+// 	else
+ 	if(!results.isEmpty())
 		qDebug() << "Found "<<results.size()<<" faces";
 	foreach(EyeCounterResult r, results)
 	{

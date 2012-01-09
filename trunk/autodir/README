@@ -1,0 +1,35 @@
+AutoDirector
+
+Simple Name, Simple Idea: An automated "director/producer" algorithm to control livemix.
+
+The current algorithm in mind will be more oriented toward a classroom/discussion usage, where
+any input /may/ be valid at any point in time. Based on motion anaylis, face tracking, etc, the
+system will attempt to "guess" which camera has the most "important" action, and then switch to that.
+ 
+For situations where there is little rating variance between cameras, multiple cameras will be shown
+on screen. The layout used will/should be varied each time the transition from one->multi takes place.
+E.g. each time a multi-layout is needed, it should use a different layout. Additionally, if
+reliable face tracking can be established (or, LK tracking of features...?), faces could be shown 
+individually.
+
+A special mode shall be integrated wherein one camera (or VideoReceiver) shall be used for multiple
+input rectangles, such as would be suitable for a screencapture feed from a video conferencing
+software running on a secondary PC.
+
+So, to boil it down:
+	- Setup a moniton analysis object for each input feed
+		- Generate some sort of "importance" rating
+		- Divide video conf input into subrects, such as Rx1:0, Rx1:1, Rx1:2, etc
+			- Analyze subrects individually as virtual inputs
+			- What if we created a video filter that issolated a rectangle from a frame and fed it out as a new frame?
+				- Could work, but what abouty applying it on the server?
+					- Just set a video drawable with appros source rect or clipping
+		- What about background segmentation?
+			- OpenCV blob tracking?
+					 
+	- Watch each of the anlysis objects
+	- Sort the inputs by their rating, group them by their deltas
+	- Inputs with highest ranking and max delta from other inputs, shown
+	- Lower ranked inputs, group together below
+	- Inputs below threshold dont show
+	

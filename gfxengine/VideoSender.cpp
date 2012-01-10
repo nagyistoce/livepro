@@ -170,6 +170,9 @@ void VideoSender::processFrame()
 			const uchar *src = (const uchar*)scaledImage.bits();
 			memcpy(ptr, src, scaledImage.byteCount());
 			
+			if(m_dataPtr)
+				m_dataPtr.clear();
+				
 			m_dataPtr = QSharedPointer<uchar>(ptr);
 			m_byteCount = scaledImage.byteCount();
 			m_imageFormat = scaledImage.format();
@@ -206,6 +209,11 @@ void VideoSender::setVideoSource(VideoSource *source)
 	{	
 		connect(m_source, SIGNAL(frameReady()), this, SLOT(frameReady()));
 		connect(m_source, SIGNAL(destroyed()), this, SLOT(disconnectVideoSource()));
+		
+		if(CameraThread *camera = dynamic_cast<CameraThread*>(m_source))
+		{
+			connect(camera, SIGNAL(signalStatusChanged(bool flag)), this, SIGNAL(signalStatusChanged(bool flag)));
+		}
 		
 		//qDebug() << "GLVideoDrawable::setVideoSource(): "<<objectName()<<" m_source:"<<m_source;
 		//setVideoFormat(m_source->videoFormat());
@@ -254,6 +262,7 @@ void VideoSender::incomingConnection(int socketDescriptor)
 	VideoSenderThread *thread = new VideoSenderThread(socketDescriptor, m_adaptiveWriteEnabled);
 	connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
 	connect(this, SIGNAL(receivedFrame()), thread, SLOT(frameReady()), Qt::QueuedConnection);
+	connect(this, SIGNAL(signalStatusChanged(bool)), thread, SLOT(signalStatusChanged(bool)), Qt::QueuedConnection);
 	thread->moveToThread(thread);
 	thread->setSender(this);
 	thread->start();
@@ -316,6 +325,12 @@ void VideoSenderThread::run()
 	// when frameReady() signal arrives, write data with header to socket
 }
 
+void VideoSenderThread::signalStatusChanged(bool flag)
+{
+	sendReply(QVariantList() 
+			<< "cmd"	<< Video_SignalStatusChanged
+			<< "flag"	<< flag);
+}
 
 void VideoSenderThread::frameReady()
 {

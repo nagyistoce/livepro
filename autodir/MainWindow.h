@@ -3,15 +3,26 @@
 
 #include <QtGui>
 
+class AnalysisFilter;
+class PlayerConnection;
+
 class MainWindow : public QWidget
 {
 	Q_OBJECT
 public:
 	MainWindow();
 	
+private slots:
+	void motionRatingChanged(int);
+	
 protected:
 	void resizeEvent(QResizeEvent*);
-
+	QList<int> m_ratings;
+	QList<AnalysisFilter*> m_filters;
+	QStringList m_cons;
+	PlayerConnection *m_player;
+	int m_lastHighNum;
+	int m_ignoreCountdown;
 };
 
 

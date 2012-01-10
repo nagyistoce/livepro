@@ -195,6 +195,9 @@ void GLVideoInputDrawable::testXfade()
 
 bool GLVideoInputDrawable::setVideoInput(const QString& camera)
 {
+	if(camera.isEmpty())
+		return false;
+		
 // 	testXfade();
 // 	return true;
 	#ifndef Q_OS_WIN32

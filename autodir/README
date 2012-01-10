@@ -33,3 +33,12 @@ So, to boil it down:
 	- Lower ranked inputs, group together below
 	- Inputs below threshold dont show
 	
+	
+-----
+
+Things learned from Initial Impl:
+- Need "weight" to "hold" the switch so it doesnt switch fast
+- All cameras should have eyeline at same point in frame (for table cameras, not teacher camera)
+- Either cross fade slowly or cut, no fast cross fades
+- Need to fix the "cut thru black" and "fade thru black"
+- After hold time, should we switch to the highest accumulated action...?

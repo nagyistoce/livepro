@@ -100,7 +100,7 @@ void HttpServer::readClient()
 		if (socket->state() == QTcpSocket::UnconnectedState) 
 		{
 			delete socket;
-			logMessage("Connection closed");
+			//logMessage("Connection closed");
 		}
 		
 		

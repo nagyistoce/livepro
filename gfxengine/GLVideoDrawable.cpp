@@ -26,6 +26,8 @@
 
 #define CAMERA_OVERSCAN .02
 
+//#define DEBUG_UPDATE_LEADER
+
 /// If the #define \em RECOMPILE_SHADERS_TO_INCLUDE_LEVELS is defined,
 /// then the shaders will be recompiled when the black/white levels
 /// change so as to enable/disable the levels code. (E.g. if black falls <=
@@ -188,6 +190,17 @@ GLVideoDrawable::~GLVideoDrawable()
 // 	==22564==    by 0x604CADA: QMetaObject::metacall(QObject*, QMetaObject::Call, int, void**) (qmetaobject.cpp:237)
 // 	==22564==    by 0x605A5A6: QMetaObject::activate(QObject*, QMetaObject const*, int, void**) (qobject.cpp:3285)
 
+	if(m_program)
+		delete m_program;
+	m_program = 0;
+	
+	if(m_program2)
+		delete m_program2;
+	m_program2 = 0;
+		
+	if(m_videoSender)
+		delete m_videoSender;
+	m_videoSender = 0;
 }
 
 void GLVideoDrawable::setFpsLimit(float fps)
@@ -494,7 +507,10 @@ void GLVideoDrawable::frameReady()
 				
 				if(m_unrenderedFrames > 1)
 				{
+					#ifdef DEBUG_UPDATE_LEADER
 					qDebug() << "GLVideoDrawable::frameReady(): "<<(QObject*)this<<" m_unrenderedFrames greater than threshold, electing new update leader, ignoring "<<(QObject*)m_updateLeader;
+					#endif
+					
 					electUpdateLeader(m_updateLeader); // ignore current update leader
 					m_unrenderedFrames = 0;
 				}

@@ -407,6 +407,7 @@ void VideoReceiver::processBlock()
 			if(imgX < 0 && imgY < 0 && holdTime < 0)
 			{
 				// data frame from VideoSender in response to a query request (Video_Get* command)
+				// or from a signal received by the VideoSender (such as signalStatusChanged(bool))
 				
 				if(byteTmp != m_byteCount)
 				{
@@ -416,11 +417,20 @@ void VideoReceiver::processBlock()
 				}
 				
 				
-				/// TODO: The parsing code here wont work for data replies. Need to rework to parse header, get byte count, THEN get data packet from header
+				QDataStream stream(&block, QIODevice::ReadOnly);
+				QVariantMap map;
+				stream >> map;
+				
+				processReceivedMap(map);
 			}
 			else
 			// No need to create and emit frames if noone is listeneing for frames!
-			if(!m_consumerList.isEmpty())
+			if(m_consumerList.isEmpty())
+			{
+				m_dataBlock.clear();
+				return;
+			}
+			else
 			{
 				//qDebug() << "raw header scan: byteTmp:"<<byteTmp<<", size:"<<imgX<<"x"<<imgY;
 				
@@ -599,4 +609,51 @@ void VideoReceiver::exit()
 	}
 }
 
-
+void VideoReceiver::processReceivedMap(const QVariantMap & map)
+{
+	QString cmd = map["cmd"].toString();
+	//qDebug() << "VideoSenderThread::processBlock: map:"<<map;
+	
+	if(cmd == Video_GetHue)
+	{
+		emit currentHue(map["value"].toInt());
+	}
+	else
+	if(cmd == Video_GetSaturation)
+	{
+		emit currentSaturation(map["value"].toInt());
+	}
+	else
+	if(cmd == Video_GetBright)
+	{
+		emit currentContrast(map["value"].toInt());
+	}
+	else
+	if(cmd == Video_GetContrast)
+	{
+		emit currentBrightness(map["value"].toInt());
+	}
+	else
+	if(cmd == Video_GetFPS)
+	{
+		//"value" << fps
+		emit currentFPS(map["value"].toInt());
+	}
+	else
+	if(cmd == Video_GetSize)
+	{
+		//"w" << size.width() << "h" << size.height()
+		emit currentSize(map["w"].toInt(), map["h"].toInt());
+	}
+	else
+	if(cmd == Video_SignalStatusChanged)
+	{
+		//<< "flag"	<< flag
+		emit signalStatusChanged(map["flag"].toBool());
+	}
+	else
+	{
+		qDebug() << "VideoReceiver::processReceivedMap: Unknown map received, cmd:"<<cmd<<", full map:"<<map;
+	}
+	
+}

@@ -18,8 +18,10 @@ include(../varnet/varnet.pri)
 HEADERS += \
 	MainWindow.h \
 	../livemix/ServerCommandNames.h \
-	PlayerConnection.h
+	PlayerConnection.h \
+	AnalysisFilter.h
 	
 SOURCES += main.cpp \
 	MainWindow.cpp \
-	PlayerConnection.cpp
+	PlayerConnection.cpp \
+	AnalysisFilter.cpp

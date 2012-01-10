@@ -116,6 +116,9 @@ GLDrawable::~GLDrawable()
 		
 	qDeleteAll(m_cornerItems);
 	m_cornerItems.clear();
+	
+	delete m_playlist;
+	m_playlist = 0;
 }
 
 void GLDrawable::editingModeChanged(bool flag)

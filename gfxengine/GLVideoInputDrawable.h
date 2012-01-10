@@ -29,7 +29,7 @@ class GLVideoInputDrawable : public GLVideoDrawable
 	//Q_PROPERTY(bool useNetworkSource READ useNetworkSource WRITE setUseNetworkSource);
 	
 public:
-	GLVideoInputDrawable(QString file=DEFAULT_INPUT, QObject *parent=0);
+	GLVideoInputDrawable(QString file="", QObject *parent=0);
 	~GLVideoInputDrawable();
 	
 	QString videoConnection() { return m_videoConnection; }

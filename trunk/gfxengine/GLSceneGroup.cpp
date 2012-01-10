@@ -287,6 +287,10 @@ GLScene::~GLScene()
 {
 	if(m_sceneType)
 		delete m_sceneType;
+	if(m_layoutListModel)
+		delete m_layoutListModel;
+	qDeleteAll(m_itemList);
+	m_itemList.clear();
 }
 
 GLSceneLayoutListModel *GLScene::layoutListModel()
@@ -953,6 +957,8 @@ GLSceneGroup::GLSceneGroup(QByteArray& ba, QObject *parent)
 
 GLSceneGroup::~GLSceneGroup()
 {
+	qDeleteAll(m_scenes);
+	m_scenes.clear();
 }
 
 int GLSceneGroup::groupId()
@@ -1560,6 +1566,8 @@ GLSceneGroupCollection::GLSceneGroupCollection(const QString& file, QObject *par
 
 GLSceneGroupCollection::~GLSceneGroupCollection()
 {
+	qDeleteAll(m_groups);
+	m_groups.clear();
 }
 
 int GLSceneGroupCollection::collectionId()

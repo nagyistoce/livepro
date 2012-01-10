@@ -375,6 +375,30 @@ GLWidget::~GLWidget()
 		delete m_fbo;
 		m_fbo = 0;
 	}
+	
+	if(m_outputStream)
+	{
+		delete m_outputStream;
+		m_outputStream = 0;
+	}
+	
+	if(m_readbackFbo)
+	{
+		delete m_readbackFbo;
+		m_readbackFbo = 0;
+	}
+	
+	if(m_program)
+	{
+		delete m_program;
+		m_program = 0;
+	}
+	
+	if(m_readbackProgram)
+	{
+		delete m_readbackProgram;
+		m_readbackProgram = 0;
+	}
 }
 
 QSize GLWidget::minimumSizeHint() const
@@ -2547,6 +2571,9 @@ void GLWidgetOutputStream::setImage(QImage img)
 	memcpy((uchar*)ptr, img.bits(), img.byteCount());
 
 	//m_data = ptr;
+	if(m_data)
+		m_data.clear();
+		
 	m_data = QSharedPointer<uchar>(ptr);
 
 	//qDebug() << "GLWidgetOutputStream::setImage(): Received frame buffer, size:"<<m_image.size()<<", img format:"<<m_image.format();
@@ -2571,6 +2598,9 @@ void GLWidgetOutputStream::copyPtr(GLubyte *ptrIn, QSize size)
 	uchar *ptr = (uchar*)malloc(sizeof(uchar) * bytes);
 	memcpy((uchar*)ptr, ptrIn, bytes);
 
+	if(m_data)
+		m_data.clear();
+		
 	m_data = QSharedPointer<uchar>(ptr);
 	m_stamp = QTime::currentTime();
 	m_frameUpdated = true;

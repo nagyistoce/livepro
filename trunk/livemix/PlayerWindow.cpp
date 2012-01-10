@@ -1338,11 +1338,19 @@ void PlayerWindow::setCollection(GLSceneGroupCollection *col)
 
 bool PlayerWindow::setGroup(GLSceneGroup *group)
 {
+	//qDebug() << "PlayerWindow::setGroup(): start";
 	if(m_group && group &&
-	   m_group->groupId() == group->groupId())
+	   m_group->groupId() == group->groupId() &&
+	   m_group != group)
 	{
+		// They are trying to set the same group,
+		// group ID's match, but pointers differ.
+		// Since ::setGroup() is supposed to take
+		// ownership of the group, we will delete
+		// the new group here so we don't leak.
 		if(group != m_group)
 			delete group;
+			
 		group = 0;
 		return false;
 	}
@@ -1353,10 +1361,20 @@ bool PlayerWindow::setGroup(GLSceneGroup *group)
 	if(m_group)
 	{
 		disconnect(m_group->playlist(), 0, this, 0);
-		if(m_scene && m_group->lookupScene(m_scene->sceneId()))
+		if(m_scene && 
+		   m_group->lookupScene(m_scene->sceneId()))
 		{
 			// active scene is in this group, dont delete till active scene released;
+			if(m_oldGroup && 
+			   m_oldGroup != group)
+			{
+				//qDebug()<<"PlayerWindow::setGroup: leaking memory via m_oldGroup - "<<m_group<<" !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!";
+				m_oldGroup->deleteLater();
+			}
+			
 			m_oldGroup = m_group;
+			m_group = 0; // dont delete because it will be deleted via m_oldgroup later
+			
 //			qDebug()<<"PlayerWindow::setGroup: m_scene "<<m_scene<<" found in group "<<m_group<<", delaying deletion.";
 		}
 		else
@@ -1377,6 +1395,7 @@ bool PlayerWindow::setGroup(GLSceneGroup *group)
 		m_group->playlist()->play();
 	}
 	
+	//qDebug() << "PlayerWindow::setGroup(): end";
 	return true;
 }
 
@@ -1398,10 +1417,14 @@ void PlayerWindow::displayScene(GLScene *scene, int fadeSpeedOverride)
 // 	}
 
 	if(m_oldScene)
+	{
+		//qDebug() << "PlayerWindow::displayScene: Has old scene, finishing that one first";
 		opacityAnimationFinished(m_oldScene);
+	}
 
 	if(m_scene)
 		m_oldScene = m_scene;
+		
 	m_scene = scene;
 
 	if(m_group)
@@ -1414,11 +1437,14 @@ void PlayerWindow::displayScene(GLScene *scene, int fadeSpeedOverride)
 		m_xfadeSpeed = fadeSpeedOverride;
 	}
 	
-	removeScene(m_oldScene);
+	//qDebug() << "PlayerWindow::displayScene: Adding in new scene";
 	addScene(m_scene);
+	//qDebug() << "PlayerWindow::displayScene: starting removal of old scene";
+	removeScene(m_oldScene);
 	
 	if(fadeSpeedOverride > -1)
 		m_xfadeSpeed = oldFadeSpeed;
+	//qDebug() << "PlayerWindow::displayScene: Done with displayScene()";
 }
 
 void PlayerWindow::addOverlay(GLScene *scene)
@@ -1457,11 +1483,18 @@ void PlayerWindow::removeScene(GLScene *scene)
 		foreach(GLDrawable *gld, list)
 			if(gld->playlist()->size() > 0)
 				gld->playlist()->stop();
-
-		//qDebug() << "PlayerWindow::removeScene: fade out scene:"<<scene<<" at "<<m_xfadeSpeed<<"ms";
-		scene->setOpacity(0,true,m_xfadeSpeed); // animate fade out
-		// remove drawables from oldScene in finished slot
-		connect(scene, SIGNAL(opacityAnimationFinished()), this, SLOT(opacityAnimationFinished()));
+				
+		if(m_xfadeSpeed > 0)
+		{
+			//qDebug() << "PlayerWindow::removeScene: fade out scene:"<<scene<<" at "<<m_xfadeSpeed<<"ms";
+			scene->setOpacity(0,true,m_xfadeSpeed); // animate fade out
+			// remove drawables from oldScene in finished slot
+			connect(scene, SIGNAL(opacityAnimationFinished()), this, SLOT(opacityAnimationFinished()));
+		}
+		else
+		{
+			opacityAnimationFinished(scene);
+		}
 	}
 	else
 	{
@@ -1494,7 +1527,8 @@ void PlayerWindow::addScene(GLScene *scene, int zmod/*=1*/, bool fadeInOpac/*=tr
 	if(!scene)
 		return;
 	
-	scene->setOpacity(0); // no anim yet...
+	if(m_xfadeSpeed > 0)
+		scene->setOpacity(0); // no anim yet...
 
 	if(scene->sceneType())
 		scene->sceneType()->setLiveStatus(true);
@@ -1518,7 +1552,7 @@ void PlayerWindow::addScene(GLScene *scene, int zmod/*=1*/, bool fadeInOpac/*=tr
 			connect(drawable->playlist(), SIGNAL(currentItemChanged(GLPlaylistItem*)), this, SLOT(currentPlaylistItemChanged(GLPlaylistItem*)));
 			connect(drawable->playlist(), SIGNAL(playerTimeChanged(double)), this, SLOT(playlistTimeChanged(double)));
 			//m_glWidget->addDrawable(drawable);
-			//qDebug() << "PlayerWindow::displayScene: Adding drawable:"<<(QObject*)drawable;
+			qDebug() << "PlayerWindow::displayScene: Adding drawable:"<<(QObject*)drawable;
 
 			if(GLVideoDrawable *vid = dynamic_cast<GLVideoDrawable*>(drawable))
 			{
@@ -1552,7 +1586,7 @@ void PlayerWindow::addScene(GLScene *scene, int zmod/*=1*/, bool fadeInOpac/*=tr
 		}
 	}
 
-	if(fadeInOpac)
+	if(fadeInOpac && m_xfadeSpeed>0)
 	{
 		//qDebug() << "PlayerWindow::addScene: fade in scene:"<<scene<<" at "<<m_xfadeSpeed<<"ms";
 		scene->setOpacity(1,true,m_xfadeSpeed); // animate fade in
@@ -1606,6 +1640,9 @@ void PlayerWindow::opacityAnimationFinished(GLScene *scene)
 
 	if(scene == m_oldScene)
 		m_oldScene = 0;
+	else
+	if(m_oldScene)
+		qDebug() << "PlayerWindow::opacityAnimationFinished: Has m_oldScene pointer, but not our scene, so not setting to 0.";
 	
 	if(scene->sceneGroup() == m_oldGroup)
 	{

@@ -49,6 +49,7 @@ public:
 		
 signals: 
 	void receivedFrame();
+	void signalStatusChanged(bool);
 	
 public slots:
 	void disconnectVideoSource();
@@ -104,6 +105,7 @@ signals:
 
 public slots:
 	void frameReady();
+	void signalStatusChanged(bool);
 	
 protected slots:
 	void dataReady();

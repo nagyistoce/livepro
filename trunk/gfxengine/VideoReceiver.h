@@ -97,6 +97,9 @@ signals:
 	void currentFPS(int);
 	void currentSize(int, int);
 	
+	// Emitted only when connected to a CameraThread on the server side
+	void signalStatusChanged(bool);
+	
 private slots:
 	void dataReady();
 	void processBlock();
@@ -106,6 +109,8 @@ private slots:
 	void connectionReady();
 
 private:
+	void processReceivedMap(const QVariantMap&);
+	
 	QString cacheKey();
 	
 	QTime timestampToQTime(int);

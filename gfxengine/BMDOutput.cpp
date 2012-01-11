@@ -9,8 +9,7 @@
 #include "DeckLinkAPI.h"
 
 /// \class BMDOutputDelegate
-///	Provides integration with Blackmagic DeckLink-compatible device (such as the Intensity Prso) for
-///	outputing {VideoFrame}s.
+///	Provides integration with Blackmagic DeckLink-compatible device (such as the Intensity Pro) for outputing {VideoFrame}s.
 
 class BMDOutputDelegate : public IDeckLinkVideoOutputCallback
 {
@@ -77,7 +76,6 @@ private:
 };
 
 QStringList BMDOutputDelegate::s_knownDevices = QStringList();
-
 
 HRESULT BMDOutputDelegate::ScheduledFrameCompleted (IDeckLinkVideoFrame* /*completedFrame*/, BMDOutputFrameCompletionResult /*result*/)
 {
@@ -243,6 +241,7 @@ IDeckLinkDisplayMode *BMDOutputDelegate::GetDisplayModeByIndex(int selectedIndex
 
 	if (m_deckLinkOutput->GetDisplayModeIterator(&displayModeIterator) != S_OK)
 		goto bail;
+		
 	while (displayModeIterator->Next(&deckLinkDisplayMode) == S_OK)
 	{
 		const char *modeName;
@@ -303,6 +302,7 @@ void BMDOutputDelegate::StartRunning ()
 		bmdFormat8BitBGRA, 
 		bmdFrameFlagDefault,
 		&m_rgbFrame);
+	
 	if(res != S_OK)
 	{
 		qDebug() << "BMDOutputDelegate::StartRunning: Error creating RGB frame, res:"<<res;
@@ -316,6 +316,7 @@ void BMDOutputDelegate::StartRunning ()
 		bmdFormat8BitYUV, 
 		bmdFrameFlagDefault,
 		&m_yuvFrame);
+	
 	if(res != S_OK)
 	{
 		qDebug() << "BMDOutputDelegate::StartRunning: Error creating YUV frame, res:"<<res;

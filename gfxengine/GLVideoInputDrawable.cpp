@@ -62,9 +62,9 @@ void GLVideoInputDrawable::setVideoConnection(const QString& con)
 
 	setNetworkSource(map["net"]);
 
-	//qDebug() << "GLVideoInputDrawable::setVideoConnection: dev:"<<map["dev"];
+	//qDebug() << "GLVideoInputDrawable::setVideoConnection: dev:"<<map["dev"]; 
 	if(!map["dev"].isEmpty() &&
-	    m_isLocal[map["net"]] &&
+	   (m_isLocal[map["net"]] || map["net"].isEmpty()) &&
 	   !m_localHasError[map["dev"]])
 		setVideoInput(map["dev"]);
 
@@ -92,6 +92,7 @@ void GLVideoInputDrawable::setNetworkSource(const QString& src)
 	//if(!m_thread->connectTo(url.host(), url.port(), url.path(), url.userName(), url.password()))
 
 	bool isLocalHost = false;
+	
 	#ifndef Q_OS_WIN32
 	QList<QHostAddress> ipAddressesList = QNetworkInterface::allAddresses();
 	// use the first non-localhost IPv4 address
@@ -102,11 +103,15 @@ void GLVideoInputDrawable::setNetworkSource(const QString& src)
 			if(!isLocalHost)
 				isLocalHost = host == ipAddressesList.at(i).toString();
 	}
-
+	
 	// if we did not find one, use IPv4 localhost
 	if (!isLocalHost)
 		isLocalHost = host == QHostAddress(QHostAddress::LocalHost).toString();
 
+	if(!isLocalHost &&
+	   host == "localhost")
+		isLocalHost = true;
+	
 	// If we already tried opening a local device, force to use the network
 	if(m_source && m_source->hasError())
 	{

@@ -2261,7 +2261,8 @@ void GLVideoDrawable::updateTexture(bool secondSource)
 			return;
 		}
 		
-		if(!paramsChanged && 
+		if(m_frame &&
+		   !paramsChanged && 
 		  (!secondSource ? m_frame->hasTextureId() : m_frame2->hasTextureId()))
 		{
 			// GPU already has texture for this frame, dont upload
@@ -3124,13 +3125,9 @@ void GLVideoDrawable::paintGL()
 				glActiveTexture(GL_TEXTURE0);
 				//glBindTexture(GL_TEXTURE_2D, m_textureIds[0]);
 				if(m_frame)
-				{
 					glBindTexture(GL_TEXTURE_2D, m_frame->hasTextureId() ? m_frame->textureId() : m_textureIds[0]);
-				}
 				else
-				{
 					glBindTexture(GL_TEXTURE_2D, m_textureIds[0]);
-				}
 				
 
 				glActiveTexture(GL_TEXTURE1);
@@ -3184,7 +3181,10 @@ void GLVideoDrawable::paintGL()
 		//glTranslatef(0.0f,0.0f,-3.42f);
 
 		//glBindTexture(GL_TEXTURE_2D, m_textureIds[0]);
-		glBindTexture(GL_TEXTURE_2D, m_frame->hasTextureId() ? m_frame->textureId() : m_textureIds[0]);
+		if(m_frame)
+			glBindTexture(GL_TEXTURE_2D, m_frame->hasTextureId() ? m_frame->textureId() : m_textureIds[0]);
+		else
+			glBindTexture(GL_TEXTURE_2D, m_textureIds[0]);
 
 		QPolygonF points = transform.map(QPolygonF(target));
  		//qDebug() << "target: "<<target;

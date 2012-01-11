@@ -242,7 +242,7 @@ void PlayerWindow::loadConfig(const QString& configFile, bool verbose)
 		m_graphicsView = new ScaledGraphicsView();
 		m_graphicsScene = new QGraphicsScene();
 		m_graphicsView->setScene(m_graphicsScene);
-		m_graphicsView->setViewport(new QGLWidget(QGLFormat(QGL::SampleBuffers)));
+		//m_graphicsView->setViewport(new QGLWidget(QGLFormat(QGL::SampleBuffers)));
 		m_graphicsScene->setSceneRect(QRectF(0,0,1000.,750.));
 		m_graphicsView->setBackgroundBrush(Qt::black);
 		layout()->addWidget(m_graphicsView);
@@ -599,16 +599,39 @@ void PlayerWindow::loadConfig(const QString& configFile, bool verbose)
 	//QTimer::singleShot(1000, this, SLOT(setBlack()));
 	
 	
-	m_overlays = new GLSceneGroup();
-	
+ 	m_overlays = new GLSceneGroup();
+ 	
+ 	QString dev = "test:/opt/livepro/devel/data/2012-01-08 SS Test/test1.mpg";
+ 	
 // 	GLScene *scene = new GLScene();
-// 	GLImageDrawable *img = new GLImageDrawable();
-// 	img->setImageFile("Pm5544.jpg");
+// 	//GLImageDrawable *img = new GLImageDrawable();
+// 	//img->setImageFile("Pm5544.jpg");
+// 	//img->setRect(QRectF(10,10,200,200));
+// 	GLVideoInputDrawable *img = new GLVideoInputDrawable(dev);
 // 	img->setRect(QRectF(10,10,200,200));
+// 	
 // 	scene->addDrawable(img);
+// 	
+// 	addOverlay(scene);
 	
-	//addOverlay(scene);
-	
+// 	QString con = tr("dev=%1").arg(dev); //,net=localhost:7755";
+// 	
+// 	qDebug() << "Composing test scene group";
+// 	
+// 	GLSceneGroup *group = new GLSceneGroup();
+// 	GLScene *scene = new GLScene();
+// 	GLVideoInputDrawable *vidgld = new GLVideoInputDrawable(); //dev);
+// 	vidgld->setVideoConnection(con);
+// 	vidgld->setRect(QRectF(10,10,200,200));
+// 	scene->addDrawable(vidgld);
+// 	
+// 	qDebug() << "Done composing, adding overlay";
+// 	
+// 	int fadeSpeedOverride = 0;
+// 	if(setGroup(group))
+// 		setScene(scene, fadeSpeedOverride);
+// 	//addOverlay(scene);
+// 	
 }
 
 void PlayerWindow::setTestScene()
@@ -1556,7 +1579,7 @@ void PlayerWindow::addScene(GLScene *scene, int zmod/*=1*/, bool fadeInOpac/*=tr
 
 			if(GLVideoDrawable *vid = dynamic_cast<GLVideoDrawable*>(drawable))
 			{
-				//qDebug() << "GLWidget mode, item:"<<(QObject*)drawable<<", xfade length:"<<m_xfadeSpeed;
+				qDebug() << "GLWidget mode, item:"<<(QObject*)drawable<<", xfade length:"<<m_xfadeSpeed;
 				vid->setXFadeLength(m_xfadeSpeed);
 			}
 
@@ -1577,10 +1600,15 @@ void PlayerWindow::addScene(GLScene *scene, int zmod/*=1*/, bool fadeInOpac/*=tr
 			connect(drawable->playlist(), SIGNAL(currentItemChanged(GLPlaylistItem*)), this, SLOT(currentPlaylistItemChanged(GLPlaylistItem*)));
 			connect(drawable->playlist(), SIGNAL(playerTimeChanged(double)), this, SLOT(playlistTimeChanged(double)));
 			m_graphicsScene->addItem(drawable);
+			
+			if(drawable->rect().isNull())
+				//m_rect = QRectF(QPointF(0,0),canvasSize());
+				drawable->setRect(m_graphicsScene->sceneRect());
+
 	
 			if(GLVideoDrawable *vid = dynamic_cast<GLVideoDrawable*>(drawable))
 			{
-				//qDebug() << "QGraphicsView mode, item:"<<(QObject*)drawable<<", xfade length:"<<m_xfadeSpeed;
+				qDebug() << "QGraphicsView mode, item:"<<(QObject*)drawable<<", xfade length:"<<m_xfadeSpeed;
 				vid->setXFadeLength(m_xfadeSpeed);
 			}
 		}

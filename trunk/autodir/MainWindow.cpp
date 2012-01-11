@@ -31,19 +31,20 @@ MainWindow::MainWindow()
 	
 	player->connectPlayer();
 	
-	player->setScreenRect(QRect(1280,600,320,240));
+	//player->setScreenRect(QRect(1280,600,320,240));
 	//player->setScreenRect(QRect(600,200,640,480));
 	player->setCrossfadeSpeed(1250);
 	//player->setCrossfadeSpeed(0);
 	
 	QStringList inputs = QStringList() 
-		<< "10.10.9.90:7755"
-		<< "10.10.9.90:7756"
-		<< "10.10.9.90:7757";
+		<< "localhost:7755"
+		<< "localhost:7756"
+		<< "localhost:7757";
+	
 	m_cons = QStringList()
-		<< "dev=test:/opt/livepro/devel/data/2012-01-08 SS Test/test1.mpg,input=Default,net=10.10.9.90:7755"
-		<< "dev=test:/opt/livepro/devel/data/2012-01-08 SS Test/test2.mpg,input=Default,net=10.10.9.90:7756"
-		<< "dev=test:/opt/livepro/devel/data/2012-01-08 SS Test/test3.mpg,input=Default,net=10.10.9.90:7757";
+		<< "dev=test:/opt/livepro/devel/data/2012-01-08 SS Test/test1.mpg,input=Default,net=localhost:7755"
+		<< "dev=test:/opt/livepro/devel/data/2012-01-08 SS Test/test2.mpg,input=Default,net=localhost:7756"
+		<< "dev=test:/opt/livepro/devel/data/2012-01-08 SS Test/test3.mpg,input=Default,net=localhost:7757";
 		
  	GLScene *scene = new GLScene();
  	

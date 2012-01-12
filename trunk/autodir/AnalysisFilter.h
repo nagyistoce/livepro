@@ -4,6 +4,7 @@
 #include <QtGui>
 #include "VideoFilter.h"
 
+typedef QList<int> QIntList;
 class AnalysisFilter : public VideoFilter
 {
 	Q_OBJECT
@@ -25,6 +26,10 @@ public slots:
 	void setFps(int);
 	
 	void setDebugText(const QString& txt) { m_debugText = txt; }
+	
+	void setMaskImage(const QImage& image) { m_maskImage_preScale = image; }
+	
+	void setOutputImagePrefix(QString name) { m_outputImagePrefix = name; }
 
 signals:
 // 	void hsvStatsUpdated(int hMin, int hMax, int hAvg, 
@@ -53,11 +58,19 @@ protected:
 	
 	QImage m_lastImage;
 	QSize m_analysisWindow;
-	QList<int> m_motionNumbers;
-	QList<int> m_lastMotionNumbers;
-	QList<int> m_deltaNumbers;
+	QIntList m_motionNumbers;
+	QIntList m_lastMotionNumbers;
+	QIntList m_deltaNumbers;
+	QList<QIntList> m_deltaHistory;
+	int m_deltaHistoryMaxLength;
 	
 	QString m_debugText;
+	
+	QImage m_maskImage;
+	QImage m_maskImage_preScale;
+	
+	QString m_outputImagePrefix;
+	int m_outCounter;
 	
 };
 

@@ -2,11 +2,15 @@
 
 #include "VideoReceiver.h"
 
+#define CHANGE_THRESHOLD 75
+
 AnalysisFilter::AnalysisFilter(QObject* parent)
 	: VideoFilter(parent)
 	, m_frameAccumEnabled(true)
 	, m_frameAccumNum(3) // just a guess
-	, m_analysisWindow(4,4)
+	, m_analysisWindow(12,12)
+	, m_deltaHistoryMaxLength(-1)
+	, m_outCounter(0)
 {
 	//setIsThreaded(true);
 	connect(&m_fpsTimer, SIGNAL(timeout()), this, SLOT(generateOutputFrame()));
@@ -20,6 +24,7 @@ AnalysisFilter::~AnalysisFilter()
 void AnalysisFilter::setAnalysisWindow(QSize size)
 {
 	m_analysisWindow = size;
+	m_deltaHistoryMaxLength = -1; // recalculated later
 	m_lastImage = QImage();
 	m_lastMotionNumbers.clear();
 }
@@ -69,10 +74,39 @@ void AnalysisFilter::generateOutputFrame()
 {
 	if(!m_frame)
 		return;
-		
+	
 	QImage image = frameImage();
+	
+	if(m_deltaHistoryMaxLength < 0)
+		m_deltaHistoryMaxLength = image.width() / m_analysisWindow.width();
+		
+	if(!m_maskImage_preScale.isNull() &&
+	    m_maskImage.size() != image.size())
+	{
+	    m_maskImage = m_maskImage_preScale.scaled(image.size());
+	    qDebug() << "AnalysisFilter: Loaded mask, size: "<<m_maskImage.size();
+	}
+	
 	QImage intermImage = processImage(image);
 	QImage outputImage = generateImage(intermImage);
+	
+	if(!m_outputImagePrefix.isEmpty())
+	{
+		m_outCounter ++;
+		QString file = tr("%1-%2.png").arg(m_outputImagePrefix).arg(m_outCounter % 2 == 0 ? 0:1);
+		qDebug() << "AnalysisFilter: Writing raw image to "<<file;
+		image.save(file);
+	}
+	
+	
+	int msecLatency = m_frame->captureTime().msecsTo(QTime::currentTime());
+	
+	QPainter p(&outputImage);
+	p.setFont(QFont("",18,QFont::Bold));
+	p.setPen(Qt::blue);
+	p.drawText(5,outputImage.rect().bottom() - 5, tr("%1 ms").arg(msecLatency));
+	p.end();
+	
 	
 	VideoFrame *frame = new VideoFrame(outputImage, m_fpsTimer.isActive() ? m_fpsTimer.interval() : m_frame->holdTime());
 	
@@ -139,6 +173,12 @@ QImage AnalysisFilter::processImage(const QImage& image)
 		}
 	}
 	
+	if(!m_maskImage.isNull())
+	{
+		QPainter p(&imagePreScaled);
+		p.drawImage(0,0,m_maskImage);
+	}
+	
 	
 	QImage origScaled = imagePreScaled.scaled(m_analysisWindow.width(),m_analysisWindow.height(),Qt::IgnoreAspectRatio);
 	if(origScaled.format() != QImage::Format_RGB32)
@@ -162,6 +202,11 @@ QImage AnalysisFilter::processImage(const QImage& image)
 	int deltaSum = 0;
 	bool deltasChangedFlag = false;
 	
+	QColor hsvConverter;
+	int h,s,v;
+	
+	bool useHsvMode = true;
+	
 	int bytesPerLine = origScaled.bytesPerLine();
 	for(int y=0; y<m_analysisWindow.height(); y++)
 	{
@@ -177,8 +222,24 @@ QImage AnalysisFilter::processImage(const QImage& image)
 			int gray = -1;
 			if(r || g || b)
 			{
-				// These grayscale conversion values are just rough estimates based on my google research - adjust to suit your tastes
-				gray = (int)( r * .30 + g * .59 + b * .11 );
+				if(useHsvMode)
+				{
+					hsvConverter.setRgb(r,g,b);
+					hsvConverter.getHsv(&h,&s,&v);
+					
+					//// HACK scale Hue to be between 0-255 instead of 0-359
+					h = (int) ( (((double)h)/359.)*255 );
+					
+					// Changes in hue are more important, followed by changes in value are more important, then saturation
+					gray = (int)( h * .30 +
+					              s * .11 +
+					              v * .59 );
+				}
+				else
+				{
+					// These grayscale conversion values are just rough estimates based on my google research - adjust to suit your tastes
+					gray = (int)( r * .30 + g * .59 + b * .11 );
+				}
 			}
 			
 			m_motionNumbers << gray;
@@ -196,12 +257,15 @@ QImage AnalysisFilter::processImage(const QImage& image)
  				double partial = (double)(delta) / 100.0;
  				//delta *= 255;
  				delta = (int)(partial * 255.0);
+ 				
+ 				if(delta < CHANGE_THRESHOLD)
+ 					delta = 0;
 				
 				deltaList << delta;
 				deltaSum += delta;
 				
 				int currentDelta = deltaList[pointLocation] - m_deltaNumbers[pointLocation];
-				if(currentDelta > 3.0) // magic threshold
+				if(currentDelta > CHANGE_THRESHOLD) // magic threshold
 				{
 					deltasChangedFlag = true;
 				}
@@ -214,6 +278,10 @@ QImage AnalysisFilter::processImage(const QImage& image)
 	m_deltaNumbers = deltaList;
 	m_lastMotionNumbers = m_motionNumbers;	
 	m_lastImage = origScaled;
+	
+	m_deltaHistory.append(m_deltaNumbers);
+	if(m_deltaHistory.size() > m_deltaHistoryMaxLength)
+		m_deltaHistory.takeFirst();
 	
 	//qDebug() << "AnalysisFilter::processImage: deltaAvg:"<<deltaAvg;
 	
@@ -256,17 +324,51 @@ QImage AnalysisFilter::generateImage(const QImage& image)
 			QColor alphaRed(255,0,0,delta);
 			
 			p.fillRect(rect, alphaRed);
+			
+			int margin = 2;
+			int lineZeroY = rect.bottom(); // small margin from bottom of rect
+			int lineX = rect.left();
+			int lineLastY = lineZeroY;
+			
+			p.setPen(Qt::red);
+			
+			foreach(QIntList list, m_deltaHistory)
+			{
+				int delta = list[pointLocation];
+				if(delta <0)
+					delta = 0;
+				if(delta > 255)
+					delta = 255;
+					
+				delta = (int)(
+						((double)delta/255.0) * 
+						(rect.height() - (margin*2))
+					);
+				
+				int lineTop = lineZeroY - delta;
+				
+				p.drawLine(lineX,lineLastY,lineX+1,lineTop);
+				
+				lineLastY = lineTop;
+				lineX ++;
+			}
+			
+			p.setFont(QFont("",8));
+			p.setPen(Qt::green);
+			p.drawText( rect.left() + margin, rect.bottom() - margin, tr("%1").arg(delta));
 		}
 	}
 	
-	QFont font("",36,600);
+	p.setFont(QFont("",12,QFont::Bold));
 	if(!m_debugText.isEmpty())
 	{
 		p.setPen(Qt::black);
-		p.drawText(12, 32, m_debugText);
+		p.drawText(6, 15, m_debugText);
 		p.setPen(Qt::white);
-		p.drawText(10, 30, m_debugText);
+		p.drawText(5, 14, m_debugText);
 	}
+	
+	p.drawImage(outputImage.rect().bottomRight() - QPoint(64,64), m_lastImage.scaled(64,64,Qt::KeepAspectRatio));
 	
 	p.end();
 	

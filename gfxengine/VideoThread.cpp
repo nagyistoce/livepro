@@ -583,7 +583,9 @@ void VideoThread::readFrame()
 						
 						//enqueue(VideoFrame(m_frame,frameDelay));
 						
-						enqueue(new VideoFrame(frame.convertToFormat(QImage::Format_ARGB32),pts_delay*1000));
+						VideoFrame *frame2 = new VideoFrame(frame.convertToFormat(QImage::Format_ARGB32),pts_delay*1000);
+						frame2->setCaptureTime(QTime::currentTime());
+						enqueue(frame2);
 						
 // 						VideoFrame vidframe;
 // 						vidframe.isRaw = true;

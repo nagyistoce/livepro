@@ -197,7 +197,7 @@ public slots:
 	
 	void setSceneType(GLSceneType *);
 	
-	void setFadeSyncLeader(GLScene* leader) { m_fadeSyncLeader = leader; }
+	void setFadeSyncLeader(GLScene* leader);
 	
 signals:
 	void drawableAdded(GLDrawable*);
@@ -225,6 +225,8 @@ private slots:
 	void fadeTick();
 	
 protected:
+	void setFadeSyncFollower(GLScene *follower);
+
 	friend class GLVideoDrawable;
 	void recalcFadeOpacity(bool setOpac=true);
 
@@ -275,6 +277,7 @@ protected:
 	GLDrawable *m_rootObj;
 	
 	QPointer<GLScene> m_fadeSyncLeader;
+	QPointer<GLScene> m_fadeSyncFollower;
 };
 
 class GLSceneGroupPlaylist;

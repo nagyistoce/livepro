@@ -258,6 +258,7 @@ GLScene::GLScene(QObject *parent)
 	, m_group(0)
 	, m_rootObj(0)
 	, m_fadeSyncLeader(0)
+	, m_fadeSyncFollower(0)
 {
 	connect(&m_fadeTimer, SIGNAL(timeout()), this, SLOT(fadeTick()));
 }
@@ -822,24 +823,24 @@ void GLScene::setOpacity(double d, bool animate, double animDuration)
 
 void GLScene::fadeTick()
 {
-	//qDebug() << "GLScene::fadeTick: mark";
+	//qDebug() << "GLScene::fadeTick(): "<<this<<" mark, leader:"<<(QObject*)m_fadeSyncLeader<<", follower:"<<(QObject*)m_fadeSyncFollower;
 	if(!m_fadeClockActive)
 	{
 		if(m_fadeSyncLeader)
 		{
 			if(!m_fadeSyncLeader->m_fadeClockActive)
 			{
-				qDebug() << "GLScene::fadeTick: Waiting for fade fadeSyncLeader to start cross-fade";
+				//qDebug() << "GLScene::fadeTick(): "<<this<<" Waiting for fade fadeSyncLeader to start cross-fade";
 				return;
 			}
 			else
 			{
-				qDebug() << "GLScene::fadeTick: Fade leader running, starting too...";
+				//qDebug() << "GLScene::fadeTick(): "<<this<<" Fade leader running, starting too...";
 			}
 		}
 		else
 		{
-			qDebug() << "GLScene::fadeTick: No fade leader";
+			//qDebug() << "GLScene::fadeTick(): "<<this<<" No fade leader";
 		}
 		
 		
@@ -847,6 +848,10 @@ void GLScene::fadeTick()
 		m_fadeClock.start();
 		m_fadeActive = true;
 	}
+	
+	if(m_fadeSyncFollower)
+		m_fadeSyncFollower->fadeTick();
+
 	if(m_fadeClock.elapsed() >= m_crossfadeSpeed)
 	{
 		//qDebug() << "GLScene::fadeTick: fade ended ("<<m_fadeClock.elapsed()<<" > "<<m_crossfadeSpeed<<")";
@@ -861,19 +866,36 @@ void GLScene::fadeTick()
 	}
 }
 
+void GLScene::setFadeSyncLeader(GLScene *other)
+{
+	m_fadeSyncLeader = other;
+	if(other)
+		other->setFadeSyncFollower(this);
+}
+
+void GLScene::setFadeSyncFollower(GLScene *other)
+{
+	m_fadeSyncFollower = other;
+}
+
 void GLScene::recalcFadeOpacity(bool setOpac)
 {
 	if(!m_fadeClockActive)
 		return;
-		
-	int time = m_fadeClock.elapsed();
+
+	if(m_fadeSyncFollower)
+		m_fadeSyncFollower->recalcFadeOpacity(setOpac);
+
+	int time = m_fadeSyncLeader ? m_fadeSyncLeader->m_fadeClock.elapsed() : m_fadeClock.elapsed();
 
 	double progress = ((double)time) / ((double)m_crossfadeSpeed);
         double valueLength = fabs(m_endOpacity - m_startOpacity);
         double fadeVal = valueLength * progress;
         if(m_fadeDirection < 0)
         	fadeVal = m_startOpacity - fadeVal;
-	
+
+//	qDebug() << "GLScene::recalcFadeOpacity(): "<<this<<",  time:"<<time<<", progress:"<<progress<<", fadeVal:"<<fadeVal;	
+
         if(fadeVal < 0)
         	return;
         if(fadeVal > 1.0)
@@ -883,7 +905,7 @@ void GLScene::recalcFadeOpacity(bool setOpac)
 		setOpacity(fadeVal);
 	else
 	{
-		//qDebug() << "GLScene::recalcFadeOpacity (!setOpac): "<<fadeVal;
+//		qDebug() << "GLScene::recalcFadeOpacity (!setOpac): "<<fadeVal<<", elapsed:"<<elapsed
 		m_opacity = fadeVal;
 	}
 }

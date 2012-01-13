@@ -56,7 +56,7 @@ sub main
 # 			exit -1;
 # 		}
 		
-		if(!$StreamerPID)
+		#if(!$StreamerPID)
 		{
 			$OutputFile   = shift @ARGV || die "Usage: $0 encodeon <output file> [src size] [dest size]\n";
 			$StreamerFile = $OutputFile;
@@ -92,21 +92,21 @@ sub main
 # 				$streamer_input = $PipePairs[1]->{out};
 # 			}
 # 			
-			if(!fork)
-			{
+# 			if(!fork)
+# 			{
 				my $cmd = "streamer -c $streamer_input -s $dest_size -r 24 -o $StreamerFile -f jpeg $audio_config -t 3:00:00 2>&1 1>/dev/null";
 				print "Running command:\n$cmd\n";
 				system($cmd);
 				exit;
-			}
-			
-			sleep 1;
-			
-			my $pid = `pidof streamer`;
-			$pid =~ s/[\r\n]//g;
-			$StreamerPID = $pid;
-			
-			print "Streamer started, PID $pid\n";
+# 			}
+# 			
+# 			sleep 1;
+# 			
+# 			my $pid = `pidof streamer`;
+# 			$pid =~ s/[\r\n]//g;
+# 			$StreamerPID = $pid;
+# 			
+# 			print "Streamer started, PID $pid\n";
 			
 		}
 	}	

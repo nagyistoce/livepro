@@ -1,0 +1,20 @@
+Recording command:
+
+streamer -c /dev/video0 -s 640x480 -r 24 -o test.avi -f jpeg -F stereo -t 3:00:00 2>&1 1>/dev/null
+
+streamer is from xawtv console apps
+
+Conversion command:
+ffmpeg -i test.avi -b 2000000 -ab 256000 test.mpg
+
+
+
+Seems to work but audio not inputting correctly ... why?
+
+mplayer tv:// -tv driver=v4l2:norm=NTSC:input=1:amode=1:width=640:height=480:device=/dev/video0 -v
+
+# Now this works, after using kmix to change settings - and uses half cpu usage of streamer:
+
+mencoder tv:// -tv driver=v4l2:norm=NTSC:input=1:amode=0:width=640:height=480:device=/dev/video0:alsa:forceaudio:amode=0:adevice=hw.0,0 -fps 25 -ovc lavc -lavcopts vcodec=mpeg4:vbitrate=6000 -vf crop=624:464:6:4,pp=lb -oac mp3lame -lameopts cbr:br=64:mode=3 -mc 2.0  -o myOutput.avi
+
+

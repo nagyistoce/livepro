@@ -1461,9 +1461,9 @@ void PlayerWindow::displayScene(GLScene *scene, int fadeSpeedOverride)
 	}
 	
 	//qDebug() << "PlayerWindow::displayScene: Adding in new scene";
-	addScene(m_scene);
+	addScene(m_scene, 1, true, m_oldScene);
 	//qDebug() << "PlayerWindow::displayScene: starting removal of old scene";
-	removeScene(m_oldScene);
+	removeScene(m_oldScene); // it will use m_scene as the 'fade leader' - eg wait for m_scene to start fading in before fading out
 	
 	if(fadeSpeedOverride > -1)
 		m_xfadeSpeed = oldFadeSpeed;
@@ -1498,7 +1498,7 @@ void PlayerWindow::removeOverlay(GLScene *scene)
 	removeScene(scene);
 }
 
-void PlayerWindow::removeScene(GLScene *scene)
+void PlayerWindow::removeScene(GLScene *scene, GLScene *fadeLeader)
 {
 	if(scene)
 	{
@@ -1509,7 +1509,8 @@ void PlayerWindow::removeScene(GLScene *scene)
 				
 		if(m_xfadeSpeed > 0)
 		{
-			//qDebug() << "PlayerWindow::removeScene: fade out scene:"<<scene<<" at "<<m_xfadeSpeed<<"ms";
+			qDebug() << "PlayerWindow::removeScene: fade out scene:"<<scene<<" at "<<m_xfadeSpeed<<"ms, fadeLeader: "<<fadeLeader;
+			scene->setFadeSyncLeader(fadeLeader);
 			scene->setOpacity(0,true,m_xfadeSpeed); // animate fade out
 			// remove drawables from oldScene in finished slot
 			connect(scene, SIGNAL(opacityAnimationFinished()), this, SLOT(opacityAnimationFinished()));
@@ -1545,7 +1546,7 @@ void PlayerWindow::removeScene(GLScene *scene)
 	}
 }
 
-void PlayerWindow::addScene(GLScene *scene, int zmod/*=1*/, bool fadeInOpac/*=true*/)
+void PlayerWindow::addScene(GLScene *scene, int zmod/*=1*/, bool fadeInOpac/*=true*/, GLScene *fadeLeader)
 {
 	if(!scene)
 		return;
@@ -1617,6 +1618,7 @@ void PlayerWindow::addScene(GLScene *scene, int zmod/*=1*/, bool fadeInOpac/*=tr
 	if(fadeInOpac && m_xfadeSpeed>0)
 	{
 		//qDebug() << "PlayerWindow::addScene: fade in scene:"<<scene<<" at "<<m_xfadeSpeed<<"ms";
+		scene->setFadeSyncLeader(fadeLeader);
 		scene->setOpacity(1,true,m_xfadeSpeed); // animate fade in
 	}
 	

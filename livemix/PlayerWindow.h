@@ -165,8 +165,8 @@ private:
 	void sendReply(QVariantList);
 	
 	void displayScene(GLScene*, int fadeSpeedOverride=-1);
-	void addScene(GLScene*, int layer=1, bool fadeInOpac=true);
-	void removeScene(GLScene*);
+	void addScene(GLScene*, int layer=1, bool fadeInOpac=true, GLScene* fadeLeader=0);
+	void removeScene(GLScene*, GLScene* fadeLeader=0);
 
 	VariantMapServer *m_server;
 

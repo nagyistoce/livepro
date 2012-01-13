@@ -9,6 +9,7 @@ ffmpeg -i test.avi -b 2000000 -ab 256000 test.mpg
 
 
 
+
 Seems to work but audio not inputting correctly ... why?
 
 mplayer tv:// -tv driver=v4l2:norm=NTSC:input=1:amode=1:width=640:height=480:device=/dev/video0 -v
@@ -18,3 +19,16 @@ mplayer tv:// -tv driver=v4l2:norm=NTSC:input=1:amode=1:width=640:height=480:dev
 mencoder tv:// -tv driver=v4l2:norm=NTSC:input=1:amode=0:width=640:height=480:device=/dev/video0:alsa:forceaudio:amode=0:adevice=hw.0,0 -fps 25 -ovc lavc -lavcopts vcodec=mpeg4:vbitrate=6000 -vf crop=624:464:6:4,pp=lb -oac mp3lame -lameopts cbr:br=64:mode=3 -mc 2.0  -o myOutput.avi
 
 
+Basic FFMPEG command:
+ffmpeg -t 10 -f video4linux2 -s 320x240 -r 30 -vc 1 -tvstd NTSC -i /dev/video0 -f oss -i /dev/dsp -f mp4 webcam.mp4
+
+http://localhost:8090/feed1.ffmv
+
+streaming() {
+INRES="1680x1050" # input resolution
+OUTRES="1280x800"
+FPS="20" # target FPS
+QUAL="fast"  # one of the many FFMPEG preset
+STREAM_KEY="$1"
+
+ffmpeg -f video4linux2 -s 320x240 -r 30 -vc 1 -tvstd NTSC -i /dev/video0 -f oss -i /dev/dsp  -vcodec libx264 -vpre "fast" -s "320x240" -acodec libmp3lame -ab 128k -f flv http://localhost:8090/feed1.ffmv

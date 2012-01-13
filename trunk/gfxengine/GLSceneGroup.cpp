@@ -257,6 +257,7 @@ GLScene::GLScene(QObject *parent)
 	, m_sceneType(0)
 	, m_group(0)
 	, m_rootObj(0)
+	, m_fadeSyncLeader(0)
 {
 	connect(&m_fadeTimer, SIGNAL(timeout()), this, SLOT(fadeTick()));
 }
@@ -824,6 +825,24 @@ void GLScene::fadeTick()
 	//qDebug() << "GLScene::fadeTick: mark";
 	if(!m_fadeClockActive)
 	{
+		if(m_fadeSyncLeader)
+		{
+			if(!m_fadeSyncLeader->m_fadeClockActive)
+			{
+				qDebug() << "GLScene::fadeTick: Waiting for fade fadeSyncLeader to start cross-fade";
+				return;
+			}
+			else
+			{
+				qDebug() << "GLScene::fadeTick: Fade leader running, starting too...";
+			}
+		}
+		else
+		{
+			qDebug() << "GLScene::fadeTick: No fade leader";
+		}
+		
+		
 		m_fadeClockActive = true;
 		m_fadeClock.start();
 		m_fadeActive = true;

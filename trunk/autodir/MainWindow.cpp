@@ -24,7 +24,8 @@ MainWindow::MainWindow()
 	vbox->addWidget(glw);
 	vbox->setContentsMargins(0,0,0,0);
 	
-	QString host = "10.10.9.91";
+	//QString host = "10.10.9.91";
+	QString host = "localhost";
 	
 	PlayerConnection *player = new PlayerConnection();
 	player->setHost(host);

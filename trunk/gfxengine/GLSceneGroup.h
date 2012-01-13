@@ -197,6 +197,8 @@ public slots:
 	
 	void setSceneType(GLSceneType *);
 	
+	void setFadeSyncLeader(GLScene* leader) { m_fadeSyncLeader = leader; }
+	
 signals:
 	void drawableAdded(GLDrawable*);
 	void drawableRemoved(GLDrawable*);
@@ -271,6 +273,8 @@ protected:
 	GLSceneGroup *m_group;
 	
 	GLDrawable *m_rootObj;
+	
+	QPointer<GLScene> m_fadeSyncLeader;
 };
 
 class GLSceneGroupPlaylist;

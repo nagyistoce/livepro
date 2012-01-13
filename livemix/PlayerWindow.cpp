@@ -1463,7 +1463,7 @@ void PlayerWindow::displayScene(GLScene *scene, int fadeSpeedOverride)
 	//qDebug() << "PlayerWindow::displayScene: Adding in new scene";
 	addScene(m_scene, 1, true, m_oldScene);
 	//qDebug() << "PlayerWindow::displayScene: starting removal of old scene";
-	removeScene(m_oldScene); // it will use m_scene as the 'fade leader' - eg wait for m_scene to start fading in before fading out
+	removeScene(m_oldScene);//, m_scene); // it will use m_scene as the 'fade leader' - eg wait for m_scene to start fading in before fading out
 	
 	if(fadeSpeedOverride > -1)
 		m_xfadeSpeed = oldFadeSpeed;

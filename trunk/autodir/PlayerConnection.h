@@ -96,8 +96,8 @@ public:
 	
 	int useCount() { return m_useCount; }
 	
-	GLSceneGroup *lastGroup() { return m_group; }
-	GLScene *lastScene() { return m_scene; }
+	//const GLSceneGroup *lastGroup() { return m_group ? (GLSceneGroup*)m_group.data() : 0; }
+	//const GLScene *lastScene() { return m_group ? (GLScene*)m_scene.data() : 0; }
 	
 /* static: */
 	/// Sort by the useCount() property in ascending order (Z-A). For use as a 'LessThan' argument to a qSort() call (See http://doc.qt.nokia.com/latest/qtalgorithms.html#qSort)
@@ -210,8 +210,8 @@ private:
 	
 	VariantMapClient *m_client;	
 	
-	GLSceneGroup *m_group;
-	GLScene *m_scene;
+	QPointer<GLSceneGroup> m_group;
+	QPointer<GLScene> m_scene;
 	
 	bool m_isConnected;
 	QString m_lastError;

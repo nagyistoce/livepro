@@ -27,7 +27,7 @@ public slots:
 	
 	void setDebugText(const QString& txt) { m_debugText = txt; }
 	
-	void setMaskImage(const QImage& image) { m_maskImage_preScale = image; }
+	void setMaskImage(const QImage& image);
 	
 	void setOutputImagePrefix(QString name) { m_outputImagePrefix = name; }
 
@@ -68,6 +68,8 @@ protected:
 	
 	QImage m_maskImage;
 	QImage m_maskImage_preScale;
+	bool m_maskSet;
+	bool m_maskDirty;
 	
 	QString m_outputImagePrefix;
 	int m_outCounter;

@@ -68,16 +68,21 @@ MainWindow::MainWindow()
 		
 		#if 1
 		AnalysisFilter *filter = new AnalysisFilter();
-		filter->setVideoSource(rx);
-		drw->setVideoSource(filter);
-		filter->setProperty("num", counter++);
-		connect(filter, SIGNAL(motionRatingChanged(int)), this, SLOT(motionRatingChanged(int)));
-		m_filters << filter;
-		m_ratings << 0;
-		//filter->setOutputImagePrefix(tr("input%1").arg(port));
+		
 		QString file = tr("input%1-mask.png").arg(port);
 		if(QFileInfo(file).exists())
 			filter->setMaskImage(QImage(file));
+		
+		filter->setVideoSource(rx);
+		drw->setVideoSource(filter);
+		
+		filter->setProperty("num", counter++);
+		connect(filter, SIGNAL(motionRatingChanged(int)), this, SLOT(motionRatingChanged(int)));
+		
+		m_filters << filter;
+		m_ratings << 0;
+		
+		//filter->setOutputImagePrefix(tr("input%1").arg(port));
 		#else
 		drw->setVideoSource(rx);
 		#endif
@@ -151,6 +156,8 @@ void MainWindow::motionRatingChanged(int rating)
 			
 			m_ignoreCountdown = 30 * m_ratings.size(); // ignore next X frames * num sources
 			qDebug() << "MainWindow::motionRatingChanged: Switching to num:"<<maxNum<<", rated:"<<max;
+			
+			group->deleteLater();
 		}
 		else
 		{

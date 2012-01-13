@@ -367,6 +367,9 @@ void VideoReceiver::processBlock()
 	
 	if(m_byteCount >= 0)
 	{
+		//qDebug() << "VideoReceiver::processBlock: Port: "<<m_port<<": received "<<m_byteCount<<" bytes";
+	
+	
 		int frameSize = m_byteCount+HEADER_SIZE;
 		
 		while(m_dataBlock.size() >= frameSize)
@@ -416,6 +419,7 @@ void VideoReceiver::processBlock()
 					//qDebug() << "VideoReceiver::processBlock: Frame size changed: "<<frameSize;
 				}
 				
+				qDebug() << "VideoReceiver::processBlock: Port: "<<m_port<<": Received MAP block";
 				
 				QDataStream stream(&block, QIODevice::ReadOnly);
 				QVariantMap map;
@@ -435,7 +439,7 @@ void VideoReceiver::processBlock()
 				//qDebug() << "raw header scan: byteTmp:"<<byteTmp<<", size:"<<imgX<<"x"<<imgY;
 				
 				//qDebug() << "VideoReceiver::processBlock: raw header data:"<<headerData;
-				if(byteTmp > 1024*1024*1024 ||
+				if(byteTmp > 1024*1024*1024     ||
 					imgX > 1900 || imgX < 0 ||
 					imgY > 1900 || imgY < 0)
 				{
@@ -509,6 +513,8 @@ void VideoReceiver::processBlock()
 // 					frame->setSize(QSize(origX,origY));
 // 				else
 					frame->setSize(QSize(imgX,imgY));
+					
+				//qDebug() << "VideoReceiver::processBlock: Port: "<<m_port<<": received "<<m_byteCount<<" bytes, frame size:"<<frame->size()<<", consumers size:"<< m_consumerList.size();
 	
 				#ifdef DEBUG_VIDEOFRAME_POINTERS
 				qDebug() << "VideoReceiver::processBlock(): Enqueing new frame:"<<frame;

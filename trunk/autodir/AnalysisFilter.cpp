@@ -6,7 +6,8 @@
 
 AnalysisFilter::AnalysisFilter(QObject* parent)
 	: VideoFilter(parent)
-	, m_frameAccumEnabled(true)
+	, m_manualFps(0)
+	, m_frameAccumEnabled(false)
 	, m_frameAccumNum(3) // just a guess
 	, m_analysisWindow(12,12)
 	, m_deltaHistoryMaxLength(-1)
@@ -70,6 +71,122 @@ void AnalysisFilter::setFps(int fps)
 	}
 }
 
+static QImage qtEqualizeHist(const QImage& inImageTmp)
+{
+/*
+CV_IMPL void cvEqualizeHist( const CvArr* srcarr, CvArr* dstarr )
+{*/
+// 	CvMat sstub, *src = cvGetMat(srcarr, &sstub);
+// 	CvMat dstub, *dst = cvGetMat(dstarr, &dstub);
+	
+	// Make sure image is grayscale and the same size
+	//CV_Assert( CV_ARE_SIZES_EQ(src, dst) && CV_ARE_TYPES_EQ(src, dst) &&
+	//	CV_MAT_TYPE(src->type) == CV_8UC1 );
+	
+	QImage inImage = inImageTmp;
+	
+	if(inImage.format() != QImage::Format_RGB32)
+		inImage = inImage.convertToFormat(QImage::Format_RGB32);
+	
+	QImage outImage(inImage.size(), QImage::Format_RGB32);
+		
+	// No idea here
+// 	CvSize size = cvGetMatSize(src);
+// 	if( CV_IS_MAT_CONT(src->type & dst->type) )
+// 	{
+// 		size.width *= size.height;
+// 		size.height = 1;
+// 	}
+
+	int x, y;
+	const int hist_sz = 256;
+	int hist[3][hist_sz];
+	//memset(hist, 0, sizeof(hist));
+	for(int c=0;c<3;c++)
+		for(int i=0;i<256;i++)
+			hist[c][i] = 0;
+	
+// 	for( y = 0; y < size.height; y++ )
+// 	{
+// 		const uchar* sptr = src->data.ptr + src->step*y;
+// 		for( x = 0; x < size.width; x++ )
+// 		{
+// 			hist[sptr[x]]++;
+// 		}
+// 	}
+
+	int bytesPerLine = inImage.bytesPerLine();
+	for(int y=0; y<inImage.height(); y++)
+	{
+		const uchar *line = (const uchar*)inImage.scanLine(y);
+		for(int x=0; x<bytesPerLine; x+=4)
+		{
+			
+// 			const uchar a = line[x];
+// 			const uchar r = x+1 >= bytesPerLine ? 0 : line[x+1];
+// 			const uchar g = x+2 >= bytesPerLine ? 0 : line[x+2];
+// 			const uchar b = x+3 >= bytesPerLine ? 0 : line[x+3];
+
+			// Docs say QImage::Format_RGB32 stores colors as 0xffRRGGBB - 
+			// - but when testing with a 4x1 image of (white,red,green,blue),
+			//   I find that the colors (on linux 32bit anyway) were stored BGRA...is that only linux or is that all Qt platforms with Format_RGB32?  
+			const uchar b = line[x];
+			const uchar g = x+1 >= bytesPerLine ? 0 : line[x+1];
+			const uchar r = x+2 >= bytesPerLine ? 0 : line[x+2];
+// 			const uchar a = x+3 >= bytesPerLine ? 0 : line[x+3];
+			if(r || g || b)
+			{
+// 				// These grayscale conversion values are just rough estimates based on my google research - adjust to suit your tastes
+// 				int gray = (int)( r * .30 + g * .59 + b * .11 );
+// 				hist[gray] ++;
+				hist[0][b] ++;
+				hist[1][g] ++;
+				hist[2][r] ++;
+			}
+		}
+	}
+	
+	float scale = 255.f/(inImage.width()*inImage.height());
+	int sum[3] = {0,0,0};
+	uchar lut[3][hist_sz+1];
+	
+	for( int i = 0; i < hist_sz; i++ )
+	{
+		for(int c=0; c<3; c++)
+		{
+			sum[c] += hist[c][i];
+			int val = (int)(sum[c]*scale);
+			lut[c][i] = (uchar)(val);
+		}
+	}
+	
+	lut[0][0] = 0;
+	lut[1][0] = 0;
+	lut[2][0] = 0;
+	//int bytesPerLine = inImage.bytesPerLine();
+	for(int y=0; y<inImage.height(); y++)
+	{
+		const uchar *lineIn = (const uchar*)inImage.scanLine(y);
+		uchar *lineOut = (uchar*)outImage.scanLine(y);
+		
+		for(int x=0; x<bytesPerLine; x+=4)
+		{
+			lineOut[x] = lut[0][lineIn[x]];
+			if(x+1 < bytesPerLine)
+				lineOut[x+1] = lut[1][lineIn[x+1]];
+			if(x+2 < bytesPerLine)
+				lineOut[x+2] = lut[2][lineIn[x+2]];
+			
+// 		const uchar* sptr = src->data.ptr + src->step*y;
+// 		uchar* dptr = dst->data.ptr + dst->step*y;
+// 		for( x = 0; x < size.width; x++ )
+// 			dptr[x] = lut[sptr[x]];
+		}
+	}
+	
+	return outImage;
+}
+
 void AnalysisFilter::generateOutputFrame()
 {
 	if(!m_frame)
@@ -79,13 +196,16 @@ void AnalysisFilter::generateOutputFrame()
 	
 	if(m_deltaHistoryMaxLength < 0)
 		m_deltaHistoryMaxLength = image.width() / m_analysisWindow.width();
-		
-	if(!m_maskImage_preScale.isNull() &&
+	
+	if(!m_maskImage_preScale.isNull() && 
+	   !image.isNull() && 
 	    m_maskImage.size() != image.size())
 	{
 	    m_maskImage = m_maskImage_preScale.scaled(image.size());
-	    qDebug() << "AnalysisFilter: Loaded mask, size: "<<m_maskImage.size();
+	    qDebug() << "AnalysisFilter::generateOutputFrame: Loaded mask, size: "<<m_maskImage.size();
 	}
+	
+	image = qtEqualizeHist(image);
 	
 	QImage intermImage = processImage(image);
 	QImage outputImage = generateImage(intermImage);
@@ -141,12 +261,24 @@ void AnalysisFilter::drawBarRect(QPainter *p, int min, int max, int avg, int sta
 }
 	*/
 	
+void AnalysisFilter::setMaskImage(const QImage& image)
+{	
+	VideoReceiver *rx = dynamic_cast<VideoReceiver*>(videoSource());
+	//qDebug() << "AnalysisFilter::setMaskImage: rx:"<<(rx ? tr("%1:%2").arg(rx->host()).arg(rx->port()) : "(null)")<<", got mask image image, null?"<<image.isNull();
+	 
+	m_maskImage = QImage();
+	m_maskImage_preScale = image;
+}
+ 
 // Separating the processImage() and generateImage() routines allow us to 
 // optionally only generate the output image if their are consumers connected
 // to our filter. Not implemented as such yet, but designed this way so it's
 // easy to impl later. 
 QImage AnalysisFilter::processImage(const QImage& image)
 {
+	//VideoReceiver *rx = dynamic_cast<VideoReceiver*>(videoSource());
+	//qDebug() << "AnalysisFilter::processImage: rx:"<<(rx ? tr("%1:%2").arg(rx->host()).arg(rx->port()) : "(null)")<<", received image, null?"<<image.isNull();
+		
 	if(image.isNull())
 		return image;
 		
@@ -290,8 +422,8 @@ QImage AnalysisFilter::processImage(const QImage& image)
 		emit deltasChanged(m_deltaNumbers);
 		emit motionRatingChanged(deltaAvg);
 		
-		VideoReceiver *rx = dynamic_cast<VideoReceiver*>(videoSource());
-		qDebug() << "AnalysisFilter::processImage: rx:"<<(rx ? tr("%1:%2").arg(rx->host()).arg(rx->port()) : "(null)")<<", deltaAvg:"<<deltaAvg; 
+		/*VideoReceiver *rx = dynamic_cast<VideoReceiver*>(videoSource());
+		qDebug() << "AnalysisFilter::processImage: rx:"<<(rx ? tr("%1:%2").arg(rx->host()).arg(rx->port()) : "(null)")<<", deltaAvg:"<<deltaAvg;*/ 
 	}
 	
 	return imagePreScaled;
@@ -304,6 +436,8 @@ QImage AnalysisFilter::generateImage(const QImage& image)
 	
 	double scaleX = (double)image.size().width() / (double)m_analysisWindow.width();
 	double scaleY = (double)image.size().height() / (double)m_analysisWindow.height();
+	
+	bool drawChart = false;
 	
 	for(int wx=0; wx<m_analysisWindow.width(); wx++)
 	{
@@ -325,37 +459,40 @@ QImage AnalysisFilter::generateImage(const QImage& image)
 			
 			p.fillRect(rect, alphaRed);
 			
-			int margin = 2;
-			int lineZeroY = rect.bottom(); // small margin from bottom of rect
-			int lineX = rect.left();
-			int lineLastY = lineZeroY;
-			
-			p.setPen(Qt::red);
-			
-			foreach(QIntList list, m_deltaHistory)
+			if(drawChart)
 			{
-				int delta = list[pointLocation];
-				if(delta <0)
-					delta = 0;
-				if(delta > 255)
-					delta = 255;
+				int margin = 2;
+				int lineZeroY = rect.bottom(); // small margin from bottom of rect
+				int lineX = rect.left();
+				int lineLastY = lineZeroY;
+				
+				p.setPen(Qt::red);
+				
+				foreach(QIntList list, m_deltaHistory)
+				{
+					int delta = list[pointLocation];
+					if(delta <0)
+						delta = 0;
+					if(delta > 255)
+						delta = 255;
+						
+					delta = (int)(
+							((double)delta/255.0) * 
+							(rect.height() - (margin*2))
+						);
 					
-				delta = (int)(
-						((double)delta/255.0) * 
-						(rect.height() - (margin*2))
-					);
+					int lineTop = lineZeroY - delta;
+					
+					p.drawLine(lineX,lineLastY,lineX+1,lineTop);
+					
+					lineLastY = lineTop;
+					lineX ++;
+				}
 				
-				int lineTop = lineZeroY - delta;
-				
-				p.drawLine(lineX,lineLastY,lineX+1,lineTop);
-				
-				lineLastY = lineTop;
-				lineX ++;
+				p.setFont(QFont("",8));
+				p.setPen(Qt::green);
+				p.drawText( rect.left() + margin, rect.bottom() - margin, tr("%1").arg(delta));
 			}
-			
-			p.setFont(QFont("",8));
-			p.setPen(Qt::green);
-			p.drawText( rect.left() + margin, rect.bottom() - margin, tr("%1").arg(delta));
 		}
 	}
 	

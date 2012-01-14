@@ -24,8 +24,8 @@ MainWindow::MainWindow()
 	vbox->addWidget(glw);
 	vbox->setContentsMargins(0,0,0,0);
 	
-	//QString host = "10.10.9.91";
-	QString host = "localhost";
+	QString host = "10.10.9.91";
+	//QString host = "localhost";
 	
 	PlayerConnection *player = new PlayerConnection();
 	player->setHost(host);
@@ -36,19 +36,23 @@ MainWindow::MainWindow()
 	//player->setScreenRect(QRect(1280,600,320,240));
 	//player->setScreenRect(QRect(600,200,640,480));
 	player->setScreenRect(QRect(0,0,640,480));
-	player->setCrossfadeSpeed(300);
+	player->setCrossfadeSpeed(150);
 	//player->setCrossfadeSpeed(0);
 	
 	
 	QStringList inputs = QStringList() 
 		<< tr("%1:7755").arg(host)
 		<< tr("%1:7756").arg(host)
-		<< tr("%1:7757").arg(host);
+		<< tr("%1:7757").arg(host)
+		<< tr("%1:7758").arg(host)
+		<< tr("10.10.9.90:7755").arg(host);
 	
 	m_cons = QStringList()
 		<< tr("dev=test:/opt/livepro/devel/data/2012-01-08 SS Test/test1.mpg,input=Default,net=%1:7755").arg(host)
-		<< tr("dev=test:/opt/livepro/devel/data/2012-01-08 SS Test/test2.mpg,input=Default,net=%1:7756").arg(host)
-		<< tr("dev=test:/opt/livepro/devel/data/2012-01-08 SS Test/test3.mpg,input=Default,net=%1:7757").arg(host);
+		<< tr("dev=test:/opt/livepro/devel/data/2012-01-08 SS Test/test1-orig.mpg,input=Default,net=%1:7756").arg(host)
+		<< tr("dev=test:/opt/livepro/devel/data/2012-01-08 SS Test/test2.mpg,input=Default,net=%1:7757").arg(host)
+		<< tr("dev=test:/opt/livepro/devel/data/2012-01-08 SS Test/test3.mpg,input=Default,net=%1:7758").arg(host)
+		<< tr("dev=/dev/null,input=Default,net=10.10.9.90:7755").arg(host);
 		
  	GLScene *scene = new GLScene();
  	
@@ -116,7 +120,8 @@ void MainWindow::motionRatingChanged(int rating)
 	
 	m_ratings[num] += rating;
 	m_filters[num]->setDebugText(tr("%2 %1").arg(m_ratings[num]).arg(m_lastHighNum == num ? " ** LIVE **":""));
-			
+
+	int frameLimit = 69;
 			
 	if(m_ignoreCountdown-- <= 0)
 	{
@@ -135,6 +140,8 @@ void MainWindow::motionRatingChanged(int rating)
 				
 			counter ++;
 		}
+		
+		//maxNum = 4;
 		
 		if(m_lastHighNum != maxNum)
 		{
@@ -155,7 +162,7 @@ void MainWindow::motionRatingChanged(int rating)
 			m_filters[maxNum]->setDebugText(tr("** LIVE ** %1").arg(rating));
 			m_ratings[maxNum] = 0;
 			
-			m_ignoreCountdown = 30 * m_ratings.size(); // ignore next X frames * num sources
+			m_ignoreCountdown = frameLimit * m_ratings.size(); // ignore next X frames * num sources
 			qDebug() << "MainWindow::motionRatingChanged: Switching to num:"<<maxNum<<", rated:"<<max;
 			
 			group->deleteLater();
@@ -165,7 +172,7 @@ void MainWindow::motionRatingChanged(int rating)
 			//for(int i=0; i<m_ratings.size(); i++)
 				m_ratings[maxNum] = 0; 
 				
-			m_ignoreCountdown = 30 * m_ratings.size(); // ignore next X frames * num sources
+			m_ignoreCountdown = frameLimit * m_ratings.size(); // ignore next X frames * num sources
 			qDebug() << "MainWindow::motionRatingChanged: Max num the same:"<<maxNum<<", rated:"<<max<<", not switching!";
 		}
 	}

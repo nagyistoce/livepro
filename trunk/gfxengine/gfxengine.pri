@@ -193,6 +193,7 @@ HEADERS += BMDOutput.h \
            MjpegThread.h \
            RichTextRenderer.h \
            RssParser.h \
+	   ScreenVideoSource.h \
            VideoConsumer.h \
            VideoDifferenceFilter.h \
            VideoEncoder.h \
@@ -239,6 +240,7 @@ SOURCES += BMDOutput.cpp \
            MjpegThread.cpp \
            RichTextRenderer.cpp \
            RssParser.cpp \
+           ScreenVideoSource.cpp \
            VideoConsumer.cpp \
            VideoDifferenceFilter.cpp \
            VideoEncoder.cpp \

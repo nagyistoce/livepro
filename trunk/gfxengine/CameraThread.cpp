@@ -160,6 +160,7 @@ public: /* static */
  		list << "test:/opt/livepro/devel/data/2012-01-08 SS Test/test2.mpg";
  		list << "test:/opt/livepro/devel/data/2012-01-08 SS Test/test3.mpg";
 		list << "test:/opt/livepro/devel/data/2012-01-08 SS Test/test1.mpg";
+		list << "test:/opt/livepro/devel/data/2012-01-08 SS Test/test1-orig.mpg";
 		return list;
 	}
 	

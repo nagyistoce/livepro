@@ -1,30 +1,44 @@
 #include "MainWindow.h"
 
-#include "GLWidget.h"
-#include "GLSceneGroup.h"
-#include "GLVideoInputDrawable.h"
-#include "QtVideoSource.h"
-#include "GLVideoFileDrawable.h"
-#include "GLVideoDrawable.h"
 #include "VideoReceiver.h"
-
 #include "AnalysisFilter.h"
 #include "PlayerConnection.h"
+#include "GLSceneGroup.h"
+#include "GLVideoInputDrawable.h"
+
+/// One or the other, not both!
+//#define PREVIEW_OPENGL
+#define PREVIEW_STOCK
+
+#ifdef PREVIEW_STOCK
+#include "VideoWidget.h"
+#else
+#include "GLWidget.h"
+#include "GLVideoDrawable.h"
+#endif
 
 MainWindow::MainWindow()
 	: QWidget()
 	, m_lastHighNum(-1)
 	, m_ignoreCountdown(0)
 {
+	#ifdef PREVIEW_OPENGL
 	// Create the GLWidget to do the actual rendering
 	GLWidget *glw = new GLWidget(this);
+	#endif
 	
 	// Setup the layout of the window
+	#ifdef PREVIEW_STOCK
+	QHBoxLayout *hbox = new QHBoxLayout(this);
+	hbox->setContentsMargins(0,0,0,0);
+	
+	#else
 	QVBoxLayout *vbox = new QVBoxLayout(this);
 	vbox->addWidget(glw);
 	vbox->setContentsMargins(0,0,0,0);
+	#endif
 	
-	QString host = "10.10.9.91";
+	QString host = "10.10.9.90";
 	//QString host = "localhost";
 	
 	PlayerConnection *player = new PlayerConnection();
@@ -45,21 +59,23 @@ MainWindow::MainWindow()
 		<< tr("%1:7756").arg(host)
 		<< tr("%1:7757").arg(host)
 		<< tr("%1:7758").arg(host)
-		<< tr("10.10.9.90:7755").arg(host);
+		<< tr("10.10.9.90:7759");
 	
 	m_cons = QStringList()
 		<< tr("dev=test:/opt/livepro/devel/data/2012-01-08 SS Test/test1.mpg,input=Default,net=%1:7755").arg(host)
 		<< tr("dev=test:/opt/livepro/devel/data/2012-01-08 SS Test/test1-orig.mpg,input=Default,net=%1:7756").arg(host)
 		<< tr("dev=test:/opt/livepro/devel/data/2012-01-08 SS Test/test2.mpg,input=Default,net=%1:7757").arg(host)
 		<< tr("dev=test:/opt/livepro/devel/data/2012-01-08 SS Test/test3.mpg,input=Default,net=%1:7758").arg(host)
-		<< tr("dev=/dev/null,input=Default,net=10.10.9.90:7755").arg(host);
+		<< tr("dev=/dev/null,input=Default,net=10.10.9.90:7759");
 		
+ 	#ifdef PREVIEW_OPENGL
  	GLScene *scene = new GLScene();
  	
  	int frameWidth  = 1000,
  	    frameHeight =  750,
  	    x = 0,
  	    y = 0;
+ 	#endif
  	
  	int counter = 0;
  	foreach(QString connection, inputs)
@@ -69,7 +85,13 @@ MainWindow::MainWindow()
 		int port = parts[1].toInt();
 		
 		VideoReceiver *rx = VideoReceiver::getReceiver(host,port);
+		
+		#ifdef PREVIEW_OPENGL
 		GLVideoDrawable *drw = new GLVideoDrawable();
+		#else
+		VideoWidget *drw = new VideoWidget(this);
+		hbox->addWidget(drw);
+		#endif
 		
 		#if 1
 		AnalysisFilter *filter = new AnalysisFilter();
@@ -92,17 +114,22 @@ MainWindow::MainWindow()
 		drw->setVideoSource(rx);
 		#endif
 		
+		#ifdef PREVIEW_OPENGL
 		drw->setRect(QRectF(x,y,frameWidth,frameHeight));
 		x += frameWidth;
 		
 		// Finally, add the drawable
 		scene->addDrawable(drw);
+		#endif
 	}
 	
+	#ifdef PREVIEW_OPENGL
 	// Add the drawables to the GLWidget
 	scene->setGLWidget(glw);
 	
 	glw->setViewport(QRect(0,0,frameWidth * inputs.size(), 750));
+	#endif
+	
 	resize( 320 * inputs.size(), 240 );
 }
 

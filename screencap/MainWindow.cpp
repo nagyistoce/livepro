@@ -1,7 +1,6 @@
 #include "MainWindow.h"
 
-#include "GLWidget.h"
-#include "GLSceneGroup.h"
+#include "VideoWidget.h"
 #include "GLVideoInputDrawable.h"
 #include "QtVideoSource.h"
 #include "GLVideoFileDrawable.h"
@@ -17,9 +16,6 @@
 MainWindow::MainWindow()
 	: QWidget()
 {
-	// Create the GLWidget to do the actual rendering
-	GLWidget *glw = new GLWidget(this);
-	
 	// Load the config from SETTINGS_FILE
 	GetSettingsObject();
 
@@ -33,20 +29,8 @@ MainWindow::MainWindow()
 	}
 		
 	// Setup the layout of the window
-	QVBoxLayout *vbox = new QVBoxLayout(this);
-	vbox->addWidget(glw);
-	vbox->setContentsMargins(0,0,0,0);
-	
-	
-	GLScene *scene = new GLScene();
-	
-	int frameWidth = 1000, frameHeight = 750, x=0, y=0;
-	
-	//GLVideoInputDrawable *drw = 0;
-	//drw = new GLVideoInputDrawable();
-	//drw->setVideoInput("/dev/video1");
-	
-	//GLVideoFileDrawable *drw = new GLVideoFileDrawable("../data/2012-01-08 SS Test/test1.mpg");
+	QHBoxLayout *hbox = new QHBoxLayout(this);
+	hbox->setContentsMargins(0,0,0,0);
 	
 	// Finally, get down to actually creating the drawables 
 	// and setting their positions
@@ -116,10 +100,7 @@ MainWindow::MainWindow()
 		ScreenVideoSource *src = new ScreenVideoSource();
 		src->setCaptureRect(captureRect);
 		src->setFps(captureFps);
-		
-		// Create the preview drawable
-		GLVideoDrawable *drw = new GLVideoDrawable();
-		drw->setVideoSource(src);
+		m_caps << src; // store for setting capture rect later
 		
 		// Create the video transmitter object
 		VideoSender *sender = new VideoSender();
@@ -127,31 +108,94 @@ MainWindow::MainWindow()
 		sender->setTransmitSize (xmitSize);
 		sender->setTransmitFps  (xmitFps);
 		sender->start           (port); // this actually starts the transmission
+		m_senders << sender;
 		
 		// Output confirmation
 		QString ipAddress = VideoSender::ipAddress();
 		qDebug() << "Success: Input "<<i<<": Started video sender "<<tr("%1:%2").arg(ipAddress).arg(sender->serverPort()) << " for rect "<<src->captureRect();
 			
-		// Position the preview drawable
-		drw->setRect(QRectF(x,y,frameWidth,frameHeight));
-		x += frameWidth;
+		// Create the preview widget
+		VideoWidget *drw = new VideoWidget();
+		drw->setVideoSource(src);
+		drw->setProperty("num",i-1);
+		connect(drw, SIGNAL(clicked()), this, SLOT(changeRectSlot()));
 		
-		// Finally, add the drawable
-		scene->addDrawable(drw);
+		// Add widget to window
+		hbox->addWidget(drw);
 		
 		// Return to top level of settings file for next group
 		settings.endGroup();
 	}
 	
-	// Add the drawables to the GLWidget
-	scene->setGLWidget(glw);
-	
 	// Adjust size of viewport and window to match number of items we have
-	glw->setViewport(QRect(0,0,frameWidth * numItems, 750));
 	resize( 320 * numItems, 240 );
 }
 
 void MainWindow::resizeEvent(QResizeEvent*)
 {
 	//qDebug() << "Window Size: "<<width()<<" x "<<height(); 
+}
+
+class RectChangeWidget : public QLabel
+{
+public:
+	RectChangeWidget(int num, MainWindow *ptr)
+		: m_num(num), m_ptr(ptr)
+	{
+		QRect rect = ptr->currentCapRect(num);
+		setWindowTitle(tr("Input %1").arg(num+1));
+		show();
+		move(rect.top(), rect.left());
+		resize(rect.width(), rect.height());	
+		
+		setText("Select the area to capture by dragging this window and resizing it. Click inside the window when done. (Hint: On Linux, hold down ALT while using L or R mouse buttons to move or resize the window anywhere.)");
+		setWordWrap(true);
+		
+	}
+
+protected:
+	void mousePressEvent( QMouseEvent */*event*/)
+	{
+		m_ptr->setCapRect( m_num, frameGeometry() );
+		close();
+		deleteLater();
+	}
+	
+	
+
+private:
+	int m_num;
+	MainWindow *m_ptr;
+	QRect m_rect;
+
+};
+
+void MainWindow::changeRectSlot()
+{
+	QObject *send = sender();
+	(void*)new RectChangeWidget(send->property("num").toInt(), this);
+}
+
+void MainWindow::setCapRect(int num, QRect rect)
+{
+	m_caps[num]->setCaptureRect(rect);
+	qDebug() << "Changed input "<<(num+1)<<" capture rect to "<<rect;
+	
+	// Load the config from SETTINGS_FILE
+	GetSettingsObject();
+	
+	// Tell QSettings to read from the current input
+	QString group = tr("input%1").arg(num+1);
+	settings.beginGroup(group);
+	
+	// If xmit size was auto, auto adjust xmit size based on current rect
+	QString origXmitSize = settings.value("xmit-size","").toString();
+	if(origXmitSize.isEmpty())
+		m_senders[num]->setTransmitSize(rect.size());
+	
+}
+
+QRect MainWindow::currentCapRect(int num)
+{
+	return m_caps[num]->captureRect();
 }

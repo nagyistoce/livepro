@@ -8,6 +8,10 @@
 #include <QTime>
 #include <QProcess>
 
+int VideoSender::m_videoSenderPortAllocator = 7755;
+
+
+
 VideoSender::VideoSender(QObject *parent)
 	: QTcpServer(parent)
 	, m_adaptiveWriteEnabled(true)
@@ -45,6 +49,60 @@ VideoSender::~VideoSender()
 // 	==22564==    by 0x604650A: QCoreApplication::notifyInternal(QObject*, QEvent*) (qcoreapplication.cpp:704)
 // 	==22564==    by 0x60762C2: QTimerInfoList::activateTimers() (qcoreapplication.h:215)
 
+}
+
+QString VideoSender::ipAddress()
+{
+	QString ipAddress;
+
+	QList<QHostAddress> ipAddressesList = QNetworkInterface::allAddresses();
+	// use the first non-localhost IPv4 address
+	for (int i = 0; i < ipAddressesList.size(); ++i)
+	{
+		if (ipAddressesList.at(i) != QHostAddress::LocalHost &&
+		    ipAddressesList.at(i).toIPv4Address())
+		{
+			QString tmp = ipAddressesList.at(i).toString();
+
+                        // TODO: Need a way to find the *names* of the adapters - these
+                        // IPs are prefixes my VirtualBox/VMWare installs are using for their
+                        // virtual adapters. Need a way to skip virtual interfaces.
+                        if(!tmp.startsWith("192.168.122.") &&
+                           !tmp.startsWith("192.168.56."))
+				ipAddress = tmp;
+		}
+	}
+
+	// if we did not find one, use IPv4 localhost
+	if (ipAddress.isEmpty())
+		ipAddress = QHostAddress(QHostAddress::LocalHost).toString();
+	
+	return ipAddress;
+}
+
+int VideoSender::start(int port)
+{
+	if(port < 0)
+	{
+		bool done = false;
+		while(!done)
+		{
+			port = m_videoSenderPortAllocator ++;
+			if(listen(QHostAddress::Any,port))
+			{
+				done = true;
+			}
+		}
+	}
+	else
+	{
+		if(!listen(QHostAddress::Any,port))
+		{
+			qDebug() << "VideoSender::start(): Unable to open server on port"<<port<<": Is it already in use?"; 
+		}
+	}
+	
+	return port;
 }
 
 void VideoSender::setTransmitSize(const QSize& size)

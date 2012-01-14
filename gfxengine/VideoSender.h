@@ -42,10 +42,13 @@ public:
 	void sendUnlock() { m_sendMutex.unlock(); }
 	
 	void setVideoSource(VideoSource *source);
-// 	QString myAddress();
+ 	
+ 	static QString ipAddress();
 
 	int transmitFps() { return m_transmitFps; }
 	QSize transmitSize() { return m_transmitSize; }
+	
+	int start(int port=-1); // -1 = auto-allocate
 		
 signals: 
 	void receivedFrame();
@@ -85,6 +88,7 @@ private:
 	
 	bool m_consumerRegistered;
 	
+	static int m_videoSenderPortAllocator;
 };
 
 

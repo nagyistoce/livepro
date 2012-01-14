@@ -3,8 +3,6 @@
 #include "VideoSender.h"
 #include <QNetworkInterface>
 
-int VideoInputSenderManager::m_videoSenderPortAllocator = 7755;
-
 VideoInputSenderManager::VideoInputSenderManager(QObject *parent)
 	: QObject(parent)
 {
@@ -59,16 +57,7 @@ void VideoInputSenderManager::setSendingEnabled(bool flag)
 		foreach(QString dev, m_videoSenders.keys())
 		{
 			VideoSender *sender = m_videoSenders[dev];
-			bool done = false;
-			int port = -1;
-			while(!done)
-			{
-				port = m_videoSenderPortAllocator ++;
-				if(sender->listen(QHostAddress::Any,port))
-				{
-					done = true;
-				}
-			}
+			int port = sender->start(); // auto-allocate a port by leaving the port argument empty
 			
 			qDebug() << "VideoInputSenderManager::setSendingEnabled: Started video sender for "<<dev<<" on port "<<port;
 		}
@@ -93,29 +82,7 @@ QStringList VideoInputSenderManager::videoConnections(bool justNetString)
 		return QStringList();
 	}
 	
-	QString ipAddress;
-
-	QList<QHostAddress> ipAddressesList = QNetworkInterface::allAddresses();
-	// use the first non-localhost IPv4 address
-	for (int i = 0; i < ipAddressesList.size(); ++i)
-	{
-		if (ipAddressesList.at(i) != QHostAddress::LocalHost &&
-		    ipAddressesList.at(i).toIPv4Address())
-		{
-			QString tmp = ipAddressesList.at(i).toString();
-
-                        // TODO: Need a way to find the *names* of the adapters - these
-                        // IPs are prefixes my VirtualBox/VMWare installs are using for their
-                        // virtual adapters. Need a way to skip virtual interfaces.
-                        if(!tmp.startsWith("192.168.122.") &&
-                           !tmp.startsWith("192.168.56."))
-				ipAddress = tmp;
-		}
-	}
-
-	// if we did not find one, use IPv4 localhost
-	if (ipAddress.isEmpty())
-		ipAddress = QHostAddress(QHostAddress::LocalHost).toString();
+	QString ipAddress = VideoSender::ipAddress();
 	
 	QStringList list;
 	

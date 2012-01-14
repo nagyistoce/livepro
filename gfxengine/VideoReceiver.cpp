@@ -82,6 +82,7 @@ VideoReceiver::VideoReceiver(QObject *parent)
 // 	m_label->show();
 // #endif
 	setIsBuffered(false);
+	enqueue(new VideoFrame(QImage("dot.gif"),1000/30));
 }
 VideoReceiver::~VideoReceiver()
 {

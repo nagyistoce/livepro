@@ -1,0 +1,3 @@
+rxout
+
+Receive Video from a VideoSender (../gfxengine/VideoSender.cpp) over the network and output to a V4L-compatible output (e.x. vloopback)

@@ -17,6 +17,15 @@
 #include "GLVideoDrawable.h"
 #endif
 
+#define ENABLE_V4L_OUTPUT
+
+#ifdef ENABLE_V4L_OUTPUT
+// Output to a V4L device (used primarily with vloopback)
+#include "V4LOutput.h"
+#define FIRST_V4L_NUM 0
+#endif
+
+
 MainWindow::MainWindow()
 	: QWidget()
 	, m_lastHighNum(-1)
@@ -86,6 +95,18 @@ MainWindow::MainWindow()
 		
 		VideoReceiver *rx = VideoReceiver::getReceiver(host,port);
 		
+		#ifdef ENABLE_V4L_OUTPUT
+		// Multiply by two because V4L pipes go (in,out), eg:
+		// /dev/video0 (input) goes to /dev/video1 (output) - zeroth item in inputs
+		// /dev/video2 (input) goes to /dev/video3 (output) - first item in inputs
+		// /dev/video4 (input) goes to /dev/video5 (output) - second item in inputs
+		QString outputDev = tr("/dev/video%1").arg((counter * 2) + FIRST_V4L_NUM);
+		qDebug() << "Outputing connecting "<<connection<<" to video device "<<outputDev;
+		V4LOutput *output = new V4LOutput(outputDev);
+		output->setVideoSource(rx);
+		#endif
+		
+		
 		#ifdef PREVIEW_OPENGL
 		GLVideoDrawable *drw = new GLVideoDrawable();
 		#else
@@ -108,6 +129,7 @@ MainWindow::MainWindow()
 		
 		m_filters << filter;
 		m_ratings << 0;
+		
 		
 		//filter->setOutputImagePrefix(tr("input%1").arg(port));
 		#else

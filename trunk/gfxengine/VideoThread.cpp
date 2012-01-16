@@ -42,6 +42,11 @@ VideoThread::VideoThread(QObject *parent)
 	
 	m_run_time.restart();
 	
+	m_video_stream = -1;
+	m_audio_stream = -1;
+	
+	m_seekOnStart = -1;
+	
 	// primer...
 	enqueue(new VideoFrame(QImage("../glvidtex/dot.gif"),1000/30));
 // 	m_frame = NULL;
@@ -210,6 +215,9 @@ void VideoThread::run()
 	if(!m_startPaused)
 		play();
 	
+	if(m_seekOnStart > 0)
+		seek(m_seekOnStart, 0);
+	
 	//exec();
 	while(!m_killed)
 	{
@@ -285,6 +293,12 @@ void VideoThread::seek(int ms, int flags)
 {
 	//qDebug() << "VideoThread::seek()";
 // 	QMutexLocker locker(&mutex);
+	if(m_video_stream < 0)
+	{
+		m_seekOnStart = ms;
+		return;
+	}
+	
 	m_total_runtime = ms;
 	m_run_time.start();
 	m_frameTimer = ms;

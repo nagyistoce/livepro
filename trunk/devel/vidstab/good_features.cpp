@@ -183,19 +183,21 @@ int main(int argc, char *argv[]) {
 	
 	#else
 	
-	//QString file = "/home/josiah/Videos/2011-12-16_15-40-38_557.3gp";
-	QString file = "/data/home/josiah/Download/from.web/photos/sp 2.9.04/cimg0016.avi";
+	QString file = "/home/josiah/Videos/2011-12-16_15-40-38_557.3gp";
+	//QString file = "/data/home/josiah/Download/from.web/photos/sp 2.9.04/cimg0016.avi";
+	//QString file = "../data/20120115/sermon.wmv";
+	//QString file = "../data/20120115/webcam3.mp4";
 	VideoThread *videoThread = new VideoThread();
 	videoThread->setVideo(file);
 	videoThread->start(); // starts new thread and starts playing
-	
+	videoThread->seek(380 * 1000, 0);
 	VideoFramePtr curFrame;
 	
 	
 	#endif
 	
 	// Create a window in which the captured images will be presented
-	cvNamedWindow(VIDEO_WINDOW, 0); // allow the window to be resized
+	//cvNamedWindow(VIDEO_WINDOW, 0); // allow the window to be resized
 	
 	cvNamedWindow(CORNER_EIG, 0); // allow the window to be resized
 	//cvMoveWindow(CORNER_EIG, 330, 0);
@@ -424,7 +426,7 @@ int main(int argc, char *argv[]) {
 	
 			
 		// Default Stabilizer Settings:
-		BOOL cleanOutput = FALSE;		// Whether to show overlayed data on the video such as motion vectors.
+		BOOL cleanOutput = TRUE;		// Whether to show overlayed data on the video such as motion vectors.
 		BOOL showVectorsUsed = TRUE;		// Whether to display the Local Motion Vectors that were used for determining the Global Motion Vector.
 		BOOL showCompensation = TRUE;		// Whether to show the compensated image or the original image.
 		BOOL comparePrevFrame = TRUE;		// Whether to do Optical Flow compared to the previous frame or the first frame.
@@ -446,15 +448,15 @@ int main(int argc, char *argv[]) {
 		IplImage *imageStabilized = stabilizeImage(&stabilizer, image);
 		
 		// Draw a rect to show the desired ROI
-		if (!cleanOutput) 
-		{
-			qDebug() << "ROI: "<<stabilizer.roi.x << stabilizer.roi.y <<  stabilizer.roi.width << stabilizer.roi.height;
-			cvRectangle(imageStabilized, 
-				cvPoint(stabilizer.roi.x, stabilizer.roi.y), 
-				cvPoint(stabilizer.roi.x + stabilizer.roi.width-1, stabilizer.roi.y + stabilizer.roi.height-1), 
-				CV_RGB(255,255,0), 1, 8, 0
-			);	// yellow border
-		}
+// 		if (!cleanOutput) 
+// 		{
+// 			//qDebug() << "ROI: "<<stabilizer.roi.x << stabilizer.roi.y <<  stabilizer.roi.width << stabilizer.roi.height;
+// 			cvRectangle(imageStabilized, 
+// 				cvPoint(stabilizer.roi.x, stabilizer.roi.y), 
+// 				cvPoint(stabilizer.roi.x + stabilizer.roi.width-1, stabilizer.roi.y + stabilizer.roi.height-1), 
+// 				CV_RGB(255,255,0), 1, 8, 0
+// 			);	// yellow border
+// 		}
 		
 		cvShowImage( CORNER_EIG, imageStabilized );
 		
@@ -556,7 +558,7 @@ int main(int argc, char *argv[]) {
 		CV_SWAP( prev_pyramid, pyramid, swap_temp );
 		CV_SWAP( points[0], points[1], swap_points );
 		need_to_init = 0;
-		cvShowImage( CORNER_EIG, image );
+		//cvShowImage( CORNER_EIG, image );
 	
 		c = cvWaitKey(10);
 		if( (char)c == 27 )
@@ -772,7 +774,7 @@ int main(int argc, char *argv[]) {
 
 	// Release the capture device housekeeping
 	cvReleaseCapture( &capture);
-	cvDestroyWindow(VIDEO_WINDOW);
+	//cvDestroyWindow(VIDEO_WINDOW);
 	cvDestroyWindow(CORNER_EIG);
 // Disable harris processing
 //	cvDestroyWindow(CORNER_HARRIS);

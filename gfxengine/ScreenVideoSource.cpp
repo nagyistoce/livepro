@@ -34,7 +34,7 @@ void ScreenVideoSource::captureScreen()
 	counter ++;
 	
 	QImage image = pixmap.toImage();
-	
+
 // 	QImage image2 = pixmap.toImage();
 // 	//if(image.format() != QImage::Format_ARGB32)
 // 	//image = image.convertToFormat(QImage::Format_RGB32).scaled(240,180);

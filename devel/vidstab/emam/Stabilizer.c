@@ -32,7 +32,7 @@ double OPFLOW_EPSILON = 0.03;		// When the Optical Flow search should stop.
 int OPFLOW_PYR_LEVEL = 4;		// How many pyramid levels should the Optical Flow use, to detect faster movements.
 int CORNER_WIN_SIZE = 10;		// Size of the window for Sub-pixel corner search.
 int OPFLOW_WIN_SIZE = 10;		// Size of the window for Optical Flow search.
-BOOL REPLICATE_BORDERS = TRUE;		// Whether the border pixels should be replicated, or just set to a default color.
+BOOL REPLICATE_BORDERS = FALSE;		// Whether the border pixels should be replicated, or just set to a default color.
 
 
 
@@ -226,28 +226,31 @@ IplImage* stabilizeImage(StabilizerData *s, IplImage *image)
 
 		// Now that atleast the first call to cvCalcOpticalFlowPyrLK() has occured, reuse the PyrA data.
 		if (s->comparePrevFrame)
-            s->flags |= CV_LKFLOW_PYR_A_READY;
+			s->flags |= CV_LKFLOW_PYR_A_READY;
 
-		// Process each point
-        for( i = k = 0; i < s->count; i++ )
-        {
+			// Process each point
+		for( i = k = 0; i < s->count; i++ )
+		{
 			// Delete the points where the optical flow wasn't found for some reason, due to wierd movement or offscreen.
-			if( !s->status[i] ) {
+			if( !s->status[i] ) 
+			{
 				s->valid[i] = FALSE;	// mark it as an invalid point from now on.
 				//printf("Stabilizer: deleting bad point %d at (%f,%f).\n", i, pointsCurr[i].x, pointsCurr[i].y);
-				if (s->pointsCurr[i].x > 0.0 && s->pointsCurr[i].y > 0.0 && !s->cleanOutput) {
+				if (s->pointsCurr[i].x > 0.0 && s->pointsCurr[i].y > 0.0 && !s->cleanOutput) 
+				{
 					cvCircle( image, cvPointFrom32f(s->pointsCurr[i]), 5, CV_RGB(255,0,0), -1, 8,0);	// show bad points as Red
 					cvCircle( image, cvPointFrom32f(s->pointsCurr[i]), 15, CV_RGB(255,0,0), 1, 8,0);	// show bad points as Red
 				}
-                continue;
+                		continue;
 			}
+			
 			// Ignore points that were previously marked invalid.
 			if ( !s->valid[i] )
 				continue;
 
 			// Count how many valid points are available.
 			k++;
-        }
+        	}
 		STOP_TIMING(opticalFlow);	// Stop the timing.
 
 		// Delete the points that had a bad status.
@@ -384,7 +387,7 @@ IplImage* stabilizeImage(StabilizerData *s, IplImage *image)
 						// If this Local Motion Vector is in the most popular cell bin (used for the Global Motion Vector),
 						// then draw it differently.
 						if (indexX == indexXused && indexY == indexYused) {
-							lineColor = CV_RGB(255,255,255);	// Local Motion Vectors that are used for the GMV are shown as white.
+							lineColor = CV_RGB(0,0,255);	// Local Motion Vectors that are used for the GMV are shown as /*white*/ blue.
 							pointColor = CV_RGB(0,255,0);		// draw the used points as bright green.
 						}
 					}
@@ -474,11 +477,13 @@ IplImage* stabilizeImage(StabilizerData *s, IplImage *image)
 			s->roi.x = 0;
 		else	// If camera is moving left, then move the image to the right of the view.
 			s->roi.x = image->width - s->roi.width;
+			
 		// If camera is moving down, then move the image to the top of the view.
 		if (s->roi.y + s->roi.height-1 >= image->height-1)
 			s->roi.y = 0;
 		else	// If camera is moving up, then move the image to the bottom of the view.
 			s->roi.y = image->height - s->roi.height;
+			
 		// Make sure the displayed image is within the viewing dimensions
 		s->roi = cropRect(s->roi, image->width, image->height);
 
@@ -506,7 +511,10 @@ IplImage* stabilizeImage(StabilizerData *s, IplImage *image)
 
 	// If no output has been generated, then show the input image
 	if (!s->showCompensation)
+	{
 		cvCopy(image, s->imageOut, NULL);
+		//printf("No compensation shown\n");
+	}
 
 	// Use the current data as the "previous frame" on the next iteration, and re-use the "previous frame" array as the current frame next time (double-buffering).
 	if (s->need_new_corners || s->comparePrevFrame ) {

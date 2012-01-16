@@ -150,6 +150,8 @@ private:
 	int m_frameSmoothAccum;
 	
 	bool m_startPaused;
+	
+	int m_seekOnStart;
 };
 
 

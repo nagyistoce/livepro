@@ -24,6 +24,10 @@ CvPoint pt;
 int originalCount = 0;
 int deltaSum = 0;
 
+int changeRateCounters[MAX_COUNT];
+int ampCounters[MAX_COUNT];
+int frameCounter = 0;
+
 //#define RESET_RATIO 0.75
 #define RESET_RATIO 0.60
 #define DELTA_COUNTER_DECAY 0.9
@@ -93,12 +97,18 @@ QImage trackPoints(QImage img)
 		{
 			valid[i] = true;
 			deltaCounters[i] = 0;
+			changeRateCounters[i] = 0;
+			ampCounters[i] = 0;
 		}
 		
 		originalCount = count;
+		frameCounter = 0;
+
 	}
 	else if( count > 0 )
 	{
+		frameCounter ++;
+		
 		cvCalcOpticalFlowPyrLK( prev_grey, grey, prev_pyramid, pyramid, 
 			points[0], points[1], count, cvSize(win_size,win_size), 3, status, 0,
 			cvTermCriteria(CV_TERMCRIT_ITER|CV_TERMCRIT_EPS,20,0.03), flags );
@@ -137,9 +147,12 @@ QImage trackPoints(QImage img)
 // 		qDebug() << "Found "<<results.size()<<" faces";
 		
 	//int min = 25;
-	int bucketCutoff = 10;
+	int bucketCutoff = 10; /// Magic number
 	
 	deltaSum = 0;
+	
+	double rateCutoff = 1.0; /// Magic number
+	int fps = 30; /// Just a guess
 	
 	// Calculate movement vectors (distances between last positions)
 	for (i=0; i<originalCount; i++) 
@@ -157,13 +170,45 @@ QImage trackPoints(QImage img)
 			// Make sure its not massive
 			distSquared = dX*dX + dY*dY;
 			
+			
+			/// All this changeRate and ampCounters stuff is an attempt
+			// to filter out points that are just oscilating back and forth very fast - so far it works maybe 10% of the time.
+			// Need to do better!
+			
+			if(frameCounter > fps)
+			{
+				changeRateCounters[i] --;
+				if(changeRateCounters[i]<0)
+					changeRateCounters[i]= 0;
+				
+				ampCounters[i] -= ampCounters[i]/fps;
+			}
+
+			if(distSquared > 1)
+			{
+				changeRateCounters[i] ++;
+				ampCounters[i] += distSquared; 
+			}
+			
+			double ampAvg = (double)ampCounters[i] / (double)fps;
+			
+			double avgChangeRate = (double)changeRateCounters[i] / (double)fps; 
+			//if(avgChangeRate > rateCutoff ||
+			//   ampAvg > 100)
+			//if(ampAvg < 4 && avgChangeRate > 0)/// MORE magic numbers 
+			//	qDebug() << "Avg change rate for "<<i<<": "<<avgChangeRate<<", "<<changeRateCounters[i]<<ampAvg;
+			
+			
 			// Decay previous value
 			deltaCounters[i] *= DELTA_COUNTER_DECAY; // 0.9
 			// Add distance change
-			deltaCounters[i] += abs(distSquared) * DELTA_COUNTER_DECAY;
+			if(avgChangeRate <= rateCutoff ||
+			   (ampAvg < 100 && ampAvg > 4)) /// MORE magic numbers
+				deltaCounters[i] += abs(distSquared) * DELTA_COUNTER_DECAY;
 			
 			if(deltaCounters[i] < 0)
 				deltaCounters[i] = 0;
+				
 			
 			//deltaCounters[i] = abs(distSquared);
 			
@@ -239,7 +284,7 @@ QImage trackPoints(QImage img)
 	
 	int moveAvg = moveSum / (!moveCount?1:moveCount);
 	
-	qDebug() << "moveAvg:"<<moveAvg;
+	//qDebug() << "moveAvg:"<<moveAvg;
 	m_history << moveAvg;
 	if(m_history.size() > imageCopy.size().width())
 		m_history.takeFirst();
@@ -255,7 +300,7 @@ QImage trackPoints(QImage img)
 	//if(historyMax > 10000)
 	historyMax = 10000;
 	
-	qDebug() << "historyMax:"<<historyMax;
+	//qDebug() << "historyMax:"<<historyMax;
 	
 	int lineMaxHeight = imageCopy.size().height() * .25;
 	int margin = 0;
@@ -333,7 +378,7 @@ QImage trackPoints(QImage img)
 	p.drawText( bucketLeft + 5, top + bucketHeight, QString("Counted>0: %1").arg( includeCount ) );
 	
 	
-	//qDebug() << "------";
+	qDebug() << "------";
 	
 	
 	

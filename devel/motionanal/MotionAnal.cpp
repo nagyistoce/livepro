@@ -18,8 +18,8 @@ MouthyTest::MouthyTest(QWidget *parent)
 	#if 1
 	// Use a video file for input
 	VideoThread * source = new VideoThread();
-	source->setVideo("../data/20120115/sermon.wmv");
-	//source->setVideo("../data/20120115/webcam4.mp4");
+	//source->setVideo("../data/20120115/sermon.wmv");
+	source->setVideo("../data/20120115/webcam4.mp4");
 	source->start();
 	// 380
 	source->seek(350 * 1000, 0);

@@ -9,6 +9,7 @@ MouthyTest::MouthyTest(QWidget *parent)
 	: QWidget(parent)
 	, m_videoWidget(0)
 	, m_source(0)
+	, m_beepCounter(0)
 {
 	// Setup the layout of the window
 	QVBoxLayout *m_vbox = new QVBoxLayout(this);
@@ -18,9 +19,10 @@ MouthyTest::MouthyTest(QWidget *parent)
 	#if 1
 	// Use a video file for input
 	VideoThread * source = new VideoThread();
-	//source->setVideo("../data/20120115/sermon.wmv");
-	source->setVideo("../data/20120115/webcam4.mp4");
+	source->setVideo("../data/20120115/sermon.wmv");
+	//source->setVideo("../data/20120115/webcam4.mp4");
 	source->start();
+	//qApp->beep();
 	// 380
 	source->seek(350 * 1000, 0);
 	
@@ -44,6 +46,7 @@ MouthyTest::MouthyTest(QWidget *parent)
 	// Add face filter
 	m_filter = new TrackingFilter(this);
 	m_filter->setVideoSource(source);
+	connect(m_filter, SIGNAL(historyAvgZero()), this, SLOT(beep()));
 	
 	m_videoWidget->setVideoSource(m_filter);
 	
@@ -58,3 +61,13 @@ MouthyTest::MouthyTest(QWidget *parent)
 }
 //47,000,000 datasources
 //57 tril/nano
+
+void MouthyTest::beep()
+{
+	if(m_beepCounter -- < 0)
+	{
+		m_beepCounter = 10;
+		system("aplay alert.wav &");
+		qDebug() << "Beep";
+	}
+}

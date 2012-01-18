@@ -1,4 +1,4 @@
-#include "MouthyTest.h"
+#include "MotionAnal.h"
 #include <QApplication>
 
 int main(int argc, char **argv)

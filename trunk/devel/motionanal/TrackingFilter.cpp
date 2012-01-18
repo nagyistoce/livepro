@@ -169,12 +169,13 @@ QImage trackPoints(QImage img)
 			
 			// Make sure its not massive
 			distSquared = dX*dX + dY*dY;
+			deltaCounters[i] *= DELTA_COUNTER_DECAY; // 0.9
 			
 			
 			/// All this changeRate and ampCounters stuff is an attempt
 			// to filter out points that are just oscilating back and forth very fast - so far it works maybe 10% of the time.
 			// Need to do better!
-			
+			/*
 			if(frameCounter > fps)
 			{
 				changeRateCounters[i] --;
@@ -200,10 +201,10 @@ QImage trackPoints(QImage img)
 			
 			
 			// Decay previous value
-			deltaCounters[i] *= DELTA_COUNTER_DECAY; // 0.9
 			// Add distance change
 			if(avgChangeRate <= rateCutoff ||
 			   (ampAvg < 100 && ampAvg > 4)) /// MORE magic numbers
+			*/
 				deltaCounters[i] += abs(distSquared) * DELTA_COUNTER_DECAY;
 			
 			if(deltaCounters[i] < 0)
@@ -308,23 +309,47 @@ QImage trackPoints(QImage img)
 	int lineX = margin;
 	int lineLastY = lineZeroY;
 	
+	int lastLineHeight = 0;
+	
+	int textInc = 10;
+	
 	p.setPen(Qt::red);
 	for(i=0; i<m_history.size(); i++)
 	{
+		p.setPen(Qt::red);
+		
 		int value = m_history[i];
+		double ratio = ((double)value/(double)historyMax);
 		int lineHeight = (int)(
-					((double)value/(double)historyMax) * 
+					ratio *  
 					(lineMaxHeight - (margin*2))
 				);
 			
 		int lineTop = lineZeroY - lineHeight;
 		p.drawLine(i,lineLastY,i+1,lineTop);
 		
+		if(i % textInc == 0)
+		{
+			p.setPen(QColor(0,0,0, (int)((double)(i/textInc) / (double)(imageCopy.size().width()/textInc) * 255.f)));
+			p.drawText( QPoint( i+2, lineTop+1 ), QString("%1").arg((int)(ratio*100)) );
+			p.setPen(QColor(255,255,255, (int)((double)(i/textInc) / (double)(imageCopy.size().width()/textInc) * 255.f)));
+			p.drawText( QPoint( i+1, lineTop ), QString("%1").arg((int)(ratio*100)) );
+		}
+		
 		//qDebug() << "value:"<<value<<", lineHeight:"<<lineHeight<<", lineMaxHeight:"<<lineMaxHeight<<", margin:"<<margin<<", lineTop:"<<lineTop;
 		
 		lineLastY = lineTop;
+		//lastLineHeight = lineHeight;
+		lastLineHeight = ratio*100;
 	}
-	
+	/*
+	QFont font = p.font();
+	p.setFont(QFont("", 24, QFont::Bold));
+	p.setPen(Qt::black);
+	p.drawText(imageCopy.rect().bottomRight() - QPoint(44, 4), QString("%1").arg(lastLineHeight));
+	p.setPen(Qt::white);
+	p.drawText(imageCopy.rect().bottomRight() - QPoint(45, 5), QString("%1").arg(lastLineHeight));
+	p.setFont(font);*/
 	
 	int bucketHeight = 10;
 	int bucketLeft   = 10;
@@ -378,7 +403,7 @@ QImage trackPoints(QImage img)
 	p.drawText( bucketLeft + 5, top + bucketHeight, QString("Counted>0: %1").arg( includeCount ) );
 	
 	
-	qDebug() << "------";
+	//qDebug() << "------";
 	
 	
 	

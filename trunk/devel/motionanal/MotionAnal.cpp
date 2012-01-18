@@ -37,6 +37,7 @@ MouthyTest::MouthyTest(QWidget *parent)
 	
 	// Create the viewer widget
 	m_videoWidget = new VideoWidget(this);
+	//m_videoWidget->setRenderFps(true);
 	m_vbox->addWidget(m_videoWidget);
 	
 	#if 1

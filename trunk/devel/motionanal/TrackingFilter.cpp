@@ -10,26 +10,34 @@
 #include <ctype.h>
 
 
-//#define RESET_RATIO 0.75
-#define RESET_RATIO 0.25
+#define RESET_RATIO 0.75
+//#define RESET_RATIO 0.25
 
 
 QImage TrackingFilter::trackPoints(QImage img)
 {
+	if(img.isNull())
+		return QImage();
+		
 	IplImage* frame = 0;
 	int i, k;
 	
 	if(!m_timeInit)
 	{
 		m_timeInit = true;
-		m_timeValue.start();
+		m_timeValue.restart();
 		m_timeFrameCounter = 0;
 	}
 	m_timeFrameCounter++;
 
+	// For testing...
+	//img = img.scaled(240,180);
+
+	// RGB888 is compat with CV 3chan 8U
 	if(img.format() != QImage::Format_RGB888)
 		img = img.convertToFormat(QImage::Format_RGB888);
 		
+	// For testing...
 	if(img.width() < 600)
 		img = img.scaled(640,480);
 		
@@ -112,7 +120,21 @@ QImage TrackingFilter::trackPoints(QImage img)
 	QPainter p(&imageCopy);
 		
 	int elapsed = m_timeValue.elapsed();
-	double fps = ((double)elapsed) / ((double)m_timeFrameCounter) / 2.0;
+	double fps = ((double)m_timeFrameCounter) /  ((double)elapsed / 1000.0);
+	
+ 	if(m_timeFrameCounter % (int)fps == 0)
+ 	{
+ 		if(m_autoTuneToFps)
+ 		{
+ 			if(((int)fps) != m_lastAutoTuneFps)
+ 				tuneToFps((int)fps);
+ 				
+ 			m_lastAutoTuneFps = (int)fps;
+ 		}
+ 		
+ 		//qDebug() << "Measured fps:" <<fps;
+ 	}
+ 		
 	
 	// Calculate movement vectors (distances between last positions)
 	for (i=0; i<m_foundCount; i++) 
@@ -130,13 +152,19 @@ QImage TrackingFilter::trackPoints(QImage img)
 			float avg = m_pointInfo[i].storeValue(fabs(distSquared));
 			
 			float distDiff = fabs(m_pointInfo[i].lastValuesAvg - avg);
-			bool hasChanged = distDiff > 0.001;
+			bool hasChanged = distDiff > m_userTuningMinDistChange;
+			
 			m_pointInfo[i].distanceMovedChangeCount += hasChanged ? 1 : -1;
-			if(m_pointInfo[i].distanceMovedChangeCount > fps)
-				m_pointInfo[i].distanceMovedChangeCount --;
+			
+// 			if(m_pointInfo[i].distanceMovedChangeCount > fps)
+// 				m_pointInfo[i].distanceMovedChangeCount --;
+				
 			if(m_pointInfo[i].distanceMovedChangeCount < 0)
 				m_pointInfo[i].distanceMovedChangeCount = 0;
-			m_pointInfo[i].distanceChangeFrequency = m_pointInfo[i].distanceMovedChangeCount / fps;
+				
+			//m_pointInfo[i].distanceChangeFrequency = m_pointInfo[i].distanceMovedChangeCount / fps;
+			//if(m_pointInfo[i].changeValuesAvg <= 0.001)
+			//	qDebug() << i << ": ZERO changeValuesAvg, fps:"<<fps<<", distanceMovedChangeCount:"<<m_pointInfo[i].distanceMovedChangeCount<<", hasChanged:"<<hasChanged<<", distDiff:"<<distDiff<<", m_userTuningMinDistChange:"<<m_userTuningMinDistChange<<", avg:"<<avg;
 			
 			m_pointInfo[i].storeChangeValue(m_pointInfo[i].distanceMovedChangeCount);
 		}
@@ -155,27 +183,32 @@ QImage TrackingFilter::trackPoints(QImage img)
 		{	
 			QPoint point((int)m_currPoints[i].x, (int)m_currPoints[i].y);
 			
-			//if (decays[i] == 1.0 || (counter > 0.1 && /*bucket >= 0 && */bucket < bucketCutoff))
 			if(m_pointInfo[i].valuesAvg > m_userTuningMinMove &&
-			(m_userTuningUseChangeValues ? m_pointInfo[i].changeValuesAvg > m_userTuningMinChange : true)) 
+			  (m_userTuningUseChangeValues ? m_pointInfo[i].changeValuesAvg > m_userTuningMinChange : true))
+			  //m_pointInfo[i].changeValuesAvg > 0.1 &&
+			  //m_pointInfo[i].changeValuesAvg < 500.1) 
 			{
 				if(!m_cleanOutput)
 				{
 			
 					p.setBrush(Qt::green);
 					p.drawEllipse(QRect(point - QPoint(5,5), QSize(10,10)));
-					//p.drawText(point + QPoint(-5,5), QString("%1").arg(i));
+					//p.drawText(point + QPoint(-5,5), QString("%1").arg( m_pointInfo[i].changeValuesAvg ));
+					//p.drawText(point + QPoint(-5,5), QString("%1/%4 | %2/%3").arg( m_pointInfo[i].changeValuesAvg ).arg(m_pointInfo[i].valuesAvg).arg(m_userTuningMinMove).arg(m_userTuningMinChange));
 				}
 				
 				moveSum += m_pointInfo[i].valuesAvg;
 				moveCount ++;
 
 			}
-// 			else
-// 			{
-// 				p.setBrush(Qt::gray);
-// 				p.drawEllipse(QRect(point - QPoint(3,3), QSize(6,6)));
-// 			}
+			else
+			if(m_drawUnused)
+			{
+				p.setBrush(Qt::gray);
+				p.drawEllipse(QRect(point - QPoint(5,5), QSize(10,10)));
+				//p.drawText(point + QPoint(-5,5), QString("%1 | %2").arg( m_pointInfo[i].changeValuesAvg ).arg(m_pointInfo[i].valuesAvg));
+				//p.drawText(point + QPoint(-5,5), QString("%1/%4 | %2/%3").arg( m_pointInfo[i].changeValuesAvg ).arg(m_pointInfo[i].valuesAvg).arg(m_userTuningMinMove).arg(m_userTuningMinChange));
+			}
 
 		}
 	}
@@ -183,24 +216,35 @@ QImage TrackingFilter::trackPoints(QImage img)
 		p.setFont(font);
 	
 	
-	int moveAvg = (int)(moveSum / (!moveCount?1:moveCount));
+	int moveAvg = moveCount == 0 ? 0 : (int)(moveSum / moveCount);
 	
-	//qDebug() << "moveAvg:"<<moveAvg;
+	
 	m_history << moveAvg;
 	if(m_history.size() > imageCopy.size().width())
 		m_history.takeFirst();
 	
 	
-	m_historyWindowTotal -= m_historyWindow[m_historyWindowIndex];
-	m_historyWindowTotal += moveAvg;
+	//m_historyWindowTotal -= m_historyWindow[m_historyWindowIndex];
+	//m_historyWindowTotal += moveAvg;
 	m_historyWindow[m_historyWindowIndex] = moveAvg;
 	m_historyWindowIndex ++;
 	if(m_historyWindowIndex >= m_historyWindowSize)
 		m_historyWindowIndex = 0;
+		
+	m_historyWindowTotal = 0;
+	for(i=0; i<m_historyWindowSize; i++)
+		m_historyWindowTotal += m_historyWindow[i]; 
 		 
 	m_historyWindowAverage = m_historyWindowTotal / m_historyWindowSize;
+	
+	//qDebug() << "moveAvg:"<<moveAvg<<", m_historyWindowAverage:"<<m_historyWindowAverage;
+	
 	if(m_historyWindowAverage < 0)
+	{
+		if(!m_cleanOutput)
+			qDebug() << "Capped history window, value:"<<m_historyWindowAverage<<", derived from: "<<m_historyWindowTotal<<",m_historyWindowSize:"<<m_historyWindowSize<<", moveAvg:"<<moveAvg;
 		m_historyWindowAverage = 1;
+	}
 	
 	if(!m_cleanOutput)
 	{
@@ -282,6 +326,21 @@ QImage TrackingFilter::trackPoints(QImage img)
 		//if(!m_cleanOutput)
 			//qDebug() << QTime::currentTime().toString() << " - HistoryAverage reached ZERO";
 		emit historyAvgZero();
+		
+		m_zeroMoveFrameCounter ++;
+	}
+	else
+	{
+		m_zeroMoveFrameCounter = 0;
+	}
+	
+	if(m_zeroMoveFrameCounter > fps * 5)
+	{
+		// if five seconds of zero movement have passed, force re-init of points
+		m_validCount = 0;
+		
+		//if(!m_cleanOutput)
+			//qDebug() << "m_zeroMoveFrameCounter("<<m_zeroMoveFrameCounter<<") > "<<(fps*5)<<", resetting points";
 	}
 	
 	emit historyAvg(m_historyWindowAverage);
@@ -296,13 +355,13 @@ QImage TrackingFilter::trackPoints(QImage img)
 	if(m_validCount <= m_foundCount * m_resetRatio)
 	{
 		//qDebug() << "Need to init!";
-		//if(!m_cleanOutput)
-		//	qDebug() << "count less than "<<(m_foundCount * RESET_RATIO)<<", resetting.";
+		if(!m_cleanOutput)
+			qDebug() << "count less than "<<(m_foundCount * m_resetRatio)<<", resetting.";
 		m_needInit = 1;
 	}
 	else
 	{
-		//qDebug() << "Count:"<<count<<", reset point:"<<(m_foundCount * RESET_RATIO);
+		//qDebug() << "Count:"<<m_validCount<<", reset point:"<<(m_foundCount * m_resetRatio);
 	}
 	
 	cvReleaseImage(&frame);
@@ -338,7 +397,7 @@ TrackingFilter::TrackingFilter(QObject *parent)
 	m_timeFrameCounter = 0;
 	
 	m_userTuningMinMove   = TRACKING_DEFAULT_MIN_MOVE; // default 0.075
-	m_userTuningMinChange = TRACKING_DEFAULT_MIN_CHANGE; // default 0.1
+	m_userTuningMinChange = .1; //TRACKING_DEFAULT_MIN_CHANGE; // default 0.1
 	m_userTuningUseChangeValues = true;
 	
 	for(int i=0; i<HISTORY_MAX_WINDOW_SIZE; i++)
@@ -350,6 +409,15 @@ TrackingFilter::TrackingFilter(QObject *parent)
 	m_historyWindowIndex = 0;
 	
 	m_resetRatio = RESET_RATIO;
+	
+	m_autoTuneToFps = true;
+	m_lastAutoTuneFps = 0;
+	
+// 	connect(&m_fpsTimer, SIGNAL(timeout()), this, SLOT(reallyProcessFrame()));
+// 	m_fpsTimer.setInterval(1000/10);
+// 	m_fpsTimer.start();
+	
+	m_drawUnused = false;
 }
 
 TrackingFilter::~TrackingFilter()
@@ -358,13 +426,85 @@ TrackingFilter::~TrackingFilter()
 
 void TrackingFilter::processFrame()
 {
-	QImage image = frameImage();	
+	m_frameImage = frameImage();
+	if(!m_fpsTimer.isActive())
+		reallyProcessFrame();
+}
+
+void TrackingFilter::reallyProcessFrame()
+{
+// 	QImage image = frameImage();	
+// 	QImage histo = trackPoints(image);
+	QImage image = m_frameImage;	
 	QImage histo = trackPoints(image);
 	
 	enqueue(new VideoFrame(histo,m_frame->holdTime()));
 }
 
-void TrackingFilter::tune(float minMove, bool useChange, int minChange, int numValues, int numChangeValues, int historyWindowSize, float resetRatio)
+void TrackingFilter::autoTuneToFps(bool flag)
+{
+	if(m_autoTuneToFps && !flag)
+		tune(); // reset to defaults
+	
+	m_autoTuneToFps = flag;
+}
+
+double mapValueToSlope(double value1, double fps1, double value2, double fps2, double curFps)
+{
+	// Simple line formulas - find line slope, find y intercept, calculate new X value from "y" (curFps)
+	// slope: (y2-y1)/(x2-x1)
+	double slope = 
+		((((double)value2) - ((double)value1)) /
+		 (((double)fps2)   - ((double)fps1))   );
+	// intercept: y1-slope*x1
+	double intercept = value1 - slope * fps1;
+	// new value: slope * x3 + intercept
+	double newValue = slope * ((double)curFps) + intercept;
+	return newValue;
+}
+	
+void TrackingFilter::tuneToFps(int fps)
+{
+	// Values to tune based on fps:
+	float minMove = -1; // use default
+	bool useChange = true; // default
+	
+	float minDistChange = (float)mapValueToSlope(
+		0.100, 10.f,
+		0.001, 30.f,
+		(double)fps);
+	//TRACKING_DEFAULT_MIN_DIST_CHANGE 0.001 -> 0.1
+	
+	float minChange = (float)mapValueToSlope(
+		0.100, 10.f,
+		0.001, 30.f,
+		(double)fps);
+	
+	// just match fps
+	int numValues = fps;
+	
+	int numChangeValues = (int)mapValueToSlope(
+		3.f, 10.f, // 3 at 10 fps
+		5.f, 30.f, // 5 at 30 fps
+		(double)fps); 
+	//POINT_INFO_DEFAULT_NUM_CHANGE_VALUES 5 -> 3
+	
+	// just match fps
+	int historyWindowSize = fps;
+	
+	float resetRatio = (float)mapValueToSlope(
+		0.25, 10.f,  // 0.25 at 10fps
+		0.75, 30.f,  // 0.75 at 30fps
+		(double)fps);
+	//resetRatio 0.25 - 0.75
+	
+	qDebug() << "tuneToFps("<<fps<<"): minDistChange:"<<minDistChange<<", minChange:"<<minChange<<", numValues:"<<numValues<<", numChangeValues:"<<numChangeValues<<", resetRatio:"<<resetRatio<<", historyWindowSize:"<<historyWindowSize;
+	// apply new parameters
+	tune(minMove, useChange, minDistChange, minChange, numValues, numChangeValues, historyWindowSize, resetRatio);
+	
+}
+
+void TrackingFilter::tune(float minMove, bool useChange, float minDistChange, float minChange, int numValues, int numChangeValues, int historyWindowSize, float resetRatio)
 {
 	for(int i=0; i<MAX_COUNT; i++)
 	{
@@ -374,8 +514,9 @@ void TrackingFilter::tune(float minMove, bool useChange, int minChange, int numV
 			m_pointInfo[i].userTuningNumChangeValues = numChangeValues;
 	}
 	
-	m_userTuningMinMove   = minMove   >= 0 ? minMove   : TRACKING_DEFAULT_MIN_MOVE;
-	m_userTuningMinChange = minChange >= 0 ? minChange : TRACKING_DEFAULT_MIN_CHANGE;
+	m_userTuningMinMove         = minMove       >= 0 ? minMove       : TRACKING_DEFAULT_MIN_MOVE;
+	m_userTuningMinDistChange   = minDistChange >= 0 ? minDistChange : TRACKING_DEFAULT_MIN_DIST_CHANGE;
+	m_userTuningMinChange       = minChange     >= 0 ? minChange     : TRACKING_DEFAULT_MIN_CHANGE;
 	m_userTuningUseChangeValues = useChange;
 	
 	m_historyWindowSize = historyWindowSize > 0 ? 

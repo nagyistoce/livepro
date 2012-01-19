@@ -34,8 +34,10 @@ opencv: {
 	DEFINES += OPENCV_ENABLED
 	LIBS += -L/usr/local/lib -lcv -lcxcore
 			
-	#HEADERS += EyeCounter.h
-	#SOURCES += EyeCounter.cpp
+	HEADERS += \
+		PointTrackingFilter.h
+	SOURCES += \
+		PointTrackingFilter.cpp
 
 }
 

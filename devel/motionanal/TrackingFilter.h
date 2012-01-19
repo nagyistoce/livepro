@@ -19,7 +19,10 @@
 #define POINT_INFO_DEFAULT_NUM_CHANGE_VALUES 5
 
 #define TRACKING_DEFAULT_MIN_MOVE 0.075
+#define TRACKING_DEFAULT_MIN_DIST_CHANGE 0.001
 #define TRACKING_DEFAULT_MIN_CHANGE 0.1
+
+#define HISTORY_MAX_WINDOW_SIZE 300
 
 #include "cv.h"
 #include "highgui.h"
@@ -39,21 +42,26 @@ public:
 		//type = PointType_Static; // mover
 		deltaCounter = 0;
 		valid = true;
+		
 		for(int i=0; i<POINT_INFO_MAX_VALUES; i++)
 		{
 			values[i] = 0;
 			changeValues[i] = 0;
 		}
-		valuesIdx = 0;
-		valuesTotal = 0;
-		numValuesUsed       = userTuningNumValues > 0 ? userTuningNumValues : POINT_INFO_DEFAULT_NUM_VALUES;
+		
+		numValuesUsed       = userTuningNumValues > 0       ? userTuningNumValues       : POINT_INFO_DEFAULT_NUM_VALUES;
 		numChangeValuesUsed = userTuningNumChangeValues > 0 ? userTuningNumChangeValues : POINT_INFO_DEFAULT_NUM_CHANGE_VALUES;
-		valuesAvg = 0;
+		
+		valuesIdx   = 0;
+		valuesTotal = 0;
+		valuesAvg   = 0;
 		lastValuesAvg = 0;
+		
 		distanceMovedChangeCount = 0;
+		
 		changeValuesTotal = 0;
-		changeValuesAvg = 0;
-		changeValuesIdx = 0;
+		changeValuesAvg   = 0;
+		changeValuesIdx   = 0;
 	};
 	
 	inline float storeValue(float value)
@@ -114,7 +122,6 @@ public:
 };
 
 
-#define HISTORY_MAX_WINDOW_SIZE 300
 
 class TrackingFilter : public VideoFilter
 {
@@ -123,7 +130,9 @@ public:
 	TrackingFilter(QObject *parent=0);
 	~TrackingFilter();
 	
-	void tune(float minMove=-1, bool useChange=true, int minChange=-1, int numValues=-1, int numChangeValues=-1, int historyWindowSize=-1, float resetRatio=-1);
+	void autoTuneToFps(bool flag=true); 
+	void tuneToFps(int fps);
+	void tune(float minMove=-1, bool useChange=true, float minDistChange=-1, float minChange=-1, int numValues=-1, int numChangeValues=-1, int historyWindowSize=-1, float resetRatio=-1);
 	
 	void setCleanOutput(bool flag){  m_cleanOutput = flag; }
 	
@@ -131,6 +140,9 @@ signals:
 	void historyAvgZero();
 	void historyAvg(int);
 	void averageMovement(int);
+	
+protected slots:
+	void reallyProcessFrame();
 
 protected:
 	virtual void processFrame();
@@ -158,6 +170,7 @@ private:
 	int m_timeFrameCounter;
 	
 	float m_userTuningMinMove; // default 0.075
+	float m_userTuningMinDistChange; // default 0.001
 	float m_userTuningMinChange; // default 0.1;
 	bool m_userTuningUseChangeValues;
 	
@@ -175,7 +188,14 @@ private:
 	
 	bool m_cleanOutput;
 
-
+	QTimer m_fpsTimer;
+	QImage m_frameImage;
+	
+	bool m_autoTuneToFps;
+	int m_lastAutoTuneFps;
+	int m_zeroMoveFrameCounter;
+	
+	bool m_drawUnused;
 };
 
 #endif

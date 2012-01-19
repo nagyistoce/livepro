@@ -68,6 +68,6 @@ void MouthyTest::beep()
 	{
 		m_beepCounter = 10;
 		system("aplay alert.wav &");
-		qDebug() << "Beep";
+		qDebug() << QTime::currentTime()<<"Beep";
 	}
 }

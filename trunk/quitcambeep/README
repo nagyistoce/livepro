@@ -1,0 +1,1 @@
+Monitors a given video stream for "quiet" using the PointTrackingFilter, beeps when "quiet" (zero movement)

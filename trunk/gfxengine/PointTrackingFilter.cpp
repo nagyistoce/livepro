@@ -1,10 +1,10 @@
-#include "TrackingFilter.h"
+#include "PointTrackingFilter.h"
 
 
 //#define CV_NO_BACKWARD_COMPATIBILITY
 
-#include "cv.h"
-#include "highgui.h"
+#include <opencv/cv.h>
+#include <opencv/highgui.h>
 
 #include <stdio.h>
 #include <ctype.h>
@@ -14,7 +14,7 @@
 //#define RESET_RATIO 0.25
 
 
-QImage TrackingFilter::trackPoints(QImage img)
+QImage PointTrackingFilter::trackPoints(QImage img)
 {
 	if(img.isNull())
 		return QImage();
@@ -370,7 +370,7 @@ QImage TrackingFilter::trackPoints(QImage img)
 }
 
 
-TrackingFilter::TrackingFilter(QObject *parent)
+PointTrackingFilter::PointTrackingFilter(QObject *parent)
 	: VideoFilter(parent)
 	, m_cleanOutput(false)
 {
@@ -395,7 +395,7 @@ TrackingFilter::TrackingFilter(QObject *parent)
 	m_timeFrameCounter = 0;
 	
 	m_userTuningMinMove   = TRACKING_DEFAULT_MIN_MOVE; // default 0.075
-	m_userTuningMinChange = .1; //TRACKING_DEFAULT_MIN_CHANGE; // default 0.1
+	m_userTuningMinChange = TRACKING_DEFAULT_MIN_CHANGE; // default 0.1
 	m_userTuningUseChangeValues = true;
 	
 	for(int i=0; i<HISTORY_MAX_WINDOW_SIZE; i++)
@@ -418,18 +418,18 @@ TrackingFilter::TrackingFilter(QObject *parent)
 	m_drawUnused = false;
 }
 
-TrackingFilter::~TrackingFilter()
+PointTrackingFilter::~PointTrackingFilter()
 {
 }
 
-void TrackingFilter::processFrame()
+void PointTrackingFilter::processFrame()
 {
 	m_frameImage = frameImage();
 	if(!m_fpsTimer.isActive())
 		reallyProcessFrame();
 }
 
-void TrackingFilter::reallyProcessFrame()
+void PointTrackingFilter::reallyProcessFrame()
 {
 // 	QImage image = frameImage();	
 // 	QImage histo = trackPoints(image);
@@ -439,7 +439,7 @@ void TrackingFilter::reallyProcessFrame()
 	enqueue(new VideoFrame(histo,m_frame->holdTime()));
 }
 
-void TrackingFilter::autoTuneToFps(bool flag)
+void PointTrackingFilter::autoTuneToFps(bool flag)
 {
 	if(m_autoTuneToFps && !flag)
 		tune(); // reset to defaults
@@ -461,7 +461,7 @@ double mapValueToSlope(double value1, double fps1, double value2, double fps2, d
 	return newValue;
 }
 	
-void TrackingFilter::tuneToFps(int fps)
+void PointTrackingFilter::tuneToFps(int fps)
 {
 	// Values to tune based on fps:
 	float minMove = -1; // use default
@@ -502,7 +502,7 @@ void TrackingFilter::tuneToFps(int fps)
 	
 }
 
-void TrackingFilter::tune(float minMove, bool useChange, float minDistChange, float minChange, int numValues, int numChangeValues, int historyWindowSize, float resetRatio)
+void PointTrackingFilter::tune(float minMove, bool useChange, float minDistChange, float minChange, int numValues, int numChangeValues, int historyWindowSize, float resetRatio)
 {
 	for(int i=0; i<MAX_COUNT; i++)
 	{

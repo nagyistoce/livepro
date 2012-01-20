@@ -52,6 +52,8 @@ QByteArray VideoDisplayOptions::toByteArray()
 	b << QVariant(flipVertical);
 	b << QVariant(cropTopLeft);
 	b << QVariant(cropBottomRight);
+	b << QVariant(adjustTopLeft);
+	b << QVariant(adjustBottomRight);
 	b << QVariant(brightness);
 	b << QVariant(contrast);
 	b << QVariant(hue);
@@ -70,6 +72,8 @@ void VideoDisplayOptions::fromByteArray(QByteArray array)
 	b >> x; flipVertical = x.toBool();
 	b >> x; cropTopLeft = x.toPointF();
 	b >> x; cropBottomRight = x.toPointF();
+	b >> x; adjustTopLeft = x.toPointF();
+	b >> x; adjustBottomRight = x.toPointF();
 	b >> x; brightness = x.toInt();
 	b >> x; contrast = x.toInt();
 	b >> x; hue = x.toInt();
@@ -78,7 +82,10 @@ void VideoDisplayOptions::fromByteArray(QByteArray array)
 
 QDebug operator<<(QDebug dbg, const VideoDisplayOptions &opts)
 {
-	dbg.nospace() << "VideoDisplayOptions("<<opts.flipHorizontal<<","<<opts.flipVertical<<","<<opts.cropTopLeft<<","<<opts.cropBottomRight<<","<<opts.brightness<<","<<opts.contrast<<","<<opts.hue<<","<<opts.saturation<<")";
+	dbg.nospace() << "VideoDisplayOptions("<<opts.flipHorizontal<<","<<opts.flipVertical<<
+						","<<opts.cropTopLeft<<","<<opts.cropBottomRight<<
+						","<<opts.adjustTopLeft<<","<<opts.adjustBottomRight<<
+						","<<opts.brightness<<","<<opts.contrast<<","<<opts.hue<<","<<opts.saturation<<")";
 
 	return dbg.space();
 }
@@ -731,6 +738,24 @@ void GLVideoDrawable::setCropBottomRight(QPointF value)
 	//qDebug() << "GLVideoDrawable::setCropBottomRight(): "<<value;
 		
 	m_displayOpts.cropBottomRight = value;
+	emit displayOptionsChanged(m_displayOpts);
+	updateRects();
+	updateGL();
+}
+
+void GLVideoDrawable::setAdjustTopLeft(QPointF value)
+{
+	m_displayOpts.adjustTopLeft = value;
+	updateRects();
+	emit displayOptionsChanged(m_displayOpts);
+	updateGL();
+}
+
+void GLVideoDrawable::setAdjustBottomRight(QPointF value)
+{
+	//qDebug() << "GLVideoDrawable::setAdjustBottomRight(): "<<value;
+		
+	m_displayOpts.adjustBottomRight = value;
 	emit displayOptionsChanged(m_displayOpts);
 	updateRects();
 	updateGL();
@@ -1918,7 +1943,28 @@ void GLVideoDrawable::updateRects(bool secondSource)
 		sourceRect = QRectF(QPointF(0,0),size);
 		sourceRect.moveCenter(QPointF(size.width() / 2, size.height() / 2));
 	}
+	
+// 	double ax1 = m_displayOpts.adjustTopLeft.x();
+// 	double ay1 = m_displayOpts.adjustTopLeft.y();
+// 	double ax2 = m_displayOpts.adjustBottomRight.x();
+// 	double ay2 = m_displayOpts.adjustBottomRight.y();
+// 	double a_x1 = ax1 * w;
+// 	double a_y1 = ay1 * h;
+// 	double a_x2 = ax2 * w;
+// 	double a_y2 = ay2 * h;
+// 	
+// 	targetRect.adjust(a_x1,a_y1,
+// 		          a_x2,a_y2);
 
+//	QRectF preSource = sourceRect;
+// 	sourceRect.adjust(
+// 		m_displayOpts.adjustTopLeft.x() * sourceRect.width(),
+// 		m_displayOpts.adjustTopLeft.y() * sourceRect.height(),
+// 		m_displayOpts.adjustBottomRight.x() * sourceRect.width(),
+// 		m_displayOpts.adjustBottomRight.y() * sourceRect.height());
+
+	//qDebug() << "sourceRect:"<<sourceRect<<", pre:"<<preSource<<", adjust:"<<m_displayOpts.adjustTopLeft<<", "<<m_displayOpts.adjustBottomRight;
+	
 	if(!secondSource)
 	{
 		m_sourceRect = sourceRect;
@@ -1943,6 +1989,7 @@ void GLVideoDrawable::setDisplayOptions(const VideoDisplayOptions& opts)
 	m_displayOpts = opts;
 	m_colorsDirty = true;
 	emit displayOptionsChanged(opts);
+	updateRects();
 	updateGL();
 }
 
@@ -2266,7 +2313,7 @@ void GLVideoDrawable::updateTexture(bool secondSource)
 		  (!secondSource ? m_frame->hasTextureId() : m_frame2->hasTextureId()))
 		{
 			// GPU already has texture for this frame, dont upload
-			VideoFrame *frame = (VideoFrame*)m_frame.data();
+			//VideoFrame *frame = (VideoFrame*)m_frame.data();
 			//qDebug() << "GLVideoDrawable::updateTexture(): Frame already on GPU, frame ptr:"<<frame;
 			return;
 		}
@@ -2628,6 +2675,18 @@ void GLVideoDrawable::paint(QPainter * painter, const QStyleOptionGraphicsItem *
 		m_displayOpts.cropTopLeft.y() * source.height(),
 		m_displayOpts.cropBottomRight.x() * source.width(),
 		m_displayOpts.cropBottomRight.y() * source.height());
+		
+	source.adjust(
+		m_displayOpts.adjustTopLeft.x() * source.width(),
+		m_displayOpts.adjustTopLeft.y() * source.height(),
+		m_displayOpts.adjustBottomRight.x() * source.width(),
+		m_displayOpts.adjustBottomRight.y() * source.height());
+
+// 	target.adjust(
+// 		m_displayOpts.adjustTopLeft.x() * target.width(),
+// 		m_displayOpts.adjustTopLeft.y() * target.height(),
+// 		m_displayOpts.adjustBottomRight.x() * target.width(),
+// 		m_displayOpts.adjustBottomRight.y() * target.height());
 
 	//const QImage::Format imageFormat = QVideoFrame::imageFormatFromPixelFormat(format.pixelFormat());
 
@@ -2683,11 +2742,29 @@ void GLVideoDrawable::paint(QPainter * painter, const QStyleOptionGraphicsItem *
 		QRectF source2 = m_sourceRect2;
 		QRectF target2 = QRectF(m_targetRect2.topLeft() - rect().topLeft(),m_targetRect2.size());
 
-		source2 = source2.adjusted(
-			m_displayOpts.cropTopLeft.x(),
-			m_displayOpts.cropTopLeft.y(),
-			m_displayOpts.cropBottomRight.x(),
-			m_displayOpts.cropBottomRight.y());
+// 		source2 = source2.adjusted(
+// 			m_displayOpts.cropTopLeft.x(),
+// 			m_displayOpts.cropTopLeft.y(),
+// 			m_displayOpts.cropBottomRight.x(),
+// 			m_displayOpts.cropBottomRight.y());
+
+		source.adjust(
+			m_displayOpts.cropTopLeft.x() * source.width(),
+			m_displayOpts.cropTopLeft.y() * source.height(),
+			m_displayOpts.cropBottomRight.x() * source.width(),
+			m_displayOpts.cropBottomRight.y() * source.height());
+			
+		source.adjust(
+			m_displayOpts.adjustTopLeft.x() * source.width(),
+			m_displayOpts.adjustTopLeft.y() * source.height(),
+			m_displayOpts.adjustBottomRight.x() * source.width(),
+			m_displayOpts.adjustBottomRight.y() * source.height());
+
+// 		target.adjust(
+// 			m_displayOpts.adjustTopLeft.x() * target.width(),
+// 			m_displayOpts.adjustTopLeft.y() * target.height(),
+// 			m_displayOpts.adjustBottomRight.x() * target.width(),
+// 			m_displayOpts.adjustBottomRight.y() * target.height());
 
 
 
@@ -2865,11 +2942,23 @@ void GLVideoDrawable::paintGL()
 	}
 	
 
-	source = source.adjusted(
+	source.adjust(
 		m_displayOpts.cropTopLeft.x() * source.width(),
 		m_displayOpts.cropTopLeft.y() * source.height(),
 		m_displayOpts.cropBottomRight.x() * source.width(),
 		m_displayOpts.cropBottomRight.y() * source.height());
+		
+	source.adjust(
+			m_displayOpts.adjustTopLeft.x() * source.width(),
+			m_displayOpts.adjustTopLeft.y() * source.height(),
+			m_displayOpts.adjustBottomRight.x() * source.width(),
+			m_displayOpts.adjustBottomRight.y() * source.height());
+	
+// 	target.adjust(
+// 		m_displayOpts.adjustTopLeft.x() * target.width(),
+// 		m_displayOpts.adjustTopLeft.y() * target.height(),
+// 		m_displayOpts.adjustBottomRight.x() * target.width(),
+// 		m_displayOpts.adjustBottomRight.y() * target.height());
 
 // 	if(property("-debug").toBool())
 // 		qDebug() << "GLVideoDrawable::paintGL():"<<(QObject*)this<<": source:"<<source<<", target:"<<target<<" ( crop:"<<m_displayOpts.cropTopLeft<<"/"<<m_displayOpts.cropBottomRight<<")";
@@ -3235,11 +3324,29 @@ void GLVideoDrawable::paintGL()
 		QRectF source2 = m_sourceRect2;
 		QRectF target2 = m_targetRect2;
 
-		source2 = source2.adjusted(
-			m_displayOpts.cropTopLeft.x(),
-			m_displayOpts.cropTopLeft.y(),
-			m_displayOpts.cropBottomRight.x(),
-			m_displayOpts.cropBottomRight.y());
+// 		source2 = source2.adjusted(
+// 			m_displayOpts.cropTopLeft.x(),
+// 			m_displayOpts.cropTopLeft.y(),
+// 			m_displayOpts.cropBottomRight.x(),
+// 			m_displayOpts.cropBottomRight.y());
+
+		source.adjust(
+			m_displayOpts.cropTopLeft.x() * source.width(),
+			m_displayOpts.cropTopLeft.y() * source.height(),
+			m_displayOpts.cropBottomRight.x() * source.width(),
+			m_displayOpts.cropBottomRight.y() * source.height());
+			
+		source.adjust(
+			m_displayOpts.adjustTopLeft.x() * source.width(),
+			m_displayOpts.adjustTopLeft.y() * source.height(),
+			m_displayOpts.adjustBottomRight.x() * source.width(),
+			m_displayOpts.adjustBottomRight.y() * source.height());
+			
+// 		target.adjust(
+// 			m_displayOpts.adjustTopLeft.x() * target.width(),
+// 			m_displayOpts.adjustTopLeft.y() * target.height(),
+// 			m_displayOpts.adjustBottomRight.x() * target.width(),
+// 			m_displayOpts.adjustBottomRight.y() * target.height());
 
 
 		//QPainter painter(this);
@@ -3734,64 +3841,128 @@ void VideoDisplayOptionWidget::initUI()
 	m_cbFlipV = cb;
 
 	row++;
-	QSpinBox *spinBox = 0;
+	QDoubleSpinBox *dSpinBox = 0;
 	QHBoxLayout *rowLayout = new QHBoxLayout();
 	layout->addWidget(new QLabel("Crop Left By:"),row,0);
-	spinBox = new QSpinBox;
-	spinBox->setSuffix(" px");
-	spinBox->setMinimum(-1000);
-	spinBox->setMaximum(1000);
-	spinBox->setValue((int)m_opts.cropTopLeft.x());
-	connect(spinBox, SIGNAL(valueChanged(int)), this, SLOT(cropX1Changed(int)));
-	rowLayout->addWidget(spinBox);
+	dSpinBox = new QDoubleSpinBox;
+	dSpinBox->setSuffix(" px");
+	dSpinBox->setMinimum(-1000);
+	dSpinBox->setMaximum(1000);
+	dSpinBox->setValue((double)m_opts.cropTopLeft.x());
+	connect(dSpinBox, SIGNAL(valueChanged(double)), this, SLOT(cropX1Changed(double)));
+	rowLayout->addWidget(dSpinBox);
 	rowLayout->addStretch(1);
 	layout->addLayout(rowLayout,row,1);
-	m_spinCropX1 = spinBox;
+	m_spinCropX1 = dSpinBox;
 
 	row++;
 	rowLayout = new QHBoxLayout();
 	layout->addWidget(new QLabel("Crop Right By:"),row,0);
-	spinBox = new QSpinBox;
-	spinBox->setSuffix(" px");
-	spinBox->setMinimum(-1000);
-	spinBox->setMaximum(1000);
-	spinBox->setValue((int)m_opts.cropBottomRight.x());
-	connect(spinBox, SIGNAL(valueChanged(int)), this, SLOT(cropX2Changed(int)));
-	rowLayout->addWidget(spinBox);
+	dSpinBox = new QDoubleSpinBox;
+	dSpinBox->setSuffix(" px");
+	dSpinBox->setMinimum(-1000);
+	dSpinBox->setMaximum(1000);
+	dSpinBox->setValue((double)m_opts.cropBottomRight.x());
+	connect(dSpinBox, SIGNAL(valueChanged(double)), this, SLOT(cropX2Changed(double)));
+	rowLayout->addWidget(dSpinBox);
 	rowLayout->addStretch(1);
 	layout->addLayout(rowLayout,row,1);
-	m_spinCropX2 = spinBox;
+	m_spinCropX2 = dSpinBox;
 
 	row++;
 	rowLayout = new QHBoxLayout();
 	layout->addWidget(new QLabel("Crop Top By:"),row,0);
-	spinBox = new QSpinBox;
-	spinBox->setSuffix(" px");
-	spinBox->setMinimum(-1000);
-	spinBox->setMaximum(1000);
-	spinBox->setValue((int)m_opts.cropTopLeft.y());
-	connect(spinBox, SIGNAL(valueChanged(int)), this, SLOT(cropY1Changed(int)));
-	rowLayout->addWidget(spinBox);
+	dSpinBox = new QDoubleSpinBox;
+	dSpinBox->setSuffix(" px");
+	dSpinBox->setMinimum(-1000);
+	dSpinBox->setMaximum(1000);
+	dSpinBox->setValue((double)m_opts.cropTopLeft.y());
+	connect(dSpinBox, SIGNAL(valueChanged(double)), this, SLOT(cropY1Changed(double)));
+	rowLayout->addWidget(dSpinBox);
 	rowLayout->addStretch(1);
 	layout->addLayout(rowLayout,row,1);
-	m_spinCropY1 = spinBox;
+	m_spinCropY1 = dSpinBox;
 
 	row++;
 	rowLayout = new QHBoxLayout();
 	layout->addWidget(new QLabel("Crop Bottom By:"),row,0);
-	spinBox = new QSpinBox;
-	spinBox->setSuffix(" px");
-	spinBox->setMinimum(-1000);
-	spinBox->setMaximum(1000);
-	spinBox->setValue((int)m_opts.cropBottomRight.y());
-	connect(spinBox, SIGNAL(valueChanged(int)), this, SLOT(cropY2Changed(int)));
-	rowLayout->addWidget(spinBox);
+	dSpinBox = new QDoubleSpinBox;
+	dSpinBox->setSuffix(" px");
+	dSpinBox->setMinimum(-1000);
+	dSpinBox->setMaximum(1000);
+	dSpinBox->setValue((double)m_opts.cropBottomRight.y());
+	connect(dSpinBox, SIGNAL(valueChanged(double)), this, SLOT(cropY2Changed(double)));
+	rowLayout->addWidget(dSpinBox);
 	rowLayout->addStretch(1);
 	layout->addLayout(rowLayout,row,1);
-	m_spinCropY2 = spinBox;
+	m_spinCropY2 = dSpinBox;
+	
+	
+	
+	row++;
+	dSpinBox = 0;
+	rowLayout = new QHBoxLayout();
+	layout->addWidget(new QLabel("Adjust Left By:"),row,0);
+	dSpinBox = new QDoubleSpinBox;
+	dSpinBox->setSuffix(" px");
+	dSpinBox->setMinimum(-1000);
+	dSpinBox->setMaximum(1000);
+	dSpinBox->setValue((double)m_opts.adjustTopLeft.x());
+	connect(dSpinBox, SIGNAL(valueChanged(double)), this, SLOT(adjustX1Changed(double)));
+	rowLayout->addWidget(dSpinBox);
+	rowLayout->addStretch(1);
+	layout->addLayout(rowLayout,row,1);
+	m_spinAdjustX1 = dSpinBox;
+
+	row++;
+	rowLayout = new QHBoxLayout();
+	layout->addWidget(new QLabel("Adjust Right By:"),row,0);
+	dSpinBox = new QDoubleSpinBox;
+	dSpinBox->setSuffix(" px");
+	dSpinBox->setMinimum(-1000);
+	dSpinBox->setMaximum(1000);
+	dSpinBox->setValue((double)m_opts.adjustBottomRight.x());
+	connect(dSpinBox, SIGNAL(valueChanged(double)), this, SLOT(adjustX2Changed(double)));
+	rowLayout->addWidget(dSpinBox);
+	rowLayout->addStretch(1);
+	layout->addLayout(rowLayout,row,1);
+	m_spinAdjustX2 = dSpinBox;
+
+	row++;
+	rowLayout = new QHBoxLayout();
+	layout->addWidget(new QLabel("Adjust Top By:"),row,0);
+	dSpinBox = new QDoubleSpinBox;
+	dSpinBox->setSuffix(" px");
+	dSpinBox->setMinimum(-1000);
+	dSpinBox->setMaximum(1000);
+	dSpinBox->setValue((double)m_opts.adjustTopLeft.y());
+	connect(dSpinBox, SIGNAL(valueChanged(double)), this, SLOT(adjustY1Changed(double)));
+	rowLayout->addWidget(dSpinBox);
+	rowLayout->addStretch(1);
+	layout->addLayout(rowLayout,row,1);
+	m_spinAdjustY1 = dSpinBox;
+
+	row++;
+	rowLayout = new QHBoxLayout();
+	layout->addWidget(new QLabel("Adjust Bottom By:"),row,0);
+	dSpinBox = new QDoubleSpinBox;
+	dSpinBox->setSuffix(" px");
+	dSpinBox->setMinimum(-1000);
+	dSpinBox->setMaximum(1000);
+	dSpinBox->setValue((double)m_opts.adjustBottomRight.y());
+	connect(dSpinBox, SIGNAL(valueChanged(double)), this, SLOT(adjustY2Changed(double)));
+	rowLayout->addWidget(dSpinBox);
+	rowLayout->addStretch(1);
+	layout->addLayout(rowLayout,row,1);
+	m_spinAdjustY2 = dSpinBox;
+	
+	
+	
+	
 
 	row++;
 	QSlider *slider =0;
+	QSpinBox *spinBox =0;
 	rowLayout = new QHBoxLayout();
 	// add label
 	layout->addWidget(new QLabel("Brightness:"),row,0);
@@ -3901,10 +4072,14 @@ void VideoDisplayOptionWidget::setDisplayOptions(const VideoDisplayOptions& opts
 	m_opts = opts;
 	m_cbFlipH->setChecked(opts.flipHorizontal);
 	m_cbFlipV->setChecked(opts.flipVertical);
-	m_spinCropX1->setValue((int)opts.cropTopLeft.x());
-	m_spinCropY1->setValue((int)opts.cropTopLeft.y());
-	m_spinCropX2->setValue((int)opts.cropBottomRight.x());
-	m_spinCropY2->setValue((int)opts.cropBottomRight.y());
+	m_spinCropX1->setValue((double)opts.cropTopLeft.x());
+	m_spinCropY1->setValue((double)opts.cropTopLeft.y());
+	m_spinCropX2->setValue((double)opts.cropBottomRight.x());
+	m_spinCropY2->setValue((double)opts.cropBottomRight.y());
+	m_spinAdjustX1->setValue((double)opts.adjustTopLeft.x());
+	m_spinAdjustY1->setValue((double)opts.adjustTopLeft.y());
+	m_spinAdjustX2->setValue((double)opts.adjustBottomRight.x());
+	m_spinAdjustY2->setValue((double)opts.adjustBottomRight.y());
 	m_spinB->setValue(opts.brightness);
 	m_spinC->setValue(opts.contrast);
 	m_spinH->setValue(opts.hue);
@@ -3925,30 +4100,58 @@ void VideoDisplayOptionWidget::flipVChanged(bool value)
 }
 
 
-void VideoDisplayOptionWidget::cropX1Changed(int value)
+void VideoDisplayOptionWidget::cropX1Changed(double value)
 {
 	m_opts.cropTopLeft.setX(value);
 	emit displayOptionsChanged(m_opts);
 }
 
 
-void VideoDisplayOptionWidget::cropY1Changed(int value)
+void VideoDisplayOptionWidget::cropY1Changed(double value)
 {
 	m_opts.cropTopLeft.setY(value);
 	emit displayOptionsChanged(m_opts);
 }
 
 
-void VideoDisplayOptionWidget::cropX2Changed(int value)
+void VideoDisplayOptionWidget::cropX2Changed(double value)
 {
 	m_opts.cropBottomRight.setX(value);
 	emit displayOptionsChanged(m_opts);
 }
 
 
-void VideoDisplayOptionWidget::cropY2Changed(int value)
+void VideoDisplayOptionWidget::cropY2Changed(double value)
 {
 	m_opts.cropBottomRight.setY(value);
+	emit displayOptionsChanged(m_opts);
+}
+
+
+void VideoDisplayOptionWidget::adjustX1Changed(double value)
+{
+	m_opts.adjustTopLeft.setX(value);
+	emit displayOptionsChanged(m_opts);
+}
+
+
+void VideoDisplayOptionWidget::adjustY1Changed(double value)
+{
+	m_opts.adjustTopLeft.setY(value);
+	emit displayOptionsChanged(m_opts);
+}
+
+
+void VideoDisplayOptionWidget::adjustX2Changed(double value)
+{
+	m_opts.adjustBottomRight.setX(value);
+	emit displayOptionsChanged(m_opts);
+}
+
+
+void VideoDisplayOptionWidget::adjustY2Changed(double value)
+{
+	m_opts.adjustBottomRight.setY(value);
 	emit displayOptionsChanged(m_opts);
 }
 

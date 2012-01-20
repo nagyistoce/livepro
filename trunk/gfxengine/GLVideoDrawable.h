@@ -19,6 +19,8 @@ public:
 		bool flipY=false, 
 		QPointF cropTL = QPointF(0,0), 
 		QPointF cropBR = QPointF(0,0), 
+		QPointF targetTL = QPointF(0,0), 
+		QPointF targetBR = QPointF(0,0),
 		int b=0, 
 		int c=0, 
 		int h=0, 
@@ -28,6 +30,8 @@ public:
 	,	flipVertical(flipY)
 	,	cropTopLeft(cropTL)
 	,	cropBottomRight(cropBR)
+	,	adjustTopLeft(targetTL)
+	,	adjustBottomRight(targetBR)
 	,	brightness(b)
 	,	contrast(c)
 	,	hue(h)
@@ -38,6 +42,8 @@ public:
 	bool flipVertical;
 	QPointF cropTopLeft;
 	QPointF cropBottomRight;
+	QPointF adjustTopLeft;
+	QPointF adjustBottomRight;
 	int brightness;
 	int contrast;
 	int hue;
@@ -66,10 +72,14 @@ public slots:
 private slots:
 	void flipHChanged(bool);
 	void flipVChanged(bool);
-	void cropX1Changed(int);
-	void cropY1Changed(int);
-	void cropX2Changed(int);
-	void cropY2Changed(int);
+	void cropX1Changed(double);
+	void cropY1Changed(double);
+	void cropX2Changed(double);
+	void cropY2Changed(double);
+	void adjustX1Changed(double);
+	void adjustY1Changed(double);
+	void adjustX2Changed(double);
+	void adjustY2Changed(double);
 	void bChanged(int);
 	void cChanged(int);
 	void hChanged(int);
@@ -84,10 +94,14 @@ private:
 	
 	QCheckBox *m_cbFlipH;
 	QCheckBox *m_cbFlipV;
-	QSpinBox *m_spinCropX1;
-	QSpinBox *m_spinCropX2;
-	QSpinBox *m_spinCropY1;
-	QSpinBox *m_spinCropY2;
+	QDoubleSpinBox *m_spinCropX1;
+	QDoubleSpinBox *m_spinCropX2;
+	QDoubleSpinBox *m_spinCropY1;
+	QDoubleSpinBox *m_spinCropY2;
+	QDoubleSpinBox *m_spinAdjustX1;
+	QDoubleSpinBox *m_spinAdjustX2;
+	QDoubleSpinBox *m_spinAdjustY1;
+	QDoubleSpinBox *m_spinAdjustY2;
 	QSpinBox *m_spinB;
 	QSpinBox *m_spinC;
 	QSpinBox *m_spinH;
@@ -114,6 +128,11 @@ class GLVideoDrawable : public GLDrawable
 	Q_PROPERTY(double cropLeft READ cropLeft WRITE setCropLeft);
 	Q_PROPERTY(double cropBottom READ cropBottom WRITE setCropBottom);
 	Q_PROPERTY(double cropRight READ cropRight WRITE setCropRight);
+	
+	Q_PROPERTY(double adjustTop READ adjustTop WRITE setAdjustTop);
+	Q_PROPERTY(double adjustLeft READ adjustLeft WRITE setAdjustLeft);
+	Q_PROPERTY(double adjustBottom READ adjustBottom WRITE setAdjustBottom);
+	Q_PROPERTY(double adjustRight READ adjustRight WRITE setAdjustRight);
 	
 	Q_PROPERTY(int whiteLevel READ whiteLevel WRITE setWhiteLevel);
 	Q_PROPERTY(int blackLevel READ blackLevel WRITE setBlackLevel);
@@ -156,6 +175,9 @@ public:
 	
 	const QPointF & cropTopLeft() { return m_displayOpts.cropTopLeft; }
 	const QPointF & cropBottomRight() { return m_displayOpts.cropBottomRight; }
+	
+	const QPointF & adjustTopLeft() { return m_displayOpts.adjustTopLeft; }
+	const QPointF & adjustBottomRight() { return m_displayOpts.adjustBottomRight; }
 	
 	VideoSource *videoSource() { return m_source; }
 	
@@ -201,6 +223,11 @@ public:
 	double cropRight() { return cropBottomRight().x(); }
 	double cropBottom() { return cropBottomRight().y(); }
 	
+	double adjustTop() { return adjustTopLeft().y(); }
+	double adjustLeft() { return adjustTopLeft().x(); }
+	double adjustRight() { return adjustBottomRight().x(); }
+	double adjustBottom() { return adjustBottomRight().y(); }
+	
 	typedef enum FilterType {
 		Filter_None,
 		Filter_Blur,
@@ -238,6 +265,9 @@ public slots:
 	void setCropTopLeft(QPointF);
 	void setCropBottomRight(QPointF);
 	
+	void setAdjustTopLeft(QPointF);
+	void setAdjustBottomRight(QPointF);
+	
 	void setCropTop(double value) 		{ setCropTopLeft(QPointF(cropTopLeft().x(),value)); }
 	void setCropLeft(double value) 		{ setCropTopLeft(QPointF(value,cropTopLeft().y())); }
 	void setCropBottom(double value) 	{ setCropBottomRight(QPointF(cropBottomRight().x(),value)); }
@@ -248,6 +278,15 @@ public slots:
 	void setCropBottom(int value) 		{ setCropBottomRight(QPointF(cropBottomRight().x(),((double)value)/100.)); }
 	void setCropRight(int value) 		{ setCropBottomRight(QPointF(((double)value)/100.,cropBottomRight().y())); }
 	
+	void setAdjustTop(double value) 	{ setAdjustTopLeft(QPointF(adjustTopLeft().x(),value)); }
+	void setAdjustLeft(double value) 	{ setAdjustTopLeft(QPointF(value,adjustTopLeft().y())); }
+	void setAdjustBottom(double value) 	{ setAdjustBottomRight(QPointF(adjustBottomRight().x(),value)); }
+	void setAdjustRight(double value) 	{ setAdjustBottomRight(QPointF(value,adjustBottomRight().y())); }
+	
+	void setAdjustTop(int value) 		{ setAdjustTopLeft(QPointF(adjustTopLeft().x(),((double)value)/100.)); }
+	void setAdjustLeft(int value) 		{ setAdjustTopLeft(QPointF(((double)value)/100.,adjustTopLeft().y())); }
+	void setAdjustBottom(int value) 	{ setAdjustBottomRight(QPointF(adjustBottomRight().x(),((double)value)/100.)); }
+	void setAdjustRight(int value) 		{ setAdjustBottomRight(QPointF(((double)value)/100.,adjustBottomRight().y())); }
 	
 	//void setLevels(int black=0, int white=255, int mid=-1, double gamma=1.61);
 	void setLevelsEnabled(bool);

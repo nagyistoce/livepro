@@ -155,12 +155,13 @@ public: /* static */
 	{
 		srand(QTime::currentTime().msec());
 		QStringList list;
-// 		for(int i=0; i<NUM_TEST_SIGNALS; i++)
-// 			list << QString("test:%1").arg(i+1);
- 		list << "test:/opt/livepro/devel/data/2012-01-08 SS Test/test2.mpg";
- 		list << "test:/opt/livepro/devel/data/2012-01-08 SS Test/test3.mpg";
-		list << "test:/opt/livepro/devel/data/2012-01-08 SS Test/test1.mpg";
-		list << "test:/opt/livepro/devel/data/2012-01-08 SS Test/test1-orig.mpg";
+ 		for(int i=0; i<NUM_TEST_SIGNALS; i++)
+ 			list << QString("test:%1").arg(i+1);
+//  		list << "test:/opt/livepro/devel/data/2012-01-08 SS Test/test2.mpg";
+//  		list << "test:/opt/livepro/devel/data/2012-01-08 SS Test/test3.mpg";
+// 		list << "test:/opt/livepro/devel/data/2012-01-08 SS Test/test1.mpg";
+// 		list << "test:/opt/livepro/devel/data/2012-01-08 SS Test/test1-orig.mpg";
+		
 		return list;
 	}
 	

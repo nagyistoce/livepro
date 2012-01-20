@@ -23,12 +23,19 @@ MouthyTest::MouthyTest(QWidget *parent)
 	
 	#else
 	// Use camera as input
-	QString dev = "test:/opt/livepro/devel/data/2012-01-08 SS Test/test1.mpg"; ///dev/video0";
+	//QString dev = "test:/opt/livepro/devel/data/2012-01-08 SS Test/stest1.mpg"; ///dev/video0";
+	QString dev = "test:1";
 	CameraThread *source = CameraThread::threadForCamera(dev);
+	if(!source)
+	{
+		qDebug() << "Unable to find camera "<<dev<<", exiting";
+		exit(-1);
+	}
+		
 	source->setFps(5);
 	
-	dev = "test:/opt/livepro/devel/data/2012-01-08 SS Test/test3.mpg";
-	CameraThread *source2 = CameraThread::threadForCamera(dev);
+// 	dev = "test:/opt/livepro/devel/data/2012-01-08 SS Test/test3.mpg";
+// 	CameraThread *source2 = CameraThread::threadForCamera(dev);
 	
 	#endif
 	

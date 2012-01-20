@@ -66,6 +66,8 @@ public:
 	// VideoSource::
 	virtual void destroySource();
 	
+	QVariantMap videoHints(bool *hasReceivedFromServer=0);
+	
 public slots:
 	void setHue(int);
 	void setSaturation(int);
@@ -83,6 +85,9 @@ public slots:
 	void queryFPS();
 	void querySize();
 	
+	void queryVideoHints();
+	void setVideoHints(QVariantMap);
+	
 signals:
 	void socketDisconnected();
 	void socketError(QAbstractSocket::SocketError);
@@ -96,6 +101,8 @@ signals:
 	
 	void currentFPS(int);
 	void currentSize(int, int);
+	
+	void currentVideoHints(QVariantMap);
 	
 	// Emitted only when connected to a CameraThread on the server side
 	void signalStatusChanged(bool);
@@ -136,6 +143,9 @@ private:
 	int m_byteCount;
 	
 	VideoFrame *m_frame;
+	
+	QVariantMap m_videoHints;
+	bool m_hasReceivedHintsFromServer;
 	
 #ifdef MJPEG_TEST
 	QLabel *m_label;

@@ -20,6 +20,10 @@
 #define Video_SetSize "SetSize"
 #define Video_GetSize "GetSize"
 
+// Only applicable to camera threads right now...
+#define Video_GetVideoHints "GetVideoHints"
+#define Video_SetVideoHints "SetVideoHints"
+
 // Sent by the VideoSender when the signal status changes on a connected CameraThread
 #define Video_SignalStatusChanged "SignalStatusChanged"
 

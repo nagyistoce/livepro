@@ -73,6 +73,8 @@ public:
 	
 	// relies on SimpleV4L2, therefore only works on linux with V4L2 devices currently (or BlackMagic too, since it is trivial to get signal flags from their SDK as well)
 	bool hasSignal();
+	
+	QVariantMap videoHints()
 
 public slots:
 	void setDeinterlace(bool);
@@ -81,6 +83,8 @@ public slots:
 	
 	void setInput(int);
 	bool setInput(const QString& name);
+	
+	void setVideoHints(QVariantMap);
 	
 	
 signals:
@@ -186,6 +190,8 @@ private:
 	
 	QTimer m_checkSignalTimer;
 	bool m_hasSignal;
+	
+	QVariantMap m_videoHints;
 	
 };
 

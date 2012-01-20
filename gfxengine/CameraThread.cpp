@@ -435,6 +435,9 @@ CameraThread::CameraThread(const QString& camera, QObject *parent)
 	connect(&m_checkSignalTimer, SIGNAL(timeout()), this, SLOT(checkForSignal()));
 	m_checkSignalTimer.setInterval(250); // check every quarter second
 	m_checkSignalTimer.start();
+	
+	QSettings settings(VIDEO_HINTS_STORAGE,QSettings::IniFormat);
+	m_videoHints = settings.value(tr("VideoHints/%1").arg(m_cameraFile));
 }
 
 void CameraThread::destroySource()
@@ -448,6 +451,20 @@ void CameraThread::destroySource()
 	VideoSource::destroySource();
 }
 
+QVariantMap CameraThread::videoHints()
+{
+	return m_videoHints;
+}
+
+void CameraThread::setVideoHints(QVariantMap map)
+{
+	m_videoHints = map;
+	
+	QSettings settings(VIDEO_HINTS_STORAGE,QSettings::IniFormat);
+	settings.setValue(tr("VideoHints/%1").arg(m_cameraFile), map);
+}
+	
+	
 CameraThread * CameraThread::threadForCamera(const QString& camera)
 {
 	if(camera.isEmpty())

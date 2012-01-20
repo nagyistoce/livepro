@@ -769,6 +769,39 @@ void VideoSenderThread::processBlock()
 		sendReply(QVariantList() << "cmd" << cmd << "w" << size.width() << "h" << size.height());
 	}
 	else
+	if(cmd == Video_SetVideoHints)
+	{
+		QVariantMap hints = map["hints"].toMap();
+		
+		VideoSource *source = m_sender->videoSource();
+		CameraThread *camera = dynamic_cast<CameraThread*>(source);
+		if(!camera)
+		{
+			// error
+			qDebug() << "VideoSenderThread::processBlock: "<<cmd<<": Video source is not a video input class ('CameraThread'), unable to get/set video hints."; 
+			return;
+		}
+		
+		camera->setVideoHints(fps);
+	}
+	else
+	if(cmd == Video_GetVideoHints)
+	{
+		VideoSource *source = m_sender->videoSource();
+		CameraThread *camera = dynamic_cast<CameraThread*>(source);
+		if(!camera)
+		{
+			// error
+			qDebug() << "VideoSenderThread::processBlock: "<<cmd<<": Video source is not a video input class ('CameraThread'), unable to get/set video hints."; 
+			return;
+		}
+		
+		QVariantMap map = camera->getVideoHints();
+		
+		sendReply(QVariantList() << "cmd" << cmd << "hints" << hints);
+	}
+	
+	else
 	{
 		// Unknown Command
 		qDebug() << "VideoSenderThread::processBlock: "<<cmd<<": Unknown command.";

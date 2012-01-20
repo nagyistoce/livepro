@@ -63,12 +63,12 @@ QString VideoSender::ipAddress()
 		    ipAddressesList.at(i).toIPv4Address())
 		{
 			QString tmp = ipAddressesList.at(i).toString();
-
-                        // TODO: Need a way to find the *names* of the adapters - these
-                        // IPs are prefixes my VirtualBox/VMWare installs are using for their
-                        // virtual adapters. Need a way to skip virtual interfaces.
-                        if(!tmp.startsWith("192.168.122.") &&
-                           !tmp.startsWith("192.168.56."))
+			
+			// TODO: Need a way to find the *names* of the adapters - these
+			// IPs are prefixes my VirtualBox/VMWare installs are using for their
+			// virtual adapters. Need a way to skip virtual interfaces.
+			if(!tmp.startsWith("192.168.122.") &&
+			   !tmp.startsWith("192.168.56."))
 				ipAddress = tmp;
 		}
 	}
@@ -782,7 +782,7 @@ void VideoSenderThread::processBlock()
 			return;
 		}
 		
-		camera->setVideoHints(fps);
+		camera->setVideoHints(hints);
 	}
 	else
 	if(cmd == Video_GetVideoHints)
@@ -796,9 +796,9 @@ void VideoSenderThread::processBlock()
 			return;
 		}
 		
-		QVariantMap map = camera->getVideoHints();
+		QVariantMap map = camera->videoHints();
 		
-		sendReply(QVariantList() << "cmd" << cmd << "hints" << hints);
+		sendReply(QVariantList() << "cmd" << cmd << "hints" << map);
 	}
 	
 	else

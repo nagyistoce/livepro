@@ -60,6 +60,8 @@ void GLVideoInputDrawable::setVideoConnection(const QString& con)
 		map[name] = value;
 	}
 
+	m_videoInput = map["dev"];
+	
 	setNetworkSource(map["net"]);
 
 	//qDebug() << "GLVideoInputDrawable::setVideoConnection: dev:"<<map["dev"]; 
@@ -113,7 +115,8 @@ void GLVideoInputDrawable::setNetworkSource(const QString& src)
 		isLocalHost = true;
 	
 	// If we already tried opening a local device, force to use the network
-	if(m_source && m_source->hasError())
+	if((m_source && m_source->hasError()) ||
+	   m_videoInput.startsWith("test:"))
 	{
 		qDebug() << "GLVideoInputDrawable::setNetworkSource: Forcing to use the network for src:"<<src<<" due to local device error.";
 		isLocalHost = false;
@@ -129,7 +132,7 @@ void GLVideoInputDrawable::setNetworkSource(const QString& src)
 
 	m_isLocal[src] = isLocalHost;
 
-	qDebug() << "GLVideoInputDrawable::setNetworkSource: src:"<<src<<", isLocalHost:"<<isLocalHost;
+	qDebug() << "GLVideoInputDrawable::setNetworkSource: src:"<<src<<", isLocalHost:"<<isLocalHost<<", m_videoInput:"<<m_videoInput;
 }
 
 void GLVideoInputDrawable::setUseNetworkSource(bool flag)

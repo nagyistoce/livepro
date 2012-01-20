@@ -29,6 +29,8 @@ extern "C" {
 #define ENABLE_TEST_GENERATOR
 #define NUM_TEST_SIGNALS 3
 
+#define VIDEO_HINTS_STORAGE "/var/lib/livepro-videohints.dat"
+
 #ifdef ENABLE_DECKLINK_CAPTURE
 
 // BMD needs to be integrated in these areas:
@@ -437,7 +439,7 @@ CameraThread::CameraThread(const QString& camera, QObject *parent)
 	m_checkSignalTimer.start();
 	
 	QSettings settings(VIDEO_HINTS_STORAGE,QSettings::IniFormat);
-	m_videoHints = settings.value(tr("VideoHints/%1").arg(m_cameraFile));
+	m_videoHints = settings.value(tr("VideoHints/%1").arg(m_cameraFile)).toMap();
 }
 
 void CameraThread::destroySource()
@@ -585,7 +587,7 @@ QStringList CameraThread::enumerateDevices(bool forceReenum)
 	
 	#ifdef ENABLE_TEST_GENERATOR
 	// NOTE: Only for testing!!!
-	list = TestSignalGenerator::enumDeviceNames(forceReenum);
+	list << TestSignalGenerator::enumDeviceNames(forceReenum);
 	#endif
 	
         //#ifdef DEBUG

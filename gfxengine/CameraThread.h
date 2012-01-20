@@ -1,7 +1,6 @@
 #ifndef CameraThread_h
 #define CameraThread_h
 
-
 #ifndef UINT64_C
 #define INT64_C(c) (c ## LL)
 #define UINT64_C(c) (c ## ULL)
@@ -25,6 +24,7 @@ extern "C" {
 #include <QMutex>
 
 #include <QFile>
+#include <QVariantMap>
 
 #include "VideoSource.h"
 class SimpleV4L2;
@@ -74,7 +74,7 @@ public:
 	// relies on SimpleV4L2, therefore only works on linux with V4L2 devices currently (or BlackMagic too, since it is trivial to get signal flags from their SDK as well)
 	bool hasSignal();
 	
-	QVariantMap videoHints()
+	QVariantMap videoHints();
 
 public slots:
 	void setDeinterlace(bool);

@@ -2,6 +2,7 @@
 
 #include "VideoReceiver.h"
 #include "AnalysisFilter.h"
+#include "PointTrackingFilter.h"
 #include "PlayerConnection.h"
 #include "GLSceneGroup.h"
 #include "GLVideoInputDrawable.h"
@@ -17,7 +18,7 @@
 #include "GLVideoDrawable.h"
 #endif
 
-#define ENABLE_V4L_OUTPUT
+//#define ENABLE_V4L_OUTPUT
 
 #ifdef ENABLE_V4L_OUTPUT
 // Output to a V4L device (used primarily with vloopback)
@@ -64,18 +65,29 @@ MainWindow::MainWindow()
 	
 	
 	QStringList inputs = QStringList() 
+// 		<< tr("%1:7755").arg(host)
+// 		<< tr("%1:7756").arg(host)
+// 		<< tr("%1:7757").arg(host)
+// 		<< tr("%1:7758").arg(host)
+// 		<< tr("10.10.9.90:7759");
+
 		<< tr("%1:7755").arg(host)
 		<< tr("%1:7756").arg(host)
 		<< tr("%1:7757").arg(host)
-		<< tr("%1:7758").arg(host)
-		<< tr("10.10.9.90:7759");
+		<< tr("%1:7758").arg(host);
+		
 	
 	m_cons = QStringList()
-		<< tr("dev=test:/opt/livepro/devel/data/2012-01-08 SS Test/test1.mpg,input=Default,net=%1:7755").arg(host)
-		<< tr("dev=test:/opt/livepro/devel/data/2012-01-08 SS Test/test1-orig.mpg,input=Default,net=%1:7756").arg(host)
-		<< tr("dev=test:/opt/livepro/devel/data/2012-01-08 SS Test/test2.mpg,input=Default,net=%1:7757").arg(host)
-		<< tr("dev=test:/opt/livepro/devel/data/2012-01-08 SS Test/test3.mpg,input=Default,net=%1:7758").arg(host)
-		<< tr("dev=/dev/null,input=Default,net=10.10.9.90:7759");
+// 		<< tr("dev=test:/opt/livepro/devel/data/2012-01-08 SS Test/test1.mpg,input=Default,net=%1:7755").arg(host)
+// 		<< tr("dev=test:/opt/livepro/devel/data/2012-01-08 SS Test/test1-orig.mpg,input=Default,net=%1:7756").arg(host)
+// 		<< tr("dev=test:/opt/livepro/devel/data/2012-01-08 SS Test/test2.mpg,input=Default,net=%1:7757").arg(host)
+// 		<< tr("dev=test:/opt/livepro/devel/data/2012-01-08 SS Test/test3.mpg,input=Default,net=%1:7758").arg(host)
+// 		<< tr("dev=/dev/null,input=Default,net=10.10.9.90:7759");
+
+		<< tr("dev=/dev/video0,input=Default,net=%1:7755").arg(host)
+		<< tr("dev=test:1,input=Default,net=%1:7756").arg(host)
+		<< tr("dev=test:2,input=Default,net=%1:7757").arg(host)
+		<< tr("dev=test:3,input=Default,net=%1:7758").arg(host);
 		
  	#ifdef PREVIEW_OPENGL
  	GLScene *scene = new GLScene();
@@ -115,17 +127,19 @@ MainWindow::MainWindow()
 		#endif
 		
 		#if 1
-		AnalysisFilter *filter = new AnalysisFilter();
+		//AnalysisFilter *filter = new AnalysisFilter();
+		PointTrackingFilter *filter = new PointTrackingFilter();
 		
-		QString file = tr("input%1-mask.png").arg(port);
-		if(QFileInfo(file).exists())
-			filter->setMaskImage(QImage(file));
+// 		QString file = tr("input%1-mask.png").arg(port);
+// 		if(QFileInfo(file).exists())
+// 			filter->setMaskImage(QImage(file));
 		
 		filter->setVideoSource(rx);
 		drw->setVideoSource(filter);
 		
 		filter->setProperty("num", counter++);
-		connect(filter, SIGNAL(motionRatingChanged(int)), this, SLOT(motionRatingChanged(int)));
+		//connect(filter, SIGNAL(motionRatingChanged(int)), this, SLOT(motionRatingChanged(int)));
+		connect(filter, SIGNAL(averageMovement(int)), this, SLOT(motionRatingChanged(int)));
 		
 		m_filters << filter;
 		m_ratings << 0;
@@ -162,13 +176,15 @@ void MainWindow::resizeEvent(QResizeEvent*)
 
 void MainWindow::motionRatingChanged(int rating)
 {
-	AnalysisFilter *filter = dynamic_cast<AnalysisFilter*>(sender());
+	//AnalysisFilter *filter = dynamic_cast<AnalysisFilter*>(sender());
+	PointTrackingFilter *filter = dynamic_cast<PointTrackingFilter*>(sender());
 	if(!filter)
 		return;
 	int num = filter->property("num").toInt();
 	
 	m_ratings[num] += rating;
-	m_filters[num]->setDebugText(tr("%2 %1").arg(m_ratings[num]).arg(m_lastHighNum == num ? " ** LIVE **":""));
+	qDebug() << num << rating;
+	//m_filters[num]->setDebugText(tr("%2 %1").arg(m_ratings[num]).arg(m_lastHighNum == num ? " ** LIVE **":""));
 
 	int frameLimit = 69;
 			
@@ -190,7 +206,7 @@ void MainWindow::motionRatingChanged(int rating)
 			counter ++;
 		}
 		
-		//maxNum = 4;
+		//maxNum = 0;
 		
 		if(m_lastHighNum != maxNum)
 		{
@@ -208,7 +224,7 @@ void MainWindow::motionRatingChanged(int rating)
 			
 			m_lastHighNum = maxNum;
 			
-			m_filters[maxNum]->setDebugText(tr("** LIVE ** %1").arg(rating));
+			//m_filters[maxNum]->setDebugText(tr("** LIVE ** %1").arg(rating));
 			m_ratings[maxNum] = 0;
 			
 			m_ignoreCountdown = frameLimit * m_ratings.size(); // ignore next X frames * num sources

@@ -158,14 +158,17 @@ MainWindow::MainWindow()
 	int frameWidth = 1000, frameHeight = 750, x=0, y=0;
 	
 	drw = new GLVideoInputDrawable();
-	drw->setVideoInput("/dev/video1");
+	drw->setVideoInput("test:1");///dev/video1");
 	drw->setRect(QRectF(x,y,frameWidth,frameHeight));
+	
+	VideoDisplayOptionWidget *widget = new VideoDisplayOptionWidget(drw);
+	widget->show();
 	
 	// Finally, add the drawable
 	scene->addDrawable(drw);
 	
 	drw = new GLVideoInputDrawable();
-	drw->setVideoInput("/dev/video1");
+	drw->setVideoInput("test:1");///dev/video1");
 	drw->setRect(QRectF(x + frameWidth,y,frameWidth,frameHeight));
 	scene->addDrawable(drw);
 	

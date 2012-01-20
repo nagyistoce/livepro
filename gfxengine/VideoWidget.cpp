@@ -33,6 +33,10 @@ VideoWidget::VideoWidget(QWidget *parent)
 	, m_adjustDy1(0)
 	, m_adjustDx2(0)
 	, m_adjustDy2(0)
+	, m_adjustTargetDx1(0)
+	, m_adjustTargetDy1(0)
+	, m_adjustTargetDx2(0)
+	, m_adjustTargetDy2(0)
 	, m_showOverlayText(false)
 	, m_overlayText("")
 	, m_forceFps(-1)
@@ -443,6 +447,13 @@ void VideoWidget::setSourceRectAdjust( int dx1, int dy1, int dx2, int dy2 )
 	m_adjustDy2 = dy2;
 }
 
+void VideoWidget::setTargetRectAdjust( int dx1, int dy1, int dx2, int dy2 )
+{
+	m_adjustTargetDx1 = dx1;
+	m_adjustTargetDy1 = dy1;
+	m_adjustTargetDx2 = dx2;
+	m_adjustTargetDy2 = dy2;
+}
 
 
 
@@ -487,6 +498,8 @@ void VideoWidget::updateRects()
 		m_sourceRect = QRect(QPoint(0,0),size);
 		m_sourceRect.moveCenter(QPoint(size.width() / 2, size.height() / 2));
 	}
+	
+	m_targetRect.adjust(m_adjustTargetDx1,m_adjustTargetDy1,m_adjustTargetDx2,m_adjustTargetDy2);
 
 	//qDebug() << "updateRects(): source: "<<m_sourceRect<<", target:" <<m_targetRect;
 	updateOverlay();

@@ -67,6 +67,7 @@ public slots:
 	void setOpacity(qreal opacity);
 	
 	void setSourceRectAdjust( int dx1, int dy1, int dx2, int dy2 );
+	void setTargetRectAdjust( int dx1, int dy1, int dx2, int dy2 );
 	
 	void setFps(int fps=-1);
 	
@@ -129,6 +130,11 @@ private:
 	int m_adjustDy1;
 	int m_adjustDx2;
 	int m_adjustDy2;
+	
+	int m_adjustTargetDx1;
+	int m_adjustTargetDy1;
+	int m_adjustTargetDx2;
+	int m_adjustTargetDy2;
 
 
 	QTime m_elapsedTime;

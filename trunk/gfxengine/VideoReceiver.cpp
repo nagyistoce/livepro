@@ -72,6 +72,7 @@ VideoReceiver::VideoReceiver(QObject *parent)
 	, m_autoResize(-1,-1)
 	, m_autoReconnect(true)
 	, m_byteCount(-1)
+	, m_hasReceivedHintsFromServer(false)
 	, m_connected(false)
 	
 {
@@ -163,6 +164,9 @@ void VideoReceiver::connectionReady()
 	m_connected = true;
 	
 	emit connected();
+	
+	// Proactively request video hints
+	queryVideoHints();
 }
 
 void VideoReceiver::log(const QString& str)
@@ -290,6 +294,14 @@ void VideoReceiver::setSize(int w, int h)
 		<< "h"   << h);
 }
 
+void VideoReceiver::setVideoHints(QVariantMap hints)
+{
+	m_videoHints = hints;
+	sendCommand(QVariantList() 
+		<< "cmd" << Video_SetVideoHints
+		<< "hints" << hints);
+}
+
 
 void VideoReceiver::queryHue()
 {
@@ -325,6 +337,12 @@ void VideoReceiver::querySize()
 {
 	sendCommand(QVariantList() 
 		<< "cmd" << Video_GetSize);
+}
+
+void VideoReceiver::queryVideoHints()
+{
+	sendCommand(QVariantList() 
+		<< "cmd" << Video_GetVideoHints);
 }
 
 void VideoReceiver::dataReady()
@@ -653,6 +671,13 @@ void VideoReceiver::processReceivedMap(const QVariantMap & map)
 		emit currentSize(map["w"].toInt(), map["h"].toInt());
 	}
 	else
+	if(cmd == Video_GetVideoHints)
+	{
+		m_videoHints = map["hints"].toMap();
+		emit currentVideoHints(m_videoHints);
+		m_hasReceivedHintsFromServer = true;
+	}
+	else
 	if(cmd == Video_SignalStatusChanged)
 	{
 		//<< "flag"	<< flag
@@ -663,4 +688,11 @@ void VideoReceiver::processReceivedMap(const QVariantMap & map)
 		qDebug() << "VideoReceiver::processReceivedMap: Unknown map received, cmd:"<<cmd<<", full map:"<<map;
 	}
 	
+}
+
+QVariantMap VideoReceiver::videoHints(bool *hasReceivedFromServer)
+{
+	if(hasReceivedFromServer)
+		*hasReceivedFromServer = m_hasReceivedHintsFromServer;
+	return m_videoHints;
 }

@@ -5,6 +5,7 @@
 #include <QStringList>
 #include <QDebug>
 #include <QApplication>
+#include <QFileInfo>
 
 #include <assert.h>
 
@@ -22,11 +23,12 @@ extern "C" {
 #include "libswscale/swscale.h"
 #include "libavdevice/avdevice.h"
 }
+#include "../3rdparty/ffmpeg/projectcommon.h"
 #endif
 
 #include "SimpleV4L2.h"
 
-#define ENABLE_TEST_GENERATOR
+//#define ENABLE_TEST_GENERATOR
 #define NUM_TEST_SIGNALS 3
 
 #define VIDEO_HINTS_STORAGE "/var/lib/livepro-videohints.dat"
@@ -522,15 +524,15 @@ QStringList CameraThread::enumerateDevices(bool forceReenum)
 	m_enumeratedDevices.clear();
 	m_devicesEnumerated = true;
 
+	QStringList list;
+
 	#ifdef Q_OS_WIN32
 		QString deviceBase = "vfwcap://";
 		QString formatName = "vfwcap";
-	#else
-		QString deviceBase = "/dev/video";
-		QString formatName = "video4linux";
-	#endif
-	QStringList list;
-
+//	#else
+//		QString deviceBase = "/dev/video";
+//		QString formatName = "video4linux";
+//	#endif
 
 	AVInputFormat *inFmt = NULL;
 	AVFormatParameters formatParams;
@@ -580,6 +582,19 @@ QStringList CameraThread::enumerateDevices(bool forceReenum)
 			av_close_input_file(formatCtx);
 		}
 	}
+	#else
+
+	for(int i=0; i<10; i++)
+	{
+		QString file = QString("/dev/video%1").arg(i);
+		QFileInfo info(file);
+		if(info.exists())
+		{
+			list << file;
+		}
+	}
+
+	#endif
 
 	#ifdef ENABLE_DECKLINK_CAPTURE
 	list << BMDCaptureDelegate::enumDeviceNames(forceReenum);
@@ -1370,7 +1385,12 @@ void CameraThread::readFrame()
                                 //global_video_pkt_pts = packet->pts;
 
 //				mutex.lock();
+//				// int avcodec_decode_video2(AVCodecContext*, AVFrame*, int*, AVPacket*)
+				#ifdef USE_DECODE_VID2
+				avcodec_decode_video2(m_video_codec_context, m_av_frame, &frame_finished, packet);
+				#else
 				avcodec_decode_video(m_video_codec_context, m_av_frame, &frame_finished, packet->data, packet->size);
+				#endif
 // 				mutex.unlock();
 
 				if(packet->dts == (uint)AV_NOPTS_VALUE &&

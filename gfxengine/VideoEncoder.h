@@ -17,6 +17,8 @@ extern "C" {
 #include "libswscale/swscale.h"
 }
 
+#include "../3rdparty/ffmpeg/projectcommon.h"
+
 #undef exit
 
 #define STREAM_PIX_FMT PIX_FMT_YUV420P

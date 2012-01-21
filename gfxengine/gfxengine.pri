@@ -78,6 +78,7 @@ mobility: {
 	
 	CONFIG += mobility multimedia
 	MOBILITY = multimedia
+	#QT += multimediakit
 
 	INCLUDEPATH += \
 		$$QT_MOBILITY_HOME/src \

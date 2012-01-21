@@ -11,6 +11,7 @@ extern "C" {
 #include "libswscale/swscale.h"
 #include "libavdevice/avdevice.h"
 }
+#include "../3rdparty/ffmpeg/projectcommon.h"
 
 #define MAX_SKIPS_TILL_RESET 30
 
@@ -421,8 +422,11 @@ void VideoThread::readFrame()
 			if(packet->stream_index == m_video_stream)
 			{
 				//global_video_pkt_pts = packet->pts;
-
+				#ifdef USE_DECODE_VID2
+				avcodec_decode_video2(m_video_codec_context, m_av_frame, &frame_finished, packet);
+				#else
 				avcodec_decode_video(m_video_codec_context, m_av_frame, &frame_finished, packet->data, packet->size);
+				#endif
 
 				if(packet->dts == AV_NOPTS_VALUE &&
 						  m_av_frame->opaque &&

@@ -1,0 +1,1 @@
+Simple test program to see how well low-latency capturing works with rendering via QGraphicsView - bottom line, it works better rendering to a dedicated widget (VideoWidget) or GLWidget.

@@ -15,3 +15,5 @@ Maybe once that's done, we'll add a simple click-to-switch interface - for now, 
 
 * Why?
 To wrap my head around the code and to get my feet wet - to see what the status of the code is.
+
+* Update, Jan 20 12: More advanced monitor/click-to-switch app in ../switchmon

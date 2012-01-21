@@ -1,0 +1,23 @@
+LivePro is a collection of programs that use the common graphcis library in gfxengine for high-perfomance, low-latency video work.
+
+Exmaples of what this does now:
+
+- livemix
+	- The main 'player' program (based on 'glvidtex' from another of my projects on google code, dviz/src/glvidtex)
+	- This player is compatible the network protocal from gldirector in dviz/src/glvidtex as well.
+	- Enumerates and connects to the physical capture cards present on the system and makes the available for monitoring via the network
+	- Handles smooth crossfading between cameras, as well as making it possible for PiP and arbitrary overlays
+- switchmon
+	- Connects to livemix, automatically enumerates the cameras available through livemix, and allows the user to switch between cameras
+- autodir
+	- Monitors selected cameras (hardcoded currently) for motion and (attempts) to automatically switch between cameras as necessary to show the "best" camera
+	- Controls livemix via PlayerConnection to perform the actual switching
+- quietcam
+	- Monitors a video stream (sent via gfxengine/VideoSender.cpp - e.g. any of the video feeds from livemix) for 'quiet' (e.g. zero movement)
+	- Uses opencv's Lucas-Kanade point tracker, combined with running average of motion deltas to filter out static and osilating points in order to best calculate the true movement in the scene
+- rxout
+	- Receives a video feed via gfxengine/VideoReceiver and just writes the frames to a V4L-compatible video output
+	- Designed to allow a V4L-compatible recording program (such as ffmpeg or mencoder) to encode the video feed toa file
+- screencap
+	- Capture a rectangle from the screen and transmit over the network via gfxengine/VideoSender
+	  

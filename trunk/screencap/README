@@ -1,0 +1,5 @@
+screencap
+
+Capture from a configurable rectangle (or multiple rects) on screen and transmit over the network via a VideoSender socket. 
+
+See inputs.ini for configuration. Click on the preview rect in the GUI to select a new rect (doesn't save to inputs.ini, just outputs rect coordinates on the console.)

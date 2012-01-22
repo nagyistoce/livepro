@@ -21,7 +21,7 @@ MainWindow::MainWindow()
 	//conLay->setSpacing(3);
 
 	m_serverBox = new QLineEdit();
-	m_serverBox->setText(settings.value("lastServer","10.10.9.90:7755").toString());
+	m_serverBox->setText(settings.value("lastServer","192.168.0.16:7755").toString());
 	connect(m_serverBox, SIGNAL(textChanged(QString)), this, SLOT(textChanged(QString)));
 	conLay->addWidget(m_serverBox);
 	
@@ -35,13 +35,14 @@ MainWindow::MainWindow()
 	
 	setWindowTitle("Quiet Camera Monitor");
 	
-	VideoWidget *videoWidget = new VideoWidget();
-	vbox->addWidget(videoWidget);
+	m_videoWidget = new VideoWidget();
+	vbox->addWidget(m_videoWidget);
 	
 	m_trackingFilter = new PointTrackingFilter();
-	videoWidget->setVideoSource(m_trackingFilter);
+	m_videoWidget->setVideoSource(m_trackingFilter);
 	
 	connect(m_trackingFilter, SIGNAL(historyAvgZero()), this, SLOT(historyAvgZero()));
+	connect(m_trackingFilter, SIGNAL(historyAvg(int)), this, SLOT(historyAvg(int)));
 	
 	
 	QHBoxLayout *bottomBox = new QHBoxLayout();
@@ -65,7 +66,7 @@ void MainWindow::connectToServer()
 	QString server = m_serverBox->text();
 	
 	m_connectBtn->setEnabled(false);
-	m_connectBtn->setText("Connecting...");
+	m_connectBtn->setText("Connected");
 	
 	QSettings().setValue("lastServer",server);
 
@@ -75,6 +76,8 @@ void MainWindow::connectToServer()
 		
 	VideoReceiver *rx = VideoReceiver::getReceiver(host,port);
 	m_trackingFilter->setVideoSource(rx);
+	//m_videoWidget->setVideoSource(rx);
+	qDebug() << "Connected to "<<host<<port<<", rx:"<<rx;
 }
 
 void MainWindow::textChanged(QString)
@@ -101,4 +104,11 @@ void MainWindow::historyAvgZero()
 			qDebug() << QTime::currentTime()<<"Beep";
 		}
 	}
+}
+
+void MainWindow::historyAvg(int zero)
+{
+	qDebug() << "History: "<<zero;
+	if(zero <= 5)
+		historyAvgZero();
 }

@@ -23,8 +23,10 @@ extern "C" {
 #include "libswscale/swscale.h"
 #include "libavdevice/avdevice.h"
 }
-#include "../3rdparty/ffmpeg/projectcommon.h"
+//#include "../3rdparty/ffmpeg/projectcommon.h"
 #endif
+
+#include <QSettings>
 
 #include "SimpleV4L2.h"
 

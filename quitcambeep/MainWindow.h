@@ -4,6 +4,7 @@
 #include <QtGui>
 
 class PointTrackingFilter;
+class VideoWidget;
 class MainWindow : public QWidget
 {
 	Q_OBJECT
@@ -12,6 +13,7 @@ public:
 	
 protected slots:
 	void historyAvgZero();
+	void historyAvg(int);
 	void textChanged(QString);
 	void connectToServer();
 	void watchButtonClicked();
@@ -26,6 +28,8 @@ protected:
 	
 	QPushButton *m_watchButton;
 	QLabel *m_watchLabel;
+	
+	VideoWidget *m_videoWidget;
 };
 
 

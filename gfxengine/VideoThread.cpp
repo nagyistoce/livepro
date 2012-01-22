@@ -11,7 +11,7 @@ extern "C" {
 #include "libswscale/swscale.h"
 #include "libavdevice/avdevice.h"
 }
-#include "../3rdparty/ffmpeg/projectcommon.h"
+//#include "../3rdparty/ffmpeg/projectcommon.h"
 
 #define MAX_SKIPS_TILL_RESET 30
 

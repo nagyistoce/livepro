@@ -17,7 +17,7 @@ extern "C" {
 #include "libswscale/swscale.h"
 }
 
-#include "../3rdparty/ffmpeg/projectcommon.h"
+//#include "../3rdparty/ffmpeg/projectcommon.h"
 
 #undef exit
 

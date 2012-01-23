@@ -543,13 +543,9 @@ QStringList CameraThread::enumerateDevices(bool forceReenum)
 	{
 		memset(&formatParams, 0, sizeof(AVFormatParameters));
 
-		#ifdef Q_OS_WIN32
-			QString file = QString::number(i);
-		#else
-			QString file = QString("/dev/video%1").arg(i);
-		#endif
-
-                //qDebug() << "CameraThread::enumerateDevices: Checking device "<<file;
+		QString file = QString::number(i);
+		
+		//qDebug() << "CameraThread::enumerateDevices: Checking device "<<file;
 
 		inFmt = av_find_input_format(qPrintable(formatName));
 		if( !inFmt )
@@ -574,27 +570,40 @@ QStringList CameraThread::enumerateDevices(bool forceReenum)
 		if(av_open_input_file(&formatCtx, qPrintable(file), inFmt, 0, &formatParams) != 0)
 		//if(av_open_input_file(&m_av_format_context, "1", inFmt, 0, NULL) != 0)
 		{
-                        //qDebug() << "[WARN] CameraThread::load(): av_open_input_file() failed, file:"<<file;
+			//qDebug() << "[WARN] CameraThread::load(): av_open_input_file() failed, file:"<<file;
 			break;
 		}
 		else
 		{
-                        //qDebug() << "CameraThread::enumerateDevices: Success with device "<<file;
+			//qDebug() << "CameraThread::enumerateDevices: Success with device "<<file;
 			list << QString("%1%2").arg(deviceBase).arg(i);
 			av_close_input_file(formatCtx);
 		}
+
 	}
 	#else
 
+	SimpleV4L2::SupressErrorPrinting = true;
+	
 	for(int i=0; i<10; i++)
 	{
 		QString file = QString("/dev/video%1").arg(i);
-		QFileInfo info(file);
-		if(info.exists())
-		{
-			list << file;
+ 		QFileInfo info(file);
+ 		if(info.exists())
+ 		{
+			SimpleV4L2 *v4l2 = new SimpleV4L2();
+			if(v4l2->openDevice(qPrintable(file)) &&
+			v4l2->initDevice())
+			{
+				//qDebug() << "CameraThread::enumerateDevices: Success with device "<<file;
+				list << file;
+			}
+			delete v4l2; // auto uninits and closes
+
 		}
 	}
+	
+	SimpleV4L2::SupressErrorPrinting = false;
 
 	#endif
 
@@ -836,7 +845,12 @@ int CameraThread::initCamera()
 						setInput(0);
 			}
 
-			m_v4l2->initDevice();
+			if(!m_v4l2->initDevice())
+			{
+				m_error = true;
+				return 0;
+			}
+			else
 			if(!m_v4l2->startCapturing())
 			{
 				m_error = true;

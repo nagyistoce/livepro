@@ -18,11 +18,13 @@ class VideoFrame;
 class SimpleV4L2
 {
 public:
+	static bool SupressErrorPrinting;
+	
 	SimpleV4L2();
 	~SimpleV4L2();
 	
 	bool openDevice(const char *dev_name);
-	void initDevice();
+	bool initDevice();
 	bool startCapturing();
 	VideoFrame* readFrame();
 	void stopCapturing();

@@ -541,7 +541,7 @@ void GLWidget::initializeGL()
 		m_useShaders = true;
 	}
 
-	qDebug() << "GLWidget::initGL: GLSL Shaders Enabled: "<<m_useShaders;
+	//qDebug() << "GLWidget::initGL: GLSL Shaders Enabled: "<<m_useShaders;
 
         if(m_useShaders)
             initShaders();
@@ -624,12 +624,12 @@ void GLWidget::initializeGL()
 	if(extensionList.indexOf("GL_ARB_pixel_buffer_object") > -1)
 	{
 		m_pboEnabled = true;
-		qDebug() << "Video card supports GL_ARB_pixel_buffer_object.";
+		//qDebug() << "Video card supports GL_ARB_pixel_buffer_object.";
 	}
 	else
 	{
 		m_pboEnabled = false;
-		qDebug() << "Video card does NOT support GL_ARB_pixel_buffer_object.";
+		qDebug() << "GLWidget: Video card does NOT support GL_ARB_pixel_buffer_object, unable to provide output stream from GLWidget";
 	}
  	#endif
 
@@ -2617,7 +2617,7 @@ void GLWidgetOutputStream::run()
 			if(m_data)
 			{
 				QImage img((uchar*)m_data.data(), m_size.width(), m_size.height(), m_format);
-				img = img.mirrored();
+				img = img.convertToFormat(QImage::Format_RGB888).mirrored();
 
 				VideoFrame *frame = new VideoFrame(img,1000/m_fps);
 				frame->setCaptureTime(m_stamp);

@@ -1,0 +1,9 @@
+This directory (vlookback) originally from http://www.lavrsen.dk/svn/vloopback/trunk
+
+I (Josiah) exported and copied it here to preserve it just in case the
+original repo ever goes down. I recommend that you get a copy straight
+from http://www.lavrsen.dk/svn/vloopback/trunk instead of using the
+copy here in DViz svn. To get the copy from lavrsen.dk, do:
+
+	svn co http://www.lavrsen.dk/svn/vloopback/trunk vloopback
+

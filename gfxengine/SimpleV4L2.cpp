@@ -29,10 +29,11 @@ extern "C" {
 #include "VideoFrame.h"
 #include "SimpleV4L2.h"
 
+bool SimpleV4L2::SupressErrorPrinting = false;
 
 static void errno_exit(const char *s)
 {
-	fprintf (stderr, "%s error %d, %s\nExiting application.",
+	fprintf (stderr, "SimpleV4L2: %s error %d, %s\nSimpleV4L2.cpp: Exiting application at errno_exit()",
 		s, errno, strerror (errno));
 
 	exit (EXIT_FAILURE);
@@ -41,8 +42,9 @@ static void errno_exit(const char *s)
 
 static void errno_print(const char *s)
 {
-	fprintf (stderr, "%s error %d, %s\n",
-		s, errno, strerror (errno));
+	if(!SimpleV4L2::SupressErrorPrinting)
+		fprintf (stderr, "SimpleV4L2: %s error %d, %s\n",
+			s, errno, strerror (errno));
 
 	//exit (EXIT_FAILURE);
 }
@@ -337,7 +339,7 @@ void SimpleV4L2::io_init_read(unsigned int buffer_size)
 	m_buffers = (v4l2_simple_buffer*)calloc (1, sizeof (*m_buffers));
 
 	if (!m_buffers) {
-		fprintf (stderr, "Out of memory\n");
+		fprintf (stderr, "SimpleV4L2: Out of memory\n");
 		exit (EXIT_FAILURE);
 	}
 
@@ -345,7 +347,7 @@ void SimpleV4L2::io_init_read(unsigned int buffer_size)
 	m_buffers[0].start = malloc (buffer_size);
 
 	if (!m_buffers[0].start) {
-		fprintf (stderr, "Out of memory\n");
+		fprintf (stderr, "SimpleV4L2: Out of memory\n");
 		exit (EXIT_FAILURE);
 	}
 }
@@ -362,7 +364,7 @@ void SimpleV4L2::io_init_mmap()
 
 	if (-1 == xioctl (m_fd, VIDIOC_REQBUFS, &req)) {
 		if (EINVAL == errno) {
-			fprintf (stderr, "%s does not support memory mapping\n", m_devName);
+			fprintf (stderr, "SimpleV4L2: %s does not support memory mapping\n", m_devName);
 			exit (EXIT_FAILURE);
 		} else {
 			errno_exit ("VIDIOC_REQBUFS");
@@ -370,14 +372,14 @@ void SimpleV4L2::io_init_mmap()
 	}
 
 	if (req.count < 2) {
-		fprintf (stderr, "Insufficient buffer memory on %s\n", m_devName);
+		fprintf (stderr, "SimpleV4L2: Insufficient buffer memory on %s\n", m_devName);
 		exit (EXIT_FAILURE);
 	}
 
 	m_buffers = (v4l2_simple_buffer*)calloc (req.count, sizeof (*m_buffers));
 
 	if (!m_buffers) {
-		fprintf (stderr, "Out of memory\n");
+		fprintf (stderr, "SimpleV4L2: Out of memory\n");
 		exit (EXIT_FAILURE);
 	}
 
@@ -422,7 +424,7 @@ void SimpleV4L2::io_init_userp(unsigned int buffer_size)
 
 	if (-1 == xioctl (m_fd, VIDIOC_REQBUFS, &req)) {
 		if (EINVAL == errno) {
-			fprintf (stderr, "%s does not support user pointer i/o\n", m_devName);
+			fprintf (stderr, "SimpleV4L2: %s does not support user pointer i/o\n", m_devName);
 			exit (EXIT_FAILURE);
 		} else {
 			errno_exit ("VIDIOC_REQBUFS");
@@ -432,7 +434,7 @@ void SimpleV4L2::io_init_userp(unsigned int buffer_size)
 	m_buffers = (v4l2_simple_buffer*)calloc (4, sizeof (*m_buffers));
 
 	if (!m_buffers) {
-		fprintf (stderr, "Out of memory\n");
+		fprintf (stderr, "SimpleV4L2: Out of memory\n");
 		exit (EXIT_FAILURE);
 	}
 
@@ -442,13 +444,13 @@ void SimpleV4L2::io_init_userp(unsigned int buffer_size)
 						buffer_size);
 
 		if (!m_buffers[m_numBuffers].start) {
-			fprintf (stderr, "Out of memory\n");
+			fprintf (stderr, "SimpleV4L2: Out of memory\n");
 			exit (EXIT_FAILURE);
 		}
 	}
 }
 
-void SimpleV4L2::initDevice()
+bool SimpleV4L2::initDevice()
 {
 	struct v4l2_capability cap;
 	struct v4l2_cropcap cropcap;
@@ -456,34 +458,50 @@ void SimpleV4L2::initDevice()
 	struct v4l2_format fmt;
 	unsigned int min;
 
-	if (-1 == xioctl (m_fd, VIDIOC_QUERYCAP, &cap)) {
-		if (EINVAL == errno) {
-			fprintf (stderr, "%s is not a V4L2 device\n", m_devName);
-			exit (EXIT_FAILURE);
-		} else {
-			errno_exit ("VIDIOC_QUERYCAP");
+	if (-1 == xioctl (m_fd, VIDIOC_QUERYCAP, &cap)) 
+	{
+		if (EINVAL == errno)
+		{
+			if(!SimpleV4L2::SupressErrorPrinting)
+				fprintf (stderr, "SimpleV4L2: %s is not a V4L2 device\n", m_devName);
+			//exit (EXIT_FAILURE);
+			return false;
+		}
+		else 
+		{
+			errno_print ("VIDIOC_QUERYCAP");
+			return false;
 		}
 	}
 
-	if (!(cap.capabilities & V4L2_CAP_VIDEO_CAPTURE)) {
-		fprintf (stderr, "%s is not a video capture device\n", m_devName);
-		exit (EXIT_FAILURE);
+	if (!(cap.capabilities & V4L2_CAP_VIDEO_CAPTURE)) 
+	{
+		if(!SimpleV4L2::SupressErrorPrinting)
+			fprintf (stderr, "SimpleV4L2: %s is not a video capture device\n", m_devName);
+		//exit (EXIT_FAILURE);
+		return false;
 	}
 
 	switch (m_io) {
 	case IO_METHOD_READ:
-		if (!(cap.capabilities & V4L2_CAP_READWRITE)) {
-			fprintf (stderr, "%s does not support read i/o\n", m_devName);
-			exit (EXIT_FAILURE);
+		if (!(cap.capabilities & V4L2_CAP_READWRITE)) 
+		{
+			if(!SimpleV4L2::SupressErrorPrinting)
+				fprintf (stderr, "SimpleV4L2: %s does not support read i/o\n", m_devName);
+			//exit (EXIT_FAILURE);
+			return false;
 		}
 
 		break;
 
 	case IO_METHOD_MMAP:
 	case IO_METHOD_USERPTR:
-		if (!(cap.capabilities & V4L2_CAP_STREAMING)) {
-			fprintf (stderr, "%s does not support streaming i/o\n", m_devName);
-			exit (EXIT_FAILURE);
+		if (!(cap.capabilities & V4L2_CAP_STREAMING)) 
+		{
+			if(!SimpleV4L2::SupressErrorPrinting)
+				fprintf (stderr, "SimpleV4L2: %s does not support streaming i/o\n", m_devName);
+			//exit (EXIT_FAILURE);
+			return false;
 		}
 
 		break;
@@ -530,7 +548,11 @@ void SimpleV4L2::initDevice()
 		{
 			fmt.fmt.pix.field = V4L2_FIELD_INTERLACED;
 			if (-1 == xioctl (m_fd, VIDIOC_S_FMT, &fmt))
-				errno_exit ("VIDIOC_S_FMT");
+			{
+				errno_print ("VIDIOC_S_FMT");
+				return false;
+			}
+				
 		}
 	}
 
@@ -567,6 +589,8 @@ void SimpleV4L2::initDevice()
 	m_imageSize = QSize(fmt.fmt.pix.width,fmt.fmt.pix.height);
 	
 	m_deviceInited = true;
+	
+	return true;
 }
 
 void SimpleV4L2::closeDevice()
@@ -588,13 +612,15 @@ bool SimpleV4L2::openDevice(const char *dev_name)
 	m_buffers = NULL;
 	m_numBuffers = 0;
 	
-	if (-1 == stat (m_devName, &st)) {
+	if (-1 == stat (m_devName, &st)) 
+	{
 		fprintf (stderr, "SimpleV4l2::openDevice: Cannot identify '%s': %d, %s\n",
 			 m_devName, errno, strerror (errno));
 		return false;
 	}
 
-	if (!S_ISCHR (st.st_mode)) {
+	if (!S_ISCHR (st.st_mode)) 
+	{
 		fprintf (stderr, "%s is not a character device\n", m_devName);
 		return false;
 	}
@@ -602,8 +628,9 @@ bool SimpleV4L2::openDevice(const char *dev_name)
 	m_fd = open (m_devName, O_RDWR /* required */ | O_NONBLOCK, 0);
 
 	if (-1 == m_fd) {
-		fprintf (stderr, "Cannot open '%s': %d, %s\n",
-			 m_devName, errno, strerror (errno));
+		if(!SimpleV4L2::SupressErrorPrinting)
+			fprintf (stderr, "Cannot open '%s': %d, %s\n",
+				 m_devName, errno, strerror (errno));
 		return false;
 	}
 	

@@ -271,7 +271,7 @@ void VideoSender::setVideoSource(VideoSource *source)
 		
 		if(CameraThread *camera = dynamic_cast<CameraThread*>(m_source))
 		{
-			connect(camera, SIGNAL(signalStatusChanged(bool flag)), this, SIGNAL(signalStatusChanged(bool flag)));
+			connect(camera, SIGNAL(signalStatusChanged(bool)), this, SIGNAL(signalStatusChanged(bool)));
 		}
 		
 		//qDebug() << "GLVideoDrawable::setVideoSource(): "<<objectName()<<" m_source:"<<m_source;
@@ -778,7 +778,7 @@ void VideoSenderThread::processBlock()
 		if(!camera)
 		{
 			// error
-			qDebug() << "VideoSenderThread::processBlock: "<<cmd<<": Video source is not a video input class ('CameraThread'), unable to get/set video hints."; 
+			qDebug() << "VideoSenderThread::processBlock: "<<cmd<<": Video source is not a video input class ('CameraThread'), unable to get/set video hints, qobject:"<<(QObject*)source; 
 			return;
 		}
 		
@@ -792,7 +792,7 @@ void VideoSenderThread::processBlock()
 		if(!camera)
 		{
 			// error
-			qDebug() << "VideoSenderThread::processBlock: "<<cmd<<": Video source is not a video input class ('CameraThread'), unable to get/set video hints."; 
+			qDebug() << "VideoSenderThread::processBlock: "<<cmd<<": Video source is not a video input class ('CameraThread'), unable to get/set video hints, qobject:"<<(QObject*)source; 
 			return;
 		}
 		

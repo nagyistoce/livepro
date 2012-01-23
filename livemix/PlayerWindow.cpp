@@ -409,6 +409,9 @@ void PlayerWindow::loadConfig(const QString& configFile, bool verbose)
 		/// To use with vloopback, first build the kernel mod in vloopback and do 'insmod vloopback.ko', then
 		/// make sure you adjust the output device to the device shown in dmesg or /var/log/messages as the output
 		/// device.
+		
+		// Just testing CPU usage...
+		//(void*)m_glWidget->outputStream();
 
 		if(v4l_out_enab)
 		{

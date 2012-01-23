@@ -29,6 +29,29 @@ extern "C" {
 	#include <linux/videodev.h>
 }
 
+// // From: http://nehe.gamedev.net/tutorial/playing_avi_files_in_opengl/23001/
+// Doesn't work yet under gcc - I don't know enough assembler to make it work!
+// void flipRB640x480(void* buffer)                // Flips The Red And Blue Bytes (640x480)
+// {
+// 	void* b = buffer;                       // Pointer To The Buffer
+// 	__asm__(                                // Assembler Code To Follow
+// 		"mov %%ecx, 640*480       \n"     // Set Up A Counter (Dimensions Of Memory Block)
+// 		"mov %%ebx, %0            \n"     // Points ebx To Our Data (b)
+// 		"label:                 \n"     // Label Used For Looping
+// 			"mov %%al,%%ebx+0 \n"     // Loads Value At ebx Into al
+// 			"mov %%ah,%%ebx+2 \n"     // Loads Value At ebx+2 Into ah
+// 			"mov %%ebx+2,%%al \n"     // Stores Value In al At ebx+2
+// 			"mov %%ebx+0,%%ah \n"     // Stores Value In ah At ebx
+// 			"add %%ebx,3      \n"     // Moves Through The Data By 3 Bytes
+// 			"dec %%ecx        \n"     // Decreases Our Loop Counter
+// 			"jnz label      \n"     // If Not Zero Jump Back To Label
+// 		: "=r" (b)
+// 		: "r" (b)
+// 		: "%al", "%ah", "%ecx", "%ebx"
+// 	);
+// }
+
+
 int V4LOutput::startPipe (int dev, int width, int height)
 {
 	struct video_capability vid_caps;
@@ -257,6 +280,7 @@ void V4LOutput::processFrame()
 			bits[i]   = bits[i+2];
 			bits[i+2] = tmp;
 		}
+//		flipRB640x480(image.scanLine(0));
 	}
 	
 	if(write(m_v4lOutputDev, (const uchar*)image.bits(), image.byteCount()) != image.byteCount()) 
@@ -269,3 +293,4 @@ void V4LOutput::processFrame()
 	} 
 	
 }
+

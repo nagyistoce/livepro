@@ -416,6 +416,8 @@ QMutex CameraThread::threadCacheMutex;
 CameraThread::CameraThread(const QString& camera, QObject *parent)
 	: VideoSource(parent)
 	, m_fps(30)
+	, m_av_rgb_frame(0)
+	, m_buffer(0)
 	, m_inited(false)
 	, m_cameraFile(camera)
 	, m_frameCount(0)
@@ -424,8 +426,6 @@ CameraThread::CameraThread(const QString& camera, QObject *parent)
 	, m_bmd(0)
 	, m_testGen(0)
 	, m_error(false)
-	, m_buffer(0)
-	, m_av_rgb_frame(0)
 	, m_hasSignal(true)
 {
 	m_time_base_rational.num = 1;
@@ -1052,7 +1052,7 @@ void CameraThread::run()
 	qDebug() << "CameraThread::run: "<<this<<" In Thread ID "<<QThread::currentThreadId();
 	#endif
 	
-        int counter = 0;
+//         int counter = 0;
 	while(!m_killed)
 	{
                 //qDebug() << "CameraThread::run: "<<this<<" counter:"<<counter++;

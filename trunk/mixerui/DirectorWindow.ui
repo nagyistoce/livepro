@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>DirectorWindow</class>
+ <widget class="QMainWindow" name="DirectorWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>520</width>
+    <height>402</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QGridLayout" name="gridLayout_2">
+    <item row="0" column="0">
+     <widget class="QMdiArea" name="mdiArea">
+      <property name="frameShape">
+       <enum>QFrame::Panel</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Plain</enum>
+      </property>
+      <property name="midLineWidth">
+       <number>1</number>
+      </property>
+      <property name="verticalScrollBarPolicy">
+       <enum>Qt::ScrollBarAsNeeded</enum>
+      </property>
+      <property name="horizontalScrollBarPolicy">
+       <enum>Qt::ScrollBarAsNeeded</enum>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="1">
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="1" column="0">
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>X-Fade:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QSlider" name="fadeSpeedSlider">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QDoubleSpinBox" name="fadeSpeedBox">
+        <property name="suffix">
+         <string>s</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QPushButton" name="fadeBlackBtn">
+        <property name="text">
+         <string>Black</string>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>520</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>&amp;File</string>
+    </property>
+    <addaction name="separator"/>
+    <addaction name="actionChoose_Output"/>
+    <addaction name="actionPlayer_Setup"/>
+    <addaction name="separator"/>
+    <addaction name="actionMIDI_Input_Settings"/>
+    <addaction name="separator"/>
+    <addaction name="actionExit"/>
+   </widget>
+   <widget class="QMenu" name="menuEdit">
+    <property name="title">
+     <string>&amp;Edit</string>
+    </property>
+    <addaction name="actionMonitor_Players_Live"/>
+    <addaction name="actionShow_Switcher"/>
+    <addaction name="actionShow_Property_Editor"/>
+    <addaction name="actionShow_Histogram"/>
+    <addaction name="actionShow_InputBalance"/>
+    <addaction name="actionShow_Preview"/>
+    <addaction name="separator"/>
+    <addaction name="actionAdd_Group_Player"/>
+    <addaction name="actionAdd_Overlay"/>
+    <addaction name="actionAdd_Camera_Mixer"/>
+    <addaction name="actionAdd_Video_Player"/>
+   </widget>
+   <widget class="QMenu" name="menuWindow">
+    <property name="title">
+     <string>&amp;Window</string>
+    </property>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuEdit"/>
+   <addaction name="menuWindow"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionPlayer_Setup">
+   <property name="text">
+    <string>Set&amp;up Outputs...</string>
+   </property>
+  </action>
+  <action name="actionExit">
+   <property name="text">
+    <string>E&amp;xit</string>
+   </property>
+  </action>
+  <action name="actionChoose_Output">
+   <property name="text">
+    <string>Choose &amp;Output...</string>
+   </property>
+  </action>
+  <action name="actionMonitor_Players_Live">
+   <property name="text">
+    <string>Show &amp;Live Monitor</string>
+   </property>
+  </action>
+  <action name="actionAdd_Video_Player">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Add &amp;Video Player</string>
+   </property>
+  </action>
+  <action name="actionAdd_Overlay">
+   <property name="text">
+    <string>Add &amp;Overlay</string>
+   </property>
+  </action>
+  <action name="actionAdd_Group_Player">
+   <property name="text">
+    <string>Add &amp;Group Player</string>
+   </property>
+  </action>
+  <action name="actionShow_Preview">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Show &amp;Preview Window</string>
+   </property>
+  </action>
+  <action name="actionShow_Switcher">
+   <property name="text">
+    <string>Show &amp;Switcher Controls</string>
+   </property>
+  </action>
+  <action name="actionShow_Property_Editor">
+   <property name="text">
+    <string>Show &amp;Property Editor Window</string>
+   </property>
+  </action>
+  <action name="actionShow_Histogram">
+   <property name="text">
+    <string>Show &amp;Histogram Window</string>
+   </property>
+  </action>
+  <action name="actionShow_InputBalance">
+   <property name="text">
+    <string>Show &amp;Camera Color Balancer</string>
+   </property>
+  </action>
+  <action name="actionAdd_Camera_Mixer">
+   <property name="text">
+    <string>Add Camera &amp;Mixer</string>
+   </property>
+  </action>
+  <action name="actionMIDI_Input_Settings">
+   <property name="text">
+    <string>MIDI Input Settings...</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

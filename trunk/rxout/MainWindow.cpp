@@ -4,7 +4,7 @@
 #include "VideoWidget.h"
 #include "V4LOutput.h"
 
-#define V4L_OUTPUT_NUM 0
+#define V4L_OUTPUT_NUM 1
 
 MainWindow::MainWindow()
 	: QWidget()
@@ -13,7 +13,7 @@ MainWindow::MainWindow()
 	QHBoxLayout *hbox = new QHBoxLayout(this);
 	hbox->setContentsMargins(0,0,0,0);
 	
-	QString host = "192.168.0.17";
+	QString host = "10.10.9.92"; //192.168.0.17";
 	int port = 9978;
 		
 	VideoReceiver *rx = VideoReceiver::getReceiver(host,port);

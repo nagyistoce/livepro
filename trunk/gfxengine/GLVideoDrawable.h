@@ -323,6 +323,10 @@ public slots:
 	void setKernelSize(int size);
 	void setCustomKernel(QVariantList list);
 	
+	/// Only compatible with CameraThread/VideoReceiver currently
+	void loadHintsFromSource();
+	void storeHintsToSource();
+	
 signals:
 	void displayOptionsChanged(const VideoDisplayOptions&);
 	void sourceDiscarded(VideoSource*);

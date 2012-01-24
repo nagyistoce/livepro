@@ -48,6 +48,7 @@ public:
 	
 	QList<StandardInfo> standards();
 	StandardInfo standard(); // return current standard
+	QString standardName() { return standard().name; } // return current standard
 	void setStandard(StandardInfo standard);
 	bool setStandard(const QString& name); // must be in the list return by standards()
 	

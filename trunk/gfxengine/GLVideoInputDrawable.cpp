@@ -177,7 +177,6 @@ void GLVideoInputDrawable::setUseNetworkSource(bool flag)
 		setVideoInput(videoInput());
 		setCardInput(cardInput());
 	}
-
 }
 
 void GLVideoInputDrawable::testXfade()

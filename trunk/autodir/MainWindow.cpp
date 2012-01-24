@@ -216,6 +216,7 @@ void MainWindow::motionRatingChanged(int rating)
 			GLScene *scene = new GLScene();
 			GLVideoInputDrawable *vidgld = new GLVideoInputDrawable();
 			vidgld->setVideoConnection(highestRatedCon);
+			vidgld->loadHintsFromSource(); // Honor video hints pre-configured for the input on the server
 			scene->addDrawable(vidgld);
 			group->addScene(scene);
 			

@@ -6,7 +6,9 @@
 #include <QVideoFrame>
 #include <QAbstractVideoSurface>
 #include "VideoSource.h"
+
 #include "CameraThread.h"
+#include "VideoReceiver.h"
 
 #include "VideoSender.h"
 
@@ -3793,7 +3795,124 @@ void GLVideoDrawable::setCustomKernel(QVariantList list)
 	updateGL();
 }
 
+void GLVideoDrawable::loadHintsFromSource()
+{
+	if(!m_source)
+	{
+		qDebug() << "GLVideoDrawable::loadHintsFromSource(): Warning: No source set, unable to load hints";
+		return;
+	}
+		
+	QString className = m_source->metaObject()->className();
+	if(className != "VideoReceiver" &&
+	   className != "CameraThread")
+	{
+		qDebug() << "GLVideoDrawable::loadHintsFromSource(): Warning: Source "<<className<<" incompatible with video hints - update GLVideoDrawable when the source is made compatible with video hints";
+		return;
+	}
 	
+	QVariantMap map;
+	if(className == "VideoReceiver")
+	{
+		bool flag = false;
+		VideoReceiver *rx = dynamic_cast<VideoReceiver*>(m_source);
+		map = rx->videoHints(&flag);
+		if(!flag)
+		{
+			qDebug() << "GLVideoInputDrawable::loadHintsFromSource(): Warning: VideoReceiver "<<(QObject*)rx<<" never received video hints from source!";
+			map = QVariantMap();
+		}
+	}
+	else
+	{
+		CameraThread *cam = dynamic_cast<CameraThread*>(m_source);
+		map = cam->videoHints();
+	}
+	
+	if(!map.isEmpty())
+	{
+		QStringList props = QStringList() 
+			<< "whiteLevel"
+			<< "blackLevel"
+	// 		<< "midLevel"
+	// 		<< "gamma"
+			<< "brightness"
+			<< "contrast" 
+			<< "hue"
+			<< "saturation"
+			<< "flipHorizontal"
+			<< "flipVertical"
+			<< "cropTop"
+			<< "cropBottom"
+			<< "cropLeft"
+			<< "cropRight"
+			<< "filterType"
+			<< "sharpAmount"
+			<< "rotation";
+		
+		foreach(QString prop, props)
+		{
+			QVariant variant = map[prop];
+			if(variant.isValid())
+			{
+				setProperty(qPrintable(prop), variant);	
+			}
+		}
+	}
+}
+
+void GLVideoDrawable::storeHintsToSource()
+{
+	QVariantMap map;
+	
+	QStringList props = QStringList() 
+		<< "whiteLevel"
+		<< "blackLevel"
+// 		<< "midLevel"
+// 		<< "gamma"
+		<< "brightness"
+		<< "contrast" 
+		<< "hue"
+		<< "saturation"
+		<< "flipHorizontal"
+		<< "flipVertical"
+		<< "cropTop"
+		<< "cropBottom"
+		<< "cropLeft"
+		<< "cropRight"
+		<< "filterType"
+		<< "sharpAmount"
+		<< "rotation";
+	
+	foreach(QString prop, props)
+		map[prop] = property(qPrintable(prop));	
+	
+	if(!m_source)
+	{
+		qDebug() << "GLVideoDrawable::storeHintsToSource(): Warning: No source set, unable to save hints";
+		return;
+	}
+	
+	QString className = m_source->metaObject()->className();
+	if(className != "VideoReceiver" &&
+	   className != "CameraThread")
+	{
+		qDebug() << "GLVideoDrawable::storeHintsToSource(): Warning: Source "<<className<<" incompatible with video hints - update GLVideoDrawable when the source is made compatible with video hints";
+		return;
+	}
+	
+	if(className == "VideoReceiver")
+	{
+		VideoReceiver *rx = dynamic_cast<VideoReceiver*>(m_source);
+		rx->setVideoHints(map);
+	}
+	else
+	{
+		CameraThread *cam = dynamic_cast<CameraThread*>(m_source);
+		cam->setVideoHints(map);
+	}
+}
+
 VideoDisplayOptionWidget::VideoDisplayOptionWidget(GLVideoDrawable *drawable, QWidget *parent)
 	: QWidget(parent)
 	, m_drawable(drawable)

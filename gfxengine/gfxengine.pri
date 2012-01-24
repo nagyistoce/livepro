@@ -168,6 +168,7 @@ HEADERS += BMDOutput.h \
            EntityList.h \
            GLCommonShaders.h \
            GLDrawable.h \
+           ExpandableWidget.h \
            GLDrawables.h \
            GLEditorGraphicsScene.h \
            GLImageDrawable.h \
@@ -216,6 +217,7 @@ SOURCES += BMDOutput.cpp \
            CornerItem.cpp \
            EditorUtilityWidgets.cpp \
            EntityList.cpp \
+           ExpandableWidget.cpp \
            GLDrawable.cpp \
            GLEditorGraphicsScene.cpp \
            GLImageDrawable.cpp \

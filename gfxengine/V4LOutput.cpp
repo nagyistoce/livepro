@@ -51,6 +51,66 @@ extern "C" {
 // 	);
 // }
 
+// The folllowing swap methods are from: http://stackoverflow.com/questions/6804101/fast-method-to-copy-memory-with-translation-argb-to-bgr
+// Can't get them to work yet.
+
+typedef unsigned char UInt8;
+
+//typedef struct{ UInt8 Alpha; UInt8 Red; UInt8 Green; UInt8 Blue; } ARGB;
+typedef struct{ UInt8 Red; UInt8 Green; UInt8 Blue; } RGB;
+typedef struct{ UInt8 Blue; UInt8 Green; UInt8 Red; } BGR;
+
+/*
+void swap1(ARGB *orig, BGR *dest, unsigned imageSize) {
+    unsigned x;
+    for(x = 0; x < imageSize; x++) {
+        *((uint32_t*)(((uint8_t*)dest)+x*3)) = OSSwapInt32(((uint32_t*)orig)[x]);
+    }
+}*/
+
+
+void swap2(uchar *orig, uchar *dest, unsigned imageSize) {
+    asm (
+        "0:\n\t"
+        "movl   (%1),%%eax\n\t"
+        "bswapl %%eax\n\t"
+        "movl   %%eax,(%0)\n\t"
+        "addl   $4,%1\n\t"
+        "addl   $3,%0\n\t"
+        "decl   %2\n\t"
+        "jnz    0b"
+        :: "D" (dest), "S" (orig), "c" (imageSize)
+        : "flags", "eax"
+    );
+}
+
+/*
+typedef uint8_t v16qi __attribute__ ((vector_size (16)));
+void swap3(uint8_t *orig, uint8_t *dest, size_t imagesize) {
+    v16qi mask = __builtin_ia32_lddqu((const char[]){3,2,1,7,6,5,11,10,9,15,14,13,0xFF,0xFF,0xFF,0XFF});
+    uint8_t *end = orig + imagesize * 4;
+    for (; orig != end; orig += 16, dest += 12) {
+        __builtin_ia32_storedqu(dest,__builtin_ia32_pshufb128(__builtin_ia32_lddqu(orig),mask));
+    }
+}*/
+
+// void swap2_2(uint8_t *orig, uint8_t *dest, size_t imagesize) {
+//     int8_t mask[16] = {3,2,1,7,6,5,11,10,9,15,14,13,0xFF,0xFF,0xFF,0XFF};//{0xFF, 0xFF, 0xFF, 0xFF, 13, 14, 15, 9, 10, 11, 5, 6, 7, 1, 2, 3};
+//     asm (
+//         "lddqu  (%3),%%xmm1\n\t"
+//         "0:\n\t"
+//         "lddqu  (%1),%%xmm0\n\t"
+//         "pshufb %%xmm1,%%xmm0\n\t"
+//         "movdqu %%xmm0,(%0)\n\t"
+//         "add    $16,%1\n\t"
+//         "add    $12,%0\n\t"
+//         "sub    $4,%2\n\t"
+//         "jnz    0b"
+//         :: "r" (dest), "r" (orig), "r" (imagesize), "r" (mask)
+//         : "flags", "xmm0", "xmm1"
+//     );
+// }
+
 
 int V4LOutput::startPipe (int dev, int width, int height)
 {
@@ -272,6 +332,8 @@ void V4LOutput::processFrame()
 	if(V4L_NATIVE_FORMAT == VIDEO_PALETTE_RGB24 &&
 	   V4L_QIMAGE_FORMAT == QImage::Format_RGB888)
 	{
+		
+		
 		uchar  tmp;
 		uchar *bits = image.scanLine(0);
 		for(int i=0; i<image.byteCount(); i+=3)
@@ -280,7 +342,12 @@ void V4LOutput::processFrame()
 			bits[i]   = bits[i+2];
 			bits[i+2] = tmp;
 		}
+		
 //		flipRB640x480(image.scanLine(0));
+// 		QImage image2(image.size(), image.format());
+// 		swap2(image.scanLine(0),image2.scanLine(0),image.byteCount());
+// 		image = image2;
+		
 	}
 	
 	if(write(m_v4lOutputDev, (const uchar*)image.bits(), image.byteCount()) != image.byteCount()) 

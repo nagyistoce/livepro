@@ -1,0 +1,5 @@
+Development folder, mostly work-in-process or proof-of-concept stuff. Some of it works, some of it doesn't, some of it makes its way out into the ../gfxengine folder and the other apps in the parent folder.
+
+I've added a 'template' of sorts in app-template - just svn export app-template new_folder to start a new development folder. (Just rename the app-template.pro to whatever you want your new .pro file called.)
+
+

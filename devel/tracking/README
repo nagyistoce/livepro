@@ -1,0 +1,6 @@
+R&D on a tracking algorithim. 
+
+Input: Stream of frames
+Output: QRect with current object bounding box. 
+
+To start tracking, call setInitialRect(QRect) of object to track. (or whatever method name we decide to use)

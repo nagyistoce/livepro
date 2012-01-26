@@ -1,9 +1,11 @@
 #include "MainWindow.h"
 
 #include "RectSelectVideoWidget.h"
-#include "CameraThread.h"
 #include "TrackingFilter.h"
+
+#include "CameraThread.h"
 #include "VideoThread.h"
+#include "VideoReceiver.h"
 
 MainWindow::MainWindow()
 	: QWidget()
@@ -18,6 +20,11 @@ MainWindow::MainWindow()
 	RectSelectVideoWidget *videoWidget = new RectSelectVideoWidget(this);
 	
 	#if 1
+	VideoReceiver *source = VideoReceiver::getReceiver("192.168.0.18",7755); 
+	#endif
+	
+	
+	#if 0
 	// Use a video file for input
 	VideoThread * source = new VideoThread();
 	source->setVideo("../data/20120115/sermon.wmv");
@@ -26,10 +33,10 @@ MainWindow::MainWindow()
 	//qApp->beep();
 	// 380
 	source->seek(550 * 1000, 0);
+	#endif
 	
-	#else
+	#if 0
 	CameraThread *source = CameraThread::threadForCamera("/dev/video0");
-	
 	#endif
 	
 	TrackingFilter *filter = new TrackingFilter();

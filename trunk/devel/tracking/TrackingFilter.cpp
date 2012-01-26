@@ -252,7 +252,7 @@ QImage TrackingFilter::trackPoints(QImage img)
 	
 	QFont font = p.font();
 	if(!m_cleanOutput)
-		p.setFont(QFont("", 12, QFont::Bold));
+		p.setFont(QFont("", 9, QFont::Bold));
 		
 	
 	
@@ -271,45 +271,48 @@ QImage TrackingFilter::trackPoints(QImage img)
 // 			ObjectPoint,
 // 			FrackPoint,
 			
-			QRect pointRect(point - QPoint(5,5), QSize(10,10));
 			bool valid=false;
 			
 			//p.setBrush(Qt::green);
 			//qDebug() << "Point:"<<i<<", type:"<<(int)type;
 						
-// 			if(type == TrackingPointInfo::InvalidPoint)
-// 			{
-// 				p.setBrush(Qt::white);
-// 			}
-// 			else
+			if(type == TrackingPointInfo::InvalidPoint)
+			{
+				p.setBrush(Qt::white);
+				//valid=true;
+			}
+			else
 			if(type == TrackingPointInfo::NonObjectPoint)
 			{
 				p.setBrush(Qt::cyan);
-				valid=true;
+				//valid=true;
 			}
 			else
 			if(type == TrackingPointInfo::ObjectPoint)
 			{
 				p.setBrush(Qt::red);
-				valid=true;
+				//valid=true;
 			}
-// 			else
-// 			if(type == TrackingPointInfo::FrackPoint)
-// 			{
-// 				p.setBrush(Qt::black);
-// 			}
+			else
+			if(type == TrackingPointInfo::FrackPoint)
+			{
+				p.setBrush(Qt::black);
+				//valid=true;
+			}
 			
-			valid = false;
+			//valid = false;
 			if(valid)
 			{
+				QRect pointRect(point - QPoint(5,5), QSize(10,10));
+			
 				p.setPen(Qt::black);
 				p.drawEllipse(pointRect);
 				
 				p.setPen(Qt::black);
-				p.drawText(point + QPoint(-4,6), QString("%1").arg( i ));
+				p.drawText(point + QPoint(-3,5), QString("%1").arg( i ));
 				
 				p.setPen(Qt::yellow);
-				p.drawText(point + QPoint(-5,5), QString("%1").arg( i ));
+				p.drawText(point + QPoint(-4,4), QString("%1").arg( i ));
 			}
 			
 					//p.drawText(point + QPoint(-5,5), QString("%1/%4 | %2/%3").arg( m_pointInfo[i].changeValuesAvg ).arg(m_pointInfo[i].valuesAvg).arg(m_userTuningMinMove).arg(m_userTuningMinChange));

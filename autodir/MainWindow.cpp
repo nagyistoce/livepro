@@ -26,11 +26,13 @@
 #define FIRST_V4L_NUM 0
 #endif
 
+#define SETTINGS_FILE "inputs.ini"
+#define GetSettingsObject() QSettings settings(SETTINGS_FILE,QSettings::IniFormat);
 
 MainWindow::MainWindow()
 	: QWidget()
 	, m_lastHighNum(-1)
-	, m_ignoreCountdown(0)
+	, m_ignoreCountdown(60)
 {
 	#ifdef PREVIEW_OPENGL
 	// Create the GLWidget to do the actual rendering
@@ -48,8 +50,15 @@ MainWindow::MainWindow()
 	vbox->setContentsMargins(0,0,0,0);
 	#endif
 	
-	QString host = "10.10.9.90";
+	GetSettingsObject();
+	
+	QString host = settings.value("host").toString(); //"10.10.9.90";
 	//QString host = "localhost";
+	if(host.isEmpty())
+	{
+		qDebug() << "Error: 'host' value in "<<SETTINGS_FILE<<" is empty, exiting.";
+		exit(-1);
+	}
 	
 	PlayerConnection *player = new PlayerConnection();
 	player->setHost(host);
@@ -59,11 +68,15 @@ MainWindow::MainWindow()
 	
 	//player->setScreenRect(QRect(1280,600,320,240));
 	//player->setScreenRect(QRect(600,200,640,480));
-	player->setScreenRect(QRect(0,0,640,480));
-	player->setCrossfadeSpeed(150);
+	QString rectStr = settings.value("rect","0,0,640,480").toString();
+	QStringList rectStrList = rectStr.split(",");
+	QRect rect(rectStrList[0].toInt(), rectStrList[1].toInt(), rectStrList[2].toInt(), rectStrList[3].toInt());
+	
+	player->setScreenRect(rect); //QRect(0,0,640,480));
+	player->setCrossfadeSpeed(settings.value("xfade",150).toInt());
 	//player->setCrossfadeSpeed(0);
 	
-	
+/*	
 	QStringList inputs = QStringList() 
 // 		<< tr("%1:7755").arg(host)
 // 		<< tr("%1:7756").arg(host)
@@ -87,7 +100,29 @@ MainWindow::MainWindow()
 		<< tr("dev=/dev/video0,input=Default,net=%1:7755").arg(host)
 		<< tr("dev=test:1,input=Default,net=%1:7756").arg(host)
 		<< tr("dev=test:2,input=Default,net=%1:7757").arg(host)
-		<< tr("dev=test:3,input=Default,net=%1:7758").arg(host);
+		<< tr("dev=test:3,input=Default,net=%1:7758").arg(host);*/
+		
+	int numInputs = settings.value("num-inputs",0).toInt();
+	if(numInputs <= 0)
+	{
+		qDebug() << "Error: Zero inputs listed in "<<SETTINGS_FILE<<", exiting.";
+		exit(-1);
+	}
+	
+	for(int i=0; i<numInputs; i++)
+	{
+		QString input = settings.value(tr("input%1").arg(i)).toString();
+		if(input.indexOf("$host") > -1)
+		{
+			QString original = input;
+			input = input.replace("$host","%1");
+			input = QString(input).arg(host);
+			qDebug() << "Input "<<i<<": Auto-replaced host, orig:"<<original<<", final:"<<input;
+		}
+		
+		m_cons << input;
+	}
+	
 		
  	#ifdef PREVIEW_OPENGL
  	GLScene *scene = new GLScene();
@@ -99,11 +134,16 @@ MainWindow::MainWindow()
  	#endif
  	
  	int counter = 0;
- 	foreach(QString connection, inputs)
+ 	foreach(QString connection, m_cons)
  	{
-		QStringList parts = connection.split(":");
-		QString host = parts[0];
-		int port = parts[1].toInt();
+// 		QStringList parts = connection.split(":");
+// 		QString host = parts[0];
+// 		int port = parts[1].toInt();
+
+		QUrl url = GLVideoInputDrawable::extractUrl(connection);
+		QString host = url.host();
+		int port = url.port();
+		
 		
 		VideoReceiver *rx = VideoReceiver::getReceiver(host,port);
 		
@@ -166,7 +206,7 @@ MainWindow::MainWindow()
 	glw->setViewport(QRect(0,0,frameWidth * inputs.size(), 750));
 	#endif
 	
-	resize( 320 * inputs.size(), 240 );
+	resize( 320 * numInputs, 240 );
 }
 
 void MainWindow::resizeEvent(QResizeEvent*)
@@ -183,11 +223,11 @@ void MainWindow::motionRatingChanged(int rating)
 	int num = filter->property("num").toInt();
 	
 	m_ratings[num] += rating;
-	qDebug() << num << rating;
+	//qDebug() << num << rating;
 	//m_filters[num]->setDebugText(tr("%2 %1").arg(m_ratings[num]).arg(m_lastHighNum == num ? " ** LIVE **":""));
 
 	int frameLimit = 69;
-			
+	
 	if(m_ignoreCountdown-- <= 0)
 	{
 		
@@ -206,7 +246,7 @@ void MainWindow::motionRatingChanged(int rating)
 			counter ++;
 		}
 		
-		//maxNum = 0;
+		maxNum = 0;
 		
 		if(m_lastHighNum != maxNum)
 		{
@@ -216,7 +256,7 @@ void MainWindow::motionRatingChanged(int rating)
 			GLScene *scene = new GLScene();
 			GLVideoInputDrawable *vidgld = new GLVideoInputDrawable();
 			vidgld->setVideoConnection(highestRatedCon);
-			vidgld->loadHintsFromSource(); // Honor video hints pre-configured for the input on the server
+			vidgld->loadHintsFromSource(); // Honor video hints pre-configured for the input on the server - use the 'hintcal' project to configure hints interactivly
 			scene->addDrawable(vidgld);
 			group->addScene(scene);
 			
@@ -239,8 +279,12 @@ void MainWindow::motionRatingChanged(int rating)
 				m_ratings[maxNum] = 0; 
 				
 			m_ignoreCountdown = frameLimit * m_ratings.size(); // ignore next X frames * num sources
-			qDebug() << "MainWindow::motionRatingChanged: Max num the same:"<<maxNum<<", rated:"<<max<<", not switching!";
+			//qDebug() << "MainWindow::motionRatingChanged: Max num the same:"<<maxNum<<", rated:"<<max<<", not switching!";
 		}
+	}
+	else
+	{
+		//qDebug() << "m_ignoreCountdown:"<<m_ignoreCountdown;
 	}
 }
 	

@@ -19,6 +19,7 @@
 #include "VideoFrame.h"
 
 #include <QMutex>
+#include <QUrl>
 
 class VideoReceiver: public VideoSource
 {
@@ -35,10 +36,9 @@ private:
 public:
 	static QList<VideoReceiver*> receivers() { return m_threadMap.values(); }
 	
+	static VideoReceiver * getReceiver(const QUrl& url) { return getReceiver(url.host(), url.port()); };
 	static VideoReceiver * getReceiver(const QString& host, int port=-1);
 	~VideoReceiver();
-	
-	
 	
 	bool connectTo(const QString& host, int port=-1, QString url = "/", const QString& user="", const QString& pass="");
 	void exit();

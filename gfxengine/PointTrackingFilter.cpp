@@ -239,8 +239,8 @@ QImage PointTrackingFilter::trackPoints(QImage img)
 	
 	if(m_historyWindowAverage < 0)
 	{
-		if(!m_cleanOutput)
-			qDebug() << "Capped history window, value:"<<m_historyWindowAverage<<", derived from: "<<m_historyWindowTotal<<",m_historyWindowSize:"<<m_historyWindowSize<<", moveAvg:"<<moveAvg;
+		//if(!m_cleanOutput)
+		//	qDebug() << "Capped history window, value:"<<m_historyWindowAverage<<", derived from: "<<m_historyWindowTotal<<",m_historyWindowSize:"<<m_historyWindowSize<<", moveAvg:"<<moveAvg;
 		m_historyWindowAverage = 1;
 	}
 	
@@ -353,8 +353,8 @@ QImage PointTrackingFilter::trackPoints(QImage img)
 	if(m_validCount <= m_foundCount * m_resetRatio)
 	{
 		//qDebug() << "Need to init!";
-		if(!m_cleanOutput)
-			qDebug() << "count less than "<<(m_foundCount * m_resetRatio)<<", resetting.";
+// 		if(!m_cleanOutput)
+// 			qDebug() << "count less than "<<(m_foundCount * m_resetRatio)<<", resetting.";
 		m_needInit = 1;
 	}
 	else
@@ -496,7 +496,7 @@ void PointTrackingFilter::tuneToFps(int fps)
 		(double)fps);
 	//resetRatio 0.25 - 0.75
 	
-	qDebug() << "tuneToFps("<<fps<<"): minDistChange:"<<minDistChange<<", minChange:"<<minChange<<", numValues:"<<numValues<<", numChangeValues:"<<numChangeValues<<", resetRatio:"<<resetRatio<<", historyWindowSize:"<<historyWindowSize;
+	//qDebug() << "tuneToFps("<<fps<<"): minDistChange:"<<minDistChange<<", minChange:"<<minChange<<", numValues:"<<numValues<<", numChangeValues:"<<numChangeValues<<", resetRatio:"<<resetRatio<<", historyWindowSize:"<<historyWindowSize;
 	// apply new parameters
 	tune(minMove, useChange, minDistChange, minChange, numValues, numChangeValues, historyWindowSize, resetRatio);
 	

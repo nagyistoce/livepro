@@ -32,6 +32,9 @@ public:
 	GLVideoInputDrawable(QString file="", QObject *parent=0);
 	~GLVideoInputDrawable();
 	
+	static QHash<QString,QString> parseConString(const QString& con);
+	static QUrl extractUrl(const QString& con);
+	
 	QString videoConnection() { return m_videoConnection; }
 	
 	QString videoInput() { return m_videoInput; }

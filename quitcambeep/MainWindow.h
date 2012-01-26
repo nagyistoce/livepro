@@ -30,6 +30,7 @@ protected:
 	QLabel *m_watchLabel;
 	
 	VideoWidget *m_videoWidget;
+	bool m_labelChanged;
 };
 
 

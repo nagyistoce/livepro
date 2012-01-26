@@ -3,6 +3,7 @@
 #include "RectSelectVideoWidget.h"
 #include "CameraThread.h"
 #include "TrackingFilter.h"
+#include "VideoThread.h"
 
 MainWindow::MainWindow()
 	: QWidget()
@@ -16,10 +17,23 @@ MainWindow::MainWindow()
 	// but they don't use OpenGL for rendering, which makes them work under less-than-ideal circumstances.
 	RectSelectVideoWidget *videoWidget = new RectSelectVideoWidget(this);
 	
-	CameraThread *camera = CameraThread::threadForCamera("/dev/video0");
+	#if 1
+	// Use a video file for input
+	VideoThread * source = new VideoThread();
+	source->setVideo("../data/20120115/sermon.wmv");
+	//source->setVideo("../data/20120115/webcam4.mp4");
+	source->start();
+	//qApp->beep();
+	// 380
+	source->seek(550 * 1000, 0);
+	
+	#else
+	CameraThread *source = CameraThread::threadForCamera("/dev/video0");
+	
+	#endif
 	
 	TrackingFilter *filter = new TrackingFilter();
-	filter->setVideoSource(camera);
+	filter->setVideoSource(source);
 	
 	videoWidget->setVideoSource(filter);
 	

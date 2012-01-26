@@ -111,7 +111,7 @@ GLVideoDrawable::GLVideoDrawable(QObject *parent)
 	, m_source2(0)
 	, m_frameCount(0)
 	, m_latencyAccum(0)
-	, m_debugFps(true)
+	, m_debugFps(false)
 	, m_validShader(false)
 	, m_validShader2(false)
 	, m_uploadedCacheKey(0)
@@ -364,6 +364,18 @@ void GLVideoDrawable::setVideoSource(VideoSource *source)
 // 		}
 
 		updateRects();
+		
+		// hintLoadPending will be set TRUE if loadHintsFromSource() failed when trying to load from a VideoReceiver.
+		// By checking the flag here, we allow that loadHintsFromSource() to fail on a client, and the GLVideoDrawable to be
+		// converted to a byte array, sent to the server, uncompressed, and then we find the flag here, we try loading
+		// hints here - assuming that now we have a CameraThread, we won't have to wait for a VideoSender to transmit them. 
+		if(property("hintLoadPending").toBool())
+		{
+			setProperty("hintLoadPending", false);
+			
+			qDebug() << "GLVideoDrawable::setVideoSource(): hintLoadPending was on, calling loadHintsFromSource() again.";
+			loadHintsFromSource();
+		}
 	}
 	else
 	{
@@ -3820,7 +3832,12 @@ void GLVideoDrawable::loadHintsFromSource()
 		if(!flag)
 		{
 			qDebug() << "GLVideoInputDrawable::loadHintsFromSource(): Warning: VideoReceiver "<<(QObject*)rx<<" never received video hints from source!";
-			map = QVariantMap();
+			//map = QVariantMap();
+			
+			// This dynamic property is set to allow the GLVideoDrawable to be sent over the wire 
+			// and it's checked in setVideoSource() to trigger another call to loadHintsFromSource() 
+			setProperty("hintLoadPending",true);
+			return;
 		}
 	}
 	else
@@ -3829,6 +3846,10 @@ void GLVideoDrawable::loadHintsFromSource()
 		map = cam->videoHints();
 	}
 	
+	setProperty("hintLoadPending",false);
+	
+	
+	//qDebug() << "GLVideoDrawable::loadHintsFromSource(): Using map:"<<map;
 	if(!map.isEmpty())
 	{
 		QStringList props = QStringList() 

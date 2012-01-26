@@ -107,7 +107,7 @@ protected:
 	void showEvent(QShowEvent*);
 	void resizeEvent(QResizeEvent*);
 
-private:
+protected:
 	void connectVideoSource(VideoSource *source);
 	void updateOverlay();
 	void updateRects();

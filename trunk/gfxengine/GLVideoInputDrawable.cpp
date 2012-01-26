@@ -33,6 +33,55 @@ GLVideoInputDrawable::~GLVideoInputDrawable()
 	}
 }
 
+QHash<QString,QString> GLVideoInputDrawable::parseConString(const QString& con)
+{
+	QHash<QString,QString> map;
+	QStringList opts = con.split(",");
+	foreach(QString pair, opts)
+	{
+		QStringList values = pair.split("=");
+		if(values.size() < 2)
+		{
+			qDebug() << "GLVideoInputDrawable::parseConString: Parse error for option:"<<pair;
+			continue;
+		}
+
+		QString name = values[0].toLower();
+		QString value = values[1];
+
+		map[name] = value;
+	}
+	
+	return map;
+}
+
+QUrl GLVideoInputDrawable::extractUrl(const QString& con)
+{
+	QString netString;
+	if(con.indexOf("=") > -1)
+	{
+		QHash<QString,QString> map = parseConString(con);
+		netString = map["net"];
+	}
+	else
+	{
+		netString = con;
+	}
+	
+	if(netString.isEmpty())
+		return QUrl();
+		
+	QStringList url = netString.split(":");
+	QString host = url[0];
+	int port = url.size() > 1 ? url[1].toInt() : 7755;
+	
+	QUrl urlObject;
+	urlObject.setHost(host);
+	urlObject.setPort(port);
+	return urlObject;
+}
+
+
 void GLVideoInputDrawable::setVideoConnection(const QString& con)
 {
 	m_videoConnection = con;
@@ -43,22 +92,7 @@ void GLVideoInputDrawable::setVideoConnection(const QString& con)
 	if(con.isEmpty())
 		return;
 
-	QHash<QString,QString> map;
-	QStringList opts = con.split(",");
-	foreach(QString pair, opts)
-	{
-		QStringList values = pair.split("=");
-		if(values.size() < 2)
-		{
-			qDebug() << "GLVideoInputDrawable::setVideoConnection: Parse error for option:"<<pair;
-			continue;
-		}
-
-		QString name = values[0].toLower();
-		QString value = values[1];
-
-		map[name] = value;
-	}
+	QHash<QString,QString> map = parseConString(con);
 
 	m_videoInput = map["dev"];
 	
@@ -80,8 +114,11 @@ void GLVideoInputDrawable::setNetworkSource(const QString& src)
 	if(src.isEmpty())
 		return;
 
-	QStringList url = src.split(":");
-	QString host = url[0];
+	QUrl url = extractUrl(src);
+	QString host = url.host();
+	
+// 	QStringList url = src.split(":");
+// 	QString host = url[0];
 // 	int port = url.size() > 1 ? url[1].toInt() : 7755;
 
 // 	QUrl url(src);
@@ -149,9 +186,12 @@ void GLVideoInputDrawable::setUseNetworkSource(bool flag)
 // 			m_rx->release(this);
 
 		//QUrl url(m_networkSource);
-		QStringList url = m_networkSource.split(":");
-		QString host = url[0];
-		int port = url.size() > 1 ? url[1].toInt() : 7755;
+// 		QStringList url = m_networkSource.split(":");
+// 		QString host = url[0];
+// 		int port = url.size() > 1 ? url[1].toInt() : 7755;
+		QUrl url = extractUrl(m_networkSource);
+		QString host = url.host();
+		int port = url.port();
 
 		m_rx = VideoReceiver::getReceiver(host,port);
 		if(!m_rx)

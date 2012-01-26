@@ -676,6 +676,9 @@ void GLScene::setGLWidget(GLWidget *glw, int zIndexOffset)
 
 	m_glWidget = glw;
 	
+	if(!glw)
+		return;
+	
 	//if(!m_rootObj)
 	//	m_rootObj = new GLDrawable();
 		

@@ -22,10 +22,20 @@ QString VideoReceiver::cacheKey()
 	return cacheKey(m_host,m_port);
 }
 
-VideoReceiver * VideoReceiver::getReceiver(const QString& host, int port)
+VideoReceiver * VideoReceiver::getReceiver(const QString& hostTmp, int port)
 {
+	QString host = hostTmp;
+	
 	if(host.isEmpty())
 		return 0;
+	
+	// Assume they passed a single QString with the format of "Host:Port"
+	if(host.indexOf(":") > 0 && port < 0)
+	{
+		QStringList list = host.split(":");
+		host = list[0];
+		port = list[1].toInt();
+	}
 
 	QMutexLocker lock(&m_threadCacheMutex);
 
@@ -83,7 +93,11 @@ VideoReceiver::VideoReceiver(QObject *parent)
 // 	m_label->show();
 // #endif
 	setIsBuffered(false);
-	enqueue(new VideoFrame(QImage("dot.gif"),1000/30));
+	
+	QImage blueImage(16,16, QImage::Format_RGB32);
+	blueImage.fill(Qt::blue);
+	
+	enqueue(new VideoFrame(blueImage,1000/30));
 }
 VideoReceiver::~VideoReceiver()
 {
@@ -438,11 +452,11 @@ void VideoReceiver::processBlock()
 					//qDebug() << "VideoReceiver::processBlock: Frame size changed: "<<frameSize;
 				}
 				
-				qDebug() << "VideoReceiver::processBlock: Port: "<<m_port<<": Received MAP block";
-				
 				QDataStream stream(&block, QIODevice::ReadOnly);
 				QVariantMap map;
 				stream >> map;
+				
+				qDebug() << "VideoReceiver::processBlock: Port: "<<m_port<<": Received MAP block: "<<map;
 				
 				processReceivedMap(map);
 			}
@@ -462,8 +476,13 @@ void VideoReceiver::processBlock()
 					imgX > 1900 || imgX < 0 ||
 					imgY > 1900 || imgY < 0)
 				{
-					qDebug() << "VideoReceiver::processBlock: Frame too large (bytes > 1GB or invalid W/H)";
+					//qDebug() << "VideoReceiver::processBlock: Frame too large (bytes > 1GB or invalid W/H): "<<byteTmp<<imgX<<imgY;
 					m_dataBlock.clear();
+					
+					QImage blueImage(16,16, QImage::Format_RGB32);
+					blueImage.fill(Qt::blue);
+					enqueue(new VideoFrame(blueImage,1000/30));
+					
 					return;
 				}
 				
@@ -674,8 +693,8 @@ void VideoReceiver::processReceivedMap(const QVariantMap & map)
 	if(cmd == Video_GetVideoHints)
 	{
 		m_videoHints = map["hints"].toMap();
-		emit currentVideoHints(m_videoHints);
 		m_hasReceivedHintsFromServer = true;
+		emit currentVideoHints(m_videoHints);
 	}
 	else
 	if(cmd == Video_SignalStatusChanged)

@@ -413,6 +413,9 @@ QStringList CameraThread::m_enumeratedDevices;
 bool CameraThread::m_devicesEnumerated = false;
 QMutex CameraThread::threadCacheMutex;
 
+#define GET_HINTS_STORAGE_OBJ() \
+	QSettings settings(VIDEO_HINTS_STORAGE,QSettings::IniFormat);
+	
 CameraThread::CameraThread(const QString& camera, QObject *parent)
 	: VideoSource(parent)
 	, m_fps(30)
@@ -442,7 +445,7 @@ CameraThread::CameraThread(const QString& camera, QObject *parent)
 	m_checkSignalTimer.setInterval(250); // check every quarter second
 	m_checkSignalTimer.start();
 	
-	QSettings settings(VIDEO_HINTS_STORAGE,QSettings::IniFormat);
+	GET_HINTS_STORAGE_OBJ();
 	m_videoHints = settings.value(tr("VideoHints/%1").arg(m_cameraFile)).toMap();
 }
 
@@ -459,6 +462,11 @@ void CameraThread::destroySource()
 
 QVariantMap CameraThread::videoHints()
 {
+	if(m_videoHints.isEmpty())
+	{
+		GET_HINTS_STORAGE_OBJ();
+		m_videoHints = settings.value(tr("VideoHints/%1").arg(m_cameraFile)).toMap();
+	}
 	return m_videoHints;
 }
 
@@ -466,7 +474,7 @@ void CameraThread::setVideoHints(QVariantMap map)
 {
 	m_videoHints = map;
 	
-	QSettings settings(VIDEO_HINTS_STORAGE,QSettings::IniFormat);
+	GET_HINTS_STORAGE_OBJ();
 	settings.setValue(tr("VideoHints/%1").arg(m_cameraFile), map);
 }
 	

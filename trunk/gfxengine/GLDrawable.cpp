@@ -1274,18 +1274,19 @@ void GLDrawable::loadPropsFromMap(const QVariantMap& map, bool onlyApplyIfChange
 	// So we dont have to engineer our own method of tracking
 	// properties, just assume all inherited objects delcare the relevant
 	// properties using Q_PROPERTY macro
-	const QMetaObject *metaobject = metaObject();
-	int count = metaobject->propertyCount();
+	//const QMetaObject *metaobject = metaObject();
+	//int count = metaobject->propertyCount();
 	bool gotOpac = false;
-	for (int i=0; i<count; ++i)
+	//for (int i=0; i<count; ++i)
+	foreach(QString propName, map.keys())
 	{
-		QMetaProperty metaproperty = metaobject->property(i);
-		const char *name = metaproperty.name();
-		QVariant value = map[name];
+		//QMetaProperty metaproperty = metaobject->property(i);
+		//const char *name = metaproperty.name();
+		QVariant value = map[propName];
 
 		//if(QString(name) == "rect")
 			//qDebug() << "GLDrawable::loadPropsFromMap():"<<(QObject*)this<<": i:"<<i<<", count:"<<count<<", prop:"<<name<<", value:"<<value;
-		QString propName(name);
+		//QString propName(name);
 
 		// These props are only for convenience - they just set the rect() property internally
 		if(propName == "size" || propName == "position")
@@ -1325,10 +1326,10 @@ void GLDrawable::loadPropsFromMap(const QVariantMap& map, bool onlyApplyIfChange
 			{
 				if(onlyApplyIfChanged)
 				{
-					if(property(name) != value)
+					if(property(qPrintable(propName)) != value)
 					{
  						//qDebug() << "LiveLayer::loadPropsFromMap():"<<this<<": [onlyApplyIfChanged] i:"<<i<<", count:"<<count<<", prop:"<<name<<", value:"<<value;
-						setProperty(name,value);
+						setProperty(qPrintable(propName),value);
 					}
 				}
 				else
@@ -1336,7 +1337,7 @@ void GLDrawable::loadPropsFromMap(const QVariantMap& map, bool onlyApplyIfChange
 					//if(QString(name) == "alignment")
 					//	qDebug() << "LiveLayer::loadPropsFromMap():"<<this<<": i:"<<i<<", count:"<<count<<", prop:"<<name<<", value:"<<value<<" (calling set prop)";
 
-					setProperty(name,value);
+					setProperty(qPrintable(propName),value);
 					//m_props[name] = value;
 				}
 			}
@@ -1390,7 +1391,14 @@ QVariantMap GLDrawable::propsToMap()
 
 		map[name] = value;
 	}
-
+	
+	// Store dynamic properties as well
+	QList<QByteArray> dynamicProps = dynamicPropertyNames();
+	foreach(QByteArray name, dynamicProps)
+	{
+		map[QString(name)] = property(name.data());
+	}
+	
 	map["playlist"] = m_playlist->toByteArray();
 
 	return map;

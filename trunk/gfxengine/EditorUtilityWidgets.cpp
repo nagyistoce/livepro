@@ -126,14 +126,14 @@ QWidget * PropertyEditorFactory::generatePropertyEditor(QObject *object, const c
 			hbox->addWidget(slider);
 		}
 		
-		QPushButton *undoBtn = new QPushButton(QPixmap("../data/stock-undo.png"), "");
+		QPushButton *undoBtn = new QPushButton(QPixmap("../images/stock-undo.png"), "");
 		ObjectValueSetter *setter = new ObjectValueSetter(spin, SLOT(setValue(int)), spin->value());
 		connect(undoBtn, SIGNAL(clicked()), setter, SLOT(executeSetValue()));
 		hbox->addWidget(undoBtn);
 		
 		if(opts.defaultValue.isValid())
 		{
-			QPushButton *resetBtn = new QPushButton(QPixmap("../data/stock-close.png"), "");
+			QPushButton *resetBtn = new QPushButton(QPixmap("../images/stock-close.png"), "");
 			ObjectValueSetter *setter = new ObjectValueSetter(spin, SLOT(setValue(int)), opts.defaultValue);
 			connect(resetBtn, SIGNAL(clicked()), setter, SLOT(executeSetValue()));
 			hbox->addWidget(resetBtn);
@@ -189,7 +189,7 @@ QWidget * PropertyEditorFactory::generatePropertyEditor(QObject *object, const c
 			
 			hbox->addWidget(box);
 			
-			QPushButton *browseButton = new QPushButton(QPixmap("../data/stock-open.png"), "");
+			QPushButton *browseButton = new QPushButton(QPixmap("../images/stock-open.png"), "");
 			BrowseDialogLauncher *setter = new BrowseDialogLauncher(box, SLOT(setText(const QString&)), box->text(), !opts.stringIsDir);
 			connect(browseButton, SIGNAL(clicked()), setter, SLOT(browse()));
 			
@@ -594,7 +594,7 @@ PointEditorWidget::PointEditorWidget(QWidget *parent)
 	connect(spin, SIGNAL(valueChanged(int)), this, SLOT(yValueChanged(int)));
 	hbox->addWidget(spin);
 
-	QPushButton *undoBtn = new QPushButton(QPixmap("../data/stock-undo.png"), "");
+	QPushButton *undoBtn = new QPushButton(QPixmap("../images/stock-undo.png"), "");
 	connect(undoBtn, SIGNAL(clicked()), this, SLOT(reset()));
 	hbox->addWidget(undoBtn);
 	
@@ -666,7 +666,7 @@ SizeEditorWidget::SizeEditorWidget(QWidget *parent)
 	connect(spin, SIGNAL(valueChanged(int)), this, SLOT(hValueChanged(int)));
 	hbox->addWidget(spin);
 	
-	QPushButton *undoBtn = new QPushButton(QPixmap("../data/stock-undo.png"), "");
+	QPushButton *undoBtn = new QPushButton(QPixmap("../images/stock-undo.png"), "");
 	connect(undoBtn, SIGNAL(clicked()), this, SLOT(reset()));
 	hbox->addWidget(undoBtn);
 

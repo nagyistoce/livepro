@@ -15,7 +15,7 @@ public:
 	
 private slots:
 	void motionRatingChanged(int);
-	
+
 protected:
 	void resizeEvent(QResizeEvent*);
 	QList<int> m_ratings;
@@ -25,6 +25,8 @@ protected:
 	PlayerConnection *m_player;
 	int m_lastHighNum;
 	int m_ignoreCountdown;
+	
+	int m_setupCountdown;
 };
 
 

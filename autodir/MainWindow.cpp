@@ -164,6 +164,9 @@ MainWindow::MainWindow()
 		#else
 		VideoWidget *drw = new VideoWidget(this);
 		hbox->addWidget(drw);
+		
+		connect(drw, SIGNAL(clicked()), this, SLOT(widgetClicked()));
+		drw->setProperty("con", connection);
 		#endif
 		
 		#if 1
@@ -222,6 +225,9 @@ void MainWindow::motionRatingChanged(int rating)
 		return;
 	int num = filter->property("num").toInt();
 	
+	if(rating < 0)
+		rating = 0;
+	
 	m_ratings[num] += rating;
 	//qDebug() << num << rating;
 	//m_filters[num]->setDebugText(tr("%2 %1").arg(m_ratings[num]).arg(m_lastHighNum == num ? " ** LIVE **":""));
@@ -246,7 +252,7 @@ void MainWindow::motionRatingChanged(int rating)
 			counter ++;
 		}
 		
-		maxNum = 0;
+		//maxNum = 0;
 		
 		if(m_lastHighNum != maxNum)
 		{
@@ -288,3 +294,19 @@ void MainWindow::motionRatingChanged(int rating)
 	}
 }
 	
+void MainWindow::widgetClicked()
+{
+	QString con = sender()->property("con").toString();
+	
+	GLSceneGroup *group = new GLSceneGroup();
+	GLScene *scene = new GLScene();
+	GLVideoInputDrawable *vidgld = new GLVideoInputDrawable();
+	vidgld->setVideoConnection(con);
+	vidgld->loadHintsFromSource(); // Honor video hints pre-configured for the input on the server - use the 'hintcal' project to configure hints interactivly
+	scene->addDrawable(vidgld);
+	group->addScene(scene);
+	
+	m_player->setGroup(group, group->at(0));
+	
+	qDebug() << "Clicked con: "<<con;
+}

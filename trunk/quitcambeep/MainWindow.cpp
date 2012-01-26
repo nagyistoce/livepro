@@ -8,6 +8,7 @@ MainWindow::MainWindow()
 	: QWidget()
 	, m_isWatching(false)
 	, m_beepCounter(0)
+	, m_labelChanged(false)
 {
 	QSettings settings;
 	// Setup the layout of the window
@@ -41,7 +42,7 @@ MainWindow::MainWindow()
 	m_trackingFilter = new PointTrackingFilter();
 	m_videoWidget->setVideoSource(m_trackingFilter);
 	
-	connect(m_trackingFilter, SIGNAL(historyAvgZero()), this, SLOT(historyAvgZero()));
+	//connect(m_trackingFilter, SIGNAL(historyAvgZero()), this, SLOT(historyAvgZero()));
 	connect(m_trackingFilter, SIGNAL(historyAvg(int)), this, SLOT(historyAvg(int)));
 	
 	
@@ -102,6 +103,9 @@ void MainWindow::historyAvgZero()
 			m_beepCounter = 10;
 			system("aplay alert.wav &");
 			qDebug() << QTime::currentTime()<<"Beep";
+			
+			m_watchLabel->setText(m_isWatching ? "<font color=red><b>BEEP BEEP</b></font>" : "Not Monitoring");
+			m_labelChanged = true;
 		}
 	}
 }
@@ -111,4 +115,11 @@ void MainWindow::historyAvg(int zero)
 	qDebug() << "History: "<<zero;
 	if(zero <= 5)
 		historyAvgZero();
+	else
+	if(m_labelChanged)
+	{
+		m_watchLabel->setText(m_isWatching ? "<font color=green>Monitoring ...</font>" : "Not Monitoring");
+		m_labelChanged = false;
+	}
 }
+

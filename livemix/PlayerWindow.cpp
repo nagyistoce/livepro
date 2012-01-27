@@ -231,6 +231,9 @@ void PlayerWindow::loadConfig(const QString& configFile, bool verbose)
 	m_useGLWidget = READ_STRING("compat","false") == "false";
 	if(m_useGLWidget)
 	{
+// 		QGLFormat format(QGL::SampleBuffers | QGL::AlphaChannel);
+// 		format.setSwapInterval(1); // sync to vblank (vsync)
+// 		m_glWidget = new GLWidget(this, 0, format);
 		m_glWidget = new GLWidget(this);
 		layout()->addWidget(m_glWidget);
 		qDebug() << "PlayerWindow: Using OpenGL to provide high-quality graphics.";
@@ -552,7 +555,7 @@ void PlayerWindow::loadConfig(const QString& configFile, bool verbose)
 	if(outputPort > 0 )
 	{
 		VideoSender *sender = new VideoSender(this);
-		sender->setTransmitFps(20);
+		sender->setTransmitFps(15);
 		sender->setTransmitSize(320,240);
 		//sender->setTransmitFps(5);
 		sender->setVideoSource(m_compatStream ? (VideoSource*)m_compatStream : (VideoSource*)m_glWidget->outputStream());
@@ -1547,6 +1550,8 @@ void PlayerWindow::removeScene(GLScene *scene, GLScene *fadeLeader)
 // 			}
 // 		}
 	}
+	
+	//qDebug() << "PlayerWindow::removeScene: Done with method";
 }
 
 void PlayerWindow::addScene(GLScene *scene, int zmod/*=1*/, bool fadeInOpac/*=true*/, GLScene *fadeLeader)
@@ -1682,6 +1687,7 @@ void PlayerWindow::opacityAnimationFinished(GLScene *scene)
 	{
 		//qDebug() << "PlayerWindow::opacityAnimationFinished: deleting old group:"<<(QObject*)m_oldGroup;
 		delete m_oldGroup;
+		//m_oldGroup->deleteLater();
 		m_oldGroup = 0;
 	}
 	

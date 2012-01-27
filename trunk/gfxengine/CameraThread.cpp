@@ -776,7 +776,7 @@ bool CameraThread::setInput(const QString& name)
 	m_inputName = name;
 	
 	#ifdef ENABLE_DECKLINK_CAPTURE
-	if(m_ bmd)
+	if(m_bmd)
 		return false;
 	#endif
 	#ifdef ENABLE_TEST_GENERATOR

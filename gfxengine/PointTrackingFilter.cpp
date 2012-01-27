@@ -122,7 +122,16 @@ QImage PointTrackingFilter::trackPoints(QImage img)
 	int elapsed = m_timeValue.elapsed();
 	double fps = ((double)m_timeFrameCounter) /  ((double)elapsed / 1000.0);
 	
- 	if(m_timeFrameCounter % (int)fps == 0)
+	if(fps < 1)
+	{
+		fps = 1.0;
+		m_timeFrameCounter = 0;
+		m_timeValue.restart();
+	}
+	
+ 	//qDebug() << "fps:"<<fps<<", m_timeFrameCounter:"<<m_timeFrameCounter;
+ 	if(fps > 1 && m_timeFrameCounter >= fps && 
+ 	   m_timeFrameCounter % (int)fps == 0)
  	{
  		if(m_autoTuneToFps)
  		{

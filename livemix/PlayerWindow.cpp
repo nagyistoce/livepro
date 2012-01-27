@@ -1621,6 +1621,7 @@ void PlayerWindow::addScene(GLScene *scene, int zmod/*=1*/, bool fadeInOpac/*=tr
 	if(fadeInOpac && m_xfadeSpeed>0)
 	{
 		//qDebug() << "PlayerWindow::addScene: fade in scene:"<<scene<<" at "<<m_xfadeSpeed<<"ms";
+		qDebug() << "PlayerWindow::addScene: fade in scene:"<<scene<<" at "<<m_xfadeSpeed<<"ms, fadeLeader: "<<fadeLeader;
 		scene->setFadeSyncLeader(fadeLeader);
 		scene->setOpacity(1,true,m_xfadeSpeed); // animate fade in
 	}

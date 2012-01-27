@@ -897,7 +897,7 @@ void GLScene::recalcFadeOpacity(bool setOpac)
         if(m_fadeDirection < 0)
         	fadeVal = m_startOpacity - fadeVal;
 
-//	qDebug() << "GLScene::recalcFadeOpacity(): "<<this<<",  time:"<<time<<", progress:"<<progress<<", fadeVal:"<<fadeVal;	
+	qDebug() << "GLScene::recalcFadeOpacity(): "<<this<<",  time:"<<time<<", progress:"<<progress<<", fadeVal:"<<fadeVal;	
 
         if(fadeVal < 0)
         	return;
@@ -1542,7 +1542,7 @@ void GLSceneGroupPlaylist::nextItem()
 		next = 0;
 		
 	double e = ((double)m_currentElapsedTime.elapsed()) / 1000.;
-	qDebug() << "GLSceneGroupPlaylist::nextItem(): Scene#:"<<next<<", elapsed:"<<e;
+	//qDebug() << "GLSceneGroupPlaylist::nextItem(): Scene#:"<<next<<", elapsed:"<<e;
 	playItem(m_group->at(next));
 }
 

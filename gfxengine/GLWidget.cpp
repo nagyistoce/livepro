@@ -274,8 +274,8 @@ void GLWidgetSubview::setSourceRight(double d)
 
 
 
-GLWidget::GLWidget(QWidget *parent, QGLWidget *shareWidget)
-	: QGLWidget(QGLFormat(QGL::SampleBuffers | QGL::AlphaChannel),parent, shareWidget)
+GLWidget::GLWidget(QWidget *parent, QGLWidget *shareWidget, const QGLFormat &format)
+	: QGLWidget(format,parent, shareWidget)
 	//: QGLWidget(parent, shareWidget)
 	, m_glInited(false)
 	, m_fbo(0)

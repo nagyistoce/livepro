@@ -332,6 +332,9 @@ signals:
 	void sourceDiscarded(VideoSource*);
 
 protected:
+	friend class GLScene;
+	QMutex *paintLockMutex() { return &m_paintLockMutex; }
+
 	// Overridden from GLDrawable
 	virtual void setGLWidget(GLWidget* widget);
 	
@@ -498,7 +501,7 @@ private:
 	bool m_texturesInited;
 	bool m_texturesInited2;
 	
-	QMutex m_frameReadyLock;
+	QMutex m_paintLockMutex;
 	
 	bool m_useShaders;
 	
@@ -574,6 +577,8 @@ private:
 	QVariantList m_customKernel;
 	
 	static int m_videoSenderPortAllocator;
+	
+	bool m_inPaintFlag;
 };
 
 #endif 

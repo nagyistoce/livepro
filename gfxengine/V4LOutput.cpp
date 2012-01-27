@@ -213,6 +213,7 @@ void V4LOutput::setVideoSource(VideoSource *source)
 		
 		//qDebug() << "GLVideoDrawable::setVideoSource(): "<<objectName()<<" m_source:"<<m_source;
 		//setVideoFormat(m_source->videoFormat());
+		m_source->registerConsumer(this);
 		
 		frameReady();
 	}
@@ -228,6 +229,7 @@ void V4LOutput::disconnectVideoSource()
 	if(!m_source)
 		return;
 	disconnect(m_source, 0, this, 0);
+	m_source->release(this);
 	m_source = 0;
 }
 

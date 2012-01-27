@@ -145,6 +145,7 @@ GLVideoDrawable::GLVideoDrawable(QObject *parent)
 	, m_filterType(Filter_None)
 	, m_sharpAmount(0.5)
 	, m_blurAmount(1.0)
+	, m_inPaintFlag(false)
 {
 
 	m_imagePixelFormats
@@ -169,6 +170,14 @@ GLVideoDrawable::GLVideoDrawable(QObject *parent)
 
 GLVideoDrawable::~GLVideoDrawable()
 {
+	if(m_glw)
+	{
+		m_glw->removeDrawable(this);
+		m_glw = 0;
+	}
+		
+	//qDebug() << "GLVideoDrawable::~GLVideoDrawable(): "<<(QObject*)this<<" Shutting down drawable, m_glw:"<<m_glw;
+	
 	setVideoSource(0);
 	if(m_isCameraThread) //m_updateLeader) // == this)
 	{
@@ -512,6 +521,10 @@ void GLVideoDrawable::frameReady()
 		if(f->isValid())
 			m_frame = f;
 	}
+
+	// If "invisible", dont bother wasting GPU time to upload the texture
+	if(opacity() <= 0.001)
+		return;
 
 // 	qDebug() << "GLVideoDrawable::frameReady(): "<<objectName()<<" going to updateTexture";
 	updateTexture();
@@ -2876,20 +2889,39 @@ void GLVideoDrawable::updateAnimations(bool insidePaint)
 	
 	if(insidePaint)
 		lockUpdates(lock);
-	
+		
 	// Call the fade update function directly for both
 	// our local crossfade and the scene crossfade
 	if(m_fadeActive)
 		xfadeTick(!insidePaint); // dont update GL
-
+		
 	if(glScene() && glScene()->fadeActive())
+	{
+		//qDebug() << "GLVideoDrawable::updateAnimations(): "<<(QObject*)this<<" mark5";
 		glScene()->recalcFadeOpacity(!insidePaint); // dont call setOpacity internally, which calls updateGL on each drawable in the scene
+	}
+	/*
+	else
+	if(glScene())
+		qDebug() << "GLVideoDrawable::updateAnimations(): "<<(QObject*)this<<" has glscene, fade act:"<<glScene()->fadeActive();
+	else
+		qDebug() << "GLVideoDrawable::updateAnimations(): "<<(QObject*)this<<" No glscene";
+	*/
 }
 
 void GLVideoDrawable::paintGL()
 {
+	// Lock this mutex because GLSceneGroup::~GLSceneGroup()
+	// also attempts to lock this mutex so it doesn't delete
+	// the drawable while its painting.
+	//QMutexLocker lock(&m_paintLockMutex);
+	if(m_inPaintFlag)
+		return;
+	m_inPaintFlag = true;
+	
 	if(!m_glw)
 		return;
+	//qDebug() << "GLVideoDrawable::paintGL(): "<<(QObject*)this<<" mark, m_glw:"<<m_glw;
 		
 	paintGLChildren(true); // paint children below 
 	
@@ -2899,12 +2931,14 @@ void GLVideoDrawable::paintGL()
 	{
 // 		if(property("-debug").toBool())
 // 			qDebug() << "GLVideoDrawable::paintGL(): "<<(QObject*)this<<" No valid shader, not painting";
+		m_inPaintFlag = false;
 		return;
 	}
 
 	if(!m_texturesInited)
 	{
 		qDebug() << "GLVideoDrawable::paintGL(): "<<(QObject*)this<<" Textures not inited, not painting.";
+		m_inPaintFlag = false;
 		return;
 	}
 
@@ -2985,6 +3019,8 @@ void GLVideoDrawable::paintGL()
 		(parent() && parent()->hasFrameBuffer()) ? parent()->coverageRect().height() :
 		QGLContext::currentContext()->device()->height() );
 
+	//qDebug() << "GLVideoDrawable::paintGL(): "<<(QObject*)this<<" mark2, m_glw:"<<m_glw;
+	
 	//QPainter painter(this);
 	QTransform transform =  ((parent() && parent()->hasFrameBuffer()) || hasFrameBuffer()) ? QTransform() : m_glw->transform(); //= painter.deviceTransform();
 	if(m_lastKnownTransform != transform)
@@ -3101,7 +3137,8 @@ void GLVideoDrawable::paintGL()
 				 opacity() :
 				(opacity() * (m_fadeActive ? m_fadeValue : 1.));
 
-	//qDebug() << "GLVideoDrawable::paintGL(): "<<(QObject*)this<<" opac used:"<<liveOpacity<<", opacity():"<<opacity()<<", fade act:"<<m_fadeActive<<", fade val:"<<m_fadeValue;
+	//if(liveOpacity != 1.0)
+	//	qDebug() << "GLVideoDrawable::paintGL(): "<<(QObject*)this<<" opac used:"<<liveOpacity<<", opacity():"<<opacity()<<", fade act:"<<m_fadeActive<<", fade val:"<<m_fadeValue;
 
 	//if(m_fadeActive)
 //		qDebug() << "GLVideoDrawable::paintGL: "<<(QObject*)this<<m_source<<" liveOpacity: "<<liveOpacity;
@@ -3656,6 +3693,15 @@ void GLVideoDrawable::paintGL()
 	paintGLChildren(false); // paint children above
 
 // 	qDebug() << "GLVideoDrawable::paintGL(): "<<(QObject*)this<<" Mark - end";
+	if(m_isCameraThread &&
+	   m_updateLeader == this)
+	{
+		//qDebug() << "GLVideoDrawable::paintGL(): "<<(QObject*)this<<" Calling proccess events...";
+		//QCoreApplication::processEvents();
+		//qDebug() << "GLVideoDrawable::paintGL(): "<<(QObject*)this<<" Done processing events.";
+	}
+	
+	m_inPaintFlag = false;
 }
 
 void GLVideoDrawable::transformChanged()

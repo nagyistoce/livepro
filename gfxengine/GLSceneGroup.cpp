@@ -291,7 +291,26 @@ GLScene::~GLScene()
 		delete m_sceneType;
 	if(m_layoutListModel)
 		delete m_layoutListModel;
-	qDeleteAll(m_itemList);
+	
+	//qDeleteAll(m_itemList);
+	while(!m_itemList.isEmpty())
+	{
+		GLDrawable *gld = m_itemList.takeFirst();
+		GLVideoDrawable *vid = dynamic_cast<GLVideoDrawable*>(gld);
+		if(vid)
+		{
+			//qDebug() << "~GLScene(): Locking paint mutex...";
+			//QMutexLocker lock(vid->paintLockMutex());
+			//qDebug() << "~GLScene(): Mutex locked, deleting drawable.";
+			//gld->deleteLater();
+			delete gld;
+			//gld->deleteLater();
+		}
+		else
+		{
+			delete gld;
+		}
+	}
 	m_itemList.clear();
 }
 
@@ -861,12 +880,12 @@ void GLScene::fadeTick()
 		m_fadeActive = false;
 		m_fadeTimer.stop();
 		setOpacity(m_endOpacity);
+		//QTimer::singleShot(0, this, SIGNAL(opacityAnimationFinished()));
 		emit opacityAnimationFinished();
+		return;
 	}
 	else
-	{
 		recalcFadeOpacity();
-	}
 }
 
 void GLScene::setFadeSyncLeader(GLScene *other)
@@ -883,6 +902,18 @@ void GLScene::setFadeSyncFollower(GLScene *other)
 
 void GLScene::recalcFadeOpacity(bool setOpac)
 {
+// 	if(m_fadeClock.elapsed() >= m_crossfadeSpeed)
+// 	{
+// 		qDebug() << "GLScene::recalcFadeOpacity: fade ended ("<<m_fadeClock.elapsed()<<" > "<<m_crossfadeSpeed<<")";
+// 		m_fadeActive = false;
+// 		m_fadeTimer.stop();
+// 		setOpacity(m_endOpacity);
+// 		QTimer::singleShot(0, this, SIGNAL(opacityAnimationFinished()));
+// 		return;
+// 	}
+	
+	//qDebug() << "GLScene::recalcFadeOpacity(): "<<this<<" start";
+	
 	if(!m_fadeClockActive)
 		return;
 
@@ -896,8 +927,16 @@ void GLScene::recalcFadeOpacity(bool setOpac)
         double fadeVal = valueLength * progress;
         if(m_fadeDirection < 0)
         	fadeVal = m_startOpacity - fadeVal;
+        	
+        if(progress >= 1.0)
+        {
+        	fadeVal = m_endOpacity;
+        	progress = 1.0;
+        	//fadeTick(); // Call to end fade activity 
+        	//ret
+        }
 
-	qDebug() << "GLScene::recalcFadeOpacity(): "<<this<<",  time:"<<time<<", progress:"<<progress<<", fadeVal:"<<fadeVal;	
+	//qDebug() << "GLScene::recalcFadeOpacity(): "<<this<<",  time:"<<time<<", progress:"<<progress<<", fadeVal:"<<fadeVal<<", leader:"<<m_fadeSyncLeader<<", follower:"<<m_fadeSyncFollower;	
 
         if(fadeVal < 0)
         	return;

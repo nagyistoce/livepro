@@ -111,6 +111,8 @@ GLDrawable::GLDrawable(QObject *parent)
 
 GLDrawable::~GLDrawable()
 {
+	m_updatesLocked = true;
+	
 	if(parent())
 		parent()->removeChild(this);
 		

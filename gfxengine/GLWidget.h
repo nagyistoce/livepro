@@ -247,7 +247,7 @@ class GLWidget : public QGLWidget
 	Q_PROPERTY(bool opacity READ opacity WRITE setOpacity);
 	
 public:
-	GLWidget(QWidget *parent = 0, QGLWidget *shareWidget = 0);
+	GLWidget(QWidget *parent = 0, QGLWidget *shareWidget = 0, const QGLFormat& format = QGLFormat(QGL::SampleBuffers | QGL::AlphaChannel));
 	~GLWidget();
 	
 	QSize minimumSizeHint() const;

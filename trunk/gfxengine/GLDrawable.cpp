@@ -1398,10 +1398,21 @@ QVariantMap GLDrawable::propsToMap()
 	QList<QByteArray> dynamicProps = dynamicPropertyNames();
 	foreach(QByteArray name, dynamicProps)
 	{
-		map[QString(name)] = property(name.data());
+		if(name.startsWith("_q"))
+			continue;
+			
+		QVariant var = property(name.data());
+		// dont store userdefined types
+		if(var.isValid() && (int)var.type() < 127)
+		{
+			map[QString(name)] = var;
+			//qDebug() << "GLDrawable::propsToMap():"<<(QObject*)this<<": dynamic prop:"<<name<<", value:"<<var;
+		}
 	}
 	
 	map["playlist"] = m_playlist->toByteArray();
+	
+	//qDebug() << "GLDrawable::propsToMap():"<<(QObject*)this<<": final map:"<<map;
 
 	return map;
 }

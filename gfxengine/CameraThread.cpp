@@ -621,7 +621,8 @@ QStringList CameraThread::enumerateDevices(bool forceReenum)
 	
 	#ifdef ENABLE_TEST_GENERATOR
 	// NOTE: Only for testing!!!
-	list << TestSignalGenerator::enumDeviceNames(forceReenum);
+	//list << TestSignalGenerator::enumDeviceNames(forceReenum);
+	list = TestSignalGenerator::enumDeviceNames(forceReenum);
 	#endif
 	
         //#ifdef DEBUG

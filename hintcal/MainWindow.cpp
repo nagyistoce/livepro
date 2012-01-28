@@ -54,19 +54,25 @@ MainWindow::MainWindow()
 	
 	setWindowTitle("Hint Calibration");
 	
+	QSplitter *split = new QSplitter(this);
+	split->setOrientation(Qt::Vertical);
+	vbox->addWidget(split);
+	
 	// Create the player object
 	m_player = new PlayerConnection();
 	connect(m_player, SIGNAL(videoInputListReceived(const QStringList&)), this, SLOT(videoInputListReceived(const QStringList&)));
 	
 	// Create the GLWidget to do the actual rendering
 	m_glw = new GLWidget(this);
-	vbox->addWidget(m_glw);
+	//vbox->addWidget(m_glw);
+	split->addWidget(m_glw);
 	
 	//glw->setViewport(QRect(0,0,1000, 750));
 	
 	QScrollArea *controlArea = new QScrollArea(this);
 	controlArea->setWidgetResizable(true);
-	vbox->addWidget(controlArea);
+	//vbox->addWidget(controlArea);
+	split->addWidget(controlArea);
 	
 	QWidget *controlBase = new QWidget(controlArea);
 	

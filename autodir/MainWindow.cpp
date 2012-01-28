@@ -7,6 +7,11 @@
 #include "GLSceneGroup.h"
 #include "GLVideoInputDrawable.h"
 
+// List of commands recognized by the original player server, also used in the json server
+#include "../livemix/ServerCommandNames.h"
+
+#include "VideoSender.h"
+
 /// One or the other, not both!
 //#define PREVIEW_OPENGL
 #define PREVIEW_STOCK
@@ -17,6 +22,9 @@
 #include "GLWidget.h"
 #include "GLVideoDrawable.h"
 #endif
+
+#define ENABLE_VIDEO_SENDERS
+#define ENABLE_LIVEVIEW_PROXY
 
 //#define ENABLE_V4L_OUTPUT
 
@@ -59,6 +67,13 @@ MainWindow::MainWindow()
 		qDebug() << "Error: 'host' value in "<<SETTINGS_FILE<<" is empty, exiting.";
 		exit(-1);
 	}
+	
+	VideoSwitcherJsonServer *jsonServer = new VideoSwitcherJsonServer(9979, this);
+	connect(jsonServer, SIGNAL(showCon(const QString&, int)), this, SLOT(showJsonCon(const QString&, int)));
+	
+	// setFadeSpeed: Not implemented yet
+	//connect(jsonServer, SIGNAL(setFadeSpeed(int)), this, SLOT(setFadeSpeed(int)));
+	
 	
 	PlayerConnection *player = new PlayerConnection();
 	player->setHost(host);
@@ -133,6 +148,9 @@ MainWindow::MainWindow()
  	    y = 0;
  	#endif
  	
+ 	QString ipAddress = VideoSender::ipAddress();
+ 	QStringList myVideoPorts;
+ 	
  	int counter = 0;
  	foreach(QString connection, m_cons)
  	{
@@ -157,7 +175,6 @@ MainWindow::MainWindow()
 		V4LOutput *output = new V4LOutput(outputDev);
 		output->setVideoSource(rx);
 		#endif
-		
 		
 		#ifdef PREVIEW_OPENGL
 		GLVideoDrawable *drw = new GLVideoDrawable();
@@ -188,6 +205,21 @@ MainWindow::MainWindow()
 		m_ratings << 0;
 		
 		
+		
+		#ifdef ENABLE_VIDEO_SENDERS
+		VideoSender *sender = new VideoSender();
+		sender->setVideoSource(filter);
+		sender->start();
+		
+		QString con = QString("dev=%1,net=%2:%3")
+				.arg(counter-1)
+				.arg(ipAddress)
+				.arg(sender->serverPort());
+		
+		qDebug() << "Sending filter output from server "<<host<<":"<<port<<" out on con "<<con;
+		myVideoPorts << con;
+		#endif
+		
 		//filter->setOutputImagePrefix(tr("input%1").arg(port));
 		#else
 		drw->setVideoSource(rx);
@@ -207,6 +239,17 @@ MainWindow::MainWindow()
 	scene->setGLWidget(glw);
 	
 	glw->setViewport(QRect(0,0,frameWidth * inputs.size(), 750));
+	#endif
+	
+	#ifdef ENABLE_VIDEO_SENDERS
+	jsonServer->setInputList(myVideoPorts);
+	#endif
+	
+	#ifdef ENABLE_LIVEVIEW_PROXY
+	VideoReceiver *liveRx = VideoReceiver::getReceiver(host, 9978);
+	VideoSender *liveSend = new VideoSender(this);
+	liveSend->setVideoSource(liveRx);
+	liveSend->listen(QHostAddress::Any,9978);
 	#endif
 	
 	resize( 320 * numInputs, 240 );
@@ -230,9 +273,10 @@ void MainWindow::motionRatingChanged(int rating)
 	
 	m_ratings[num] += rating;
 	//qDebug() << num << rating;
-	//m_filters[num]->setDebugText(tr("%2 %1").arg(m_ratings[num]).arg(m_lastHighNum == num ? " ** LIVE **":""));
+	m_filters[num]->setDebugText(tr("%2 %1").arg(m_ratings[num]).arg(m_lastHighNum == num ? " ** LIVE **":""));
 
-	int frameLimit = 69;
+	// Hold the camera for approx 7 seconds
+	int frameLimit = (int)(filter->calculatedFps() * 7.0);
 	
 	if(m_ignoreCountdown-- <= 0)
 	{
@@ -257,27 +301,27 @@ void MainWindow::motionRatingChanged(int rating)
 		if(m_lastHighNum != maxNum)
 		{
 			QString highestRatedCon = m_cons[maxNum];
-			
-			GLSceneGroup *group = new GLSceneGroup();
-			GLScene *scene = new GLScene();
-			GLVideoInputDrawable *vidgld = new GLVideoInputDrawable();
-			vidgld->setVideoConnection(highestRatedCon);
-			vidgld->loadHintsFromSource(); // Honor video hints pre-configured for the input on the server - use the 'hintcal' project to configure hints interactivly
-			scene->addDrawable(vidgld);
-			group->addScene(scene);
-			
-			m_player->setGroup(group, group->at(0));
+			showCon(highestRatedCon);
+// 			GLSceneGroup *group = new GLSceneGroup();
+// 			GLScene *scene = new GLScene();
+// 			GLVideoInputDrawable *vidgld = new GLVideoInputDrawable();
+// 			vidgld->setVideoConnection(highestRatedCon);
+// 			vidgld->loadHintsFromSource(); // Honor video hints pre-configured for the input on the server - use the 'hintcal' project to configure hints interactivly
+// 			scene->addDrawable(vidgld);
+// 			group->addScene(scene);
+// 			
+// 			m_player->setGroup(group, group->at(0));
 			//player->setUserProperty(gld, m_con, "videoConnection");
 			
 			m_lastHighNum = maxNum;
 			
-			//m_filters[maxNum]->setDebugText(tr("** LIVE ** %1").arg(rating));
+			m_filters[maxNum]->setDebugText(tr("** LIVE ** %1").arg(rating));
 			m_ratings[maxNum] = 0;
 			
 			m_ignoreCountdown = frameLimit * m_ratings.size(); // ignore next X frames * num sources
-			qDebug() << "MainWindow::motionRatingChanged: Switching to num:"<<maxNum<<", rated:"<<max;
+			qDebug() << "MainWindow::motionRatingChanged: Switching to num:"<<maxNum<<", rated:"<<max<<", not switching for: "<<m_ignoreCountdown;
 			
-			group->deleteLater();
+			//group->deleteLater();
 		}
 		else
 		{
@@ -285,7 +329,7 @@ void MainWindow::motionRatingChanged(int rating)
 				m_ratings[maxNum] = 0; 
 				
 			m_ignoreCountdown = frameLimit * m_ratings.size(); // ignore next X frames * num sources
-			//qDebug() << "MainWindow::motionRatingChanged: Max num the same:"<<maxNum<<", rated:"<<max<<", not switching!";
+			qDebug() << "MainWindow::motionRatingChanged: Max num the same:"<<maxNum<<", rated:"<<max<<", not switching for: "<<m_ignoreCountdown;
 		}
 	}
 	else
@@ -297,6 +341,11 @@ void MainWindow::motionRatingChanged(int rating)
 void MainWindow::widgetClicked()
 {
 	QString con = sender()->property("con").toString();
+	showCon(con);
+}
+
+void MainWindow::showCon(const QString& con)
+{
 	
 	GLSceneGroup *group = new GLSceneGroup();
 	GLScene *scene = new GLScene();
@@ -308,5 +357,116 @@ void MainWindow::widgetClicked()
 	
 	m_player->setGroup(group, group->at(0));
 	
-	qDebug() << "Clicked con: "<<con;
+	int idx = m_cons.indexOf(con);
+	if(idx > -1)
+		m_lastHighNum = idx;
+		
+	qDebug() << "MainWindow::showCon: "<<con<<", idx:"<<idx;
+	
+	group->deleteLater();
+}
+
+void MainWindow::showJsonCon(const QString& con, int /*ms*/)
+{
+	QHash<QString, QString> map = GLVideoInputDrawable::parseConString(con);
+	int conNum = map["dev"].toInt();
+	if(conNum < 0 || conNum >= m_cons.size())
+	{
+		qDebug() << "MainWindow::showJsonCon: Invalid con num in con string:"<<con;
+		return;
+	}
+	
+	showCon(m_cons[conNum]);
+}
+
+/// VideoSwitcherJsonServer
+VideoSwitcherJsonServer::VideoSwitcherJsonServer(quint16 port, QObject *parent)
+	: HttpServer(port,parent)
+	, m_jsonOut(new QJson::Serializer())
+{
+
+}
+
+void VideoSwitcherJsonServer::dispatch(QTcpSocket *socket, const QStringList &pathElements, const QStringMap &map)
+{
+	//QString pathStr = path.join("/");
+
+	QStringList path = pathElements;
+
+	QString cmd = path.isEmpty() ? "" : path.takeFirst();
+
+
+	//QString cmd = map["cmd"].toString();
+	qDebug() << "VideoSwitcherJsonServer::receivedMap: [COMMAND]: "<<cmd;
+
+	if(cmd == Server_SetCrossfadeSpeed)
+	{
+		int ms = map["ms"].toInt();
+		emit setFadeSpeed(ms);
+
+		sendReply(socket, QVariantList()
+				<< "cmd" << cmd
+				<< "status" << true);
+	}
+	else
+	if(cmd == Server_ShowVideoConnection)
+	{
+		QString con = map["con"];
+		
+		QString speedStr = map["ms"];
+		int fadeSpeedOverride = -1;
+		if(!speedStr.isEmpty())
+			fadeSpeedOverride = speedStr.toInt();
+		
+		emit showCon(con, fadeSpeedOverride);
+	}
+	else
+	if(cmd == Server_ListVideoInputs)
+	{
+		QStringList inputs = m_inputList;
+		QVariantList varList;
+		foreach(QString str, inputs)
+			varList << str;
+		QVariant list = varList; // convert to a varient so sendReply() doesnt try to add each element to the map
+		sendReply(socket, QVariantList()
+				<< "cmd"  << cmd
+				<< "list" << list);
+
+	}
+	else
+	{
+		sendReply(socket, QVariantList()
+				<< "cmd"     << cmd
+				<< "status"  << "error"
+				<< "message" << "Unknown command.");
+	}
+}
+
+
+void VideoSwitcherJsonServer::sendReply(QTcpSocket *socket, QVariantList reply)
+{
+	QVariantMap map;
+	if(reply.size() % 2 != 0)
+	{
+		qDebug() << "VideoSwitcherJsonServer::sendReply: [WARNING]: Odd number of elelements in reply: "<<reply;
+	}
+	
+	// Add the API version on all outgoing JSON replies
+	reply << "api" << "0.6";
+
+	for(int i=0; i<reply.size(); i+=2)
+	{
+		if(i+1 >= reply.size())
+			continue;
+
+		QString key = reply[i].toString();
+		QVariant value = reply[i+1];
+
+		map[key] = value;
+	}
+
+	QByteArray json = m_jsonOut->serialize( map );
+	qDebug() << "VideoSwitcherJsonServer::sendReply: [DEBUG] map:"<<map<<", json:"<<json;
+
+	Http_Send_Response(socket,"HTTP/1.0 200 OK\r\nContent-Type: text/javascript\r\n\r\n") << json;
 }

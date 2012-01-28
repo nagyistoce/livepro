@@ -415,6 +415,10 @@ void SwitchMonWidget::createViewers()
 		
 		m_viewerLayout->addWidget(widget);
 		
+		// Dont leave empty receivers visible - mainly for the first live viewer
+		if(!idx && !receiver->isConnected())
+			widget->hide();
+		
 		idx++;
 	}
 	
@@ -469,6 +473,17 @@ void SwitchMonWidget::processInputEnumReply(const QByteArray &bytes)
 	m_inputList.prepend(tr("net=%1:9978").arg(m_host));
 	
 	createViewers();
+	
+	// In 0.6, we added the "ShowVideoConnection" command,
+	// so we don't need to examine the current scene for
+	// a drawable ID inorder to show the camera.
+	if(m_serverApiVer >= 0.6)
+	{
+		m_connectBtn->setEnabled(false);
+		m_connectBtn->setText("Connected");
+		return;
+	}
+	
 	
 	m_lastReqType = T_ExamineScene;
 	loadUrl(tr("http://%1:9979/ExamineCurrentScene").arg(m_host));

@@ -129,6 +129,8 @@ QImage PointTrackingFilter::trackPoints(QImage img)
 		m_timeValue.restart();
 	}
 	
+	m_calculatedFps = fps;
+	
  	//qDebug() << "fps:"<<fps<<", m_timeFrameCounter:"<<m_timeFrameCounter;
  	if(fps > 1 && m_timeFrameCounter >= fps && 
  	   m_timeFrameCounter % (int)fps == 0)
@@ -319,13 +321,28 @@ QImage PointTrackingFilter::trackPoints(QImage img)
 			//lastLineHeight = lineHeight;
 			lastLineHeight = (int)(ratio*100);
 		}
-	
+		
+		p.setPen(QPen());
+		p.fillRect(QRect(0,0,imageCopy.width(), 38), QColor(0,0,0,127));
+		
 		p.setFont(QFont("", 24, QFont::Bold));
 		p.setPen(Qt::black);
 		p.drawText(imageCopy.rect().topRight() + QPoint( -149, 31 ), QString().sprintf("%06d", m_historyWindowAverage)); //moveAvg));
 		p.setPen(Qt::white);
 		p.drawText(imageCopy.rect().topRight() + QPoint( -150, 30 ), QString().sprintf("%06d", m_historyWindowAverage)); //moveAvg));
 		p.setFont(font);
+		
+		
+		if(!m_debugText.isEmpty())
+		{
+			p.setFont(QFont("",24,QFont::Bold));
+			p.setPen(Qt::black);
+			p.drawText(6, 31, m_debugText);
+			p.setPen(Qt::white);
+			p.drawText(5, 30, m_debugText);
+			p.setFont(font);
+		}
+		
 	} 
 	
 	if(m_historyWindowAverage <= 0)
@@ -425,6 +442,8 @@ PointTrackingFilter::PointTrackingFilter(QObject *parent)
 // 	m_fpsTimer.start();
 	
 	m_drawUnused = false;
+	
+	m_calculatedFps = 15.0;
 }
 
 PointTrackingFilter::~PointTrackingFilter()

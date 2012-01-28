@@ -136,10 +136,15 @@ public:
 	
 	void setCleanOutput(bool flag){  m_cleanOutput = flag; }
 	
+	double calculatedFps() { return m_calculatedFps; }
+	
 signals:
 	void historyAvgZero();
 	void historyAvg(int);
 	void averageMovement(int);
+	
+public slots:
+	void setDebugText(const QString& text) { m_debugText = text; }
 	
 protected slots:
 	void reallyProcessFrame();
@@ -196,6 +201,10 @@ private:
 	int m_zeroMoveFrameCounter;
 	
 	bool m_drawUnused;
+	
+	QString m_debugText;
+	
+	double m_calculatedFps;
 };
 
 #endif

@@ -40,6 +40,9 @@ QImage PointTrackingFilter::trackPoints(QImage img)
 	// For testing...
 	if(img.width() < 600)
 		img = img.scaled(640,480);
+
+	// crop in for cameras
+	img = img.copy(img.rect().adjusted(10,10,-20,-20));
 		
 	frame = cvCreateImageHeader( cvSize(img.width(), img.height()), IPL_DEPTH_8U, 3);
 	frame->imageData = (char*) img.bits();
@@ -358,13 +361,15 @@ QImage PointTrackingFilter::trackPoints(QImage img)
 		m_zeroMoveFrameCounter = 0;
 	}
 	
-	if(m_zeroMoveFrameCounter > fps * 5)
+	if(m_zeroMoveFrameCounter > fps * 7)
 	{
 		// if five seconds of zero movement have passed, force re-init of points
 		m_validCount = 0;
 		
 		//if(!m_cleanOutput)
-			//qDebug() << "m_zeroMoveFrameCounter("<<m_zeroMoveFrameCounter<<") > "<<(fps*5)<<", resetting points";
+			qDebug() << this << "m_zeroMoveFrameCounter("<<m_zeroMoveFrameCounter<<") > "<<(fps*7)<<", resetting points";
+
+		m_zeroMoveFrameCounter = 0;
 	}
 	
 	emit historyAvg(m_historyWindowAverage);
@@ -378,10 +383,19 @@ QImage PointTrackingFilter::trackPoints(QImage img)
 	
 	if(m_validCount <= m_foundCount * m_resetRatio)
 	{
-		//qDebug() << "Need to init!";
-// 		if(!m_cleanOutput)
-// 			qDebug() << "count less than "<<(m_foundCount * m_resetRatio)<<", resetting.";
-		m_needInit = 1;
+		if(--m_startupCountdown <= 0)
+		{ 
+			//qDebug() << "Need to init!";
+	// 		if(!m_cleanOutput)
+				//qDebug() << this << "count less than "<<(m_foundCount * m_resetRatio)<<", resetting.";
+			m_needInit = 1;
+		}
+		else
+		{
+			//m_startupCountdown = 90;
+		}
+
+
 	}
 	else
 	{
@@ -444,6 +458,8 @@ PointTrackingFilter::PointTrackingFilter(QObject *parent)
 	m_drawUnused = false;
 	
 	m_calculatedFps = 15.0;
+
+	m_startupCountdown = 0;
 }
 
 PointTrackingFilter::~PointTrackingFilter()

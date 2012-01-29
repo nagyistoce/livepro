@@ -12,16 +12,8 @@
 
 #include "VideoSender.h"
 
-/// One or the other, not both!
-//#define PREVIEW_OPENGL
-#define PREVIEW_STOCK
 
-#ifdef PREVIEW_STOCK
 #include "VideoWidget.h"
-#else
-#include "GLWidget.h"
-#include "GLVideoDrawable.h"
-#endif
 
 #define ENABLE_VIDEO_SENDERS
 #define ENABLE_LIVEVIEW_PROXY
@@ -42,21 +34,8 @@ MainWindow::MainWindow()
 	, m_lastHighNum(-1)
 	, m_ignoreCountdown(60)
 {
-	#ifdef PREVIEW_OPENGL
-	// Create the GLWidget to do the actual rendering
-	GLWidget *glw = new GLWidget(this);
-	#endif
-	
-	// Setup the layout of the window
-	#ifdef PREVIEW_STOCK
-	QHBoxLayout *hbox = new QHBoxLayout(this);
-	hbox->setContentsMargins(0,0,0,0);
-	
-	#else
-	QVBoxLayout *vbox = new QVBoxLayout(this);
-	vbox->addWidget(glw);
-	vbox->setContentsMargins(0,0,0,0);
-	#endif
+	m_hbox = new QHBoxLayout(this);
+	m_hbox->setContentsMargins(0,0,0,0);
 	
 	GetSettingsObject();
 	
@@ -68,8 +47,8 @@ MainWindow::MainWindow()
 		exit(-1);
 	}
 	
-	VideoSwitcherJsonServer *jsonServer = new VideoSwitcherJsonServer(9979, this);
-	connect(jsonServer, SIGNAL(showCon(const QString&, int)), this, SLOT(showJsonCon(const QString&, int)));
+	m_jsonServer = new VideoSwitcherJsonServer(9979, this);
+	connect(m_jsonServer, SIGNAL(showCon(const QString&, int)), this, SLOT(showJsonCon(const QString&, int)));
 	
 	// setFadeSpeed: Not implemented yet
 	//connect(jsonServer, SIGNAL(setFadeSpeed(int)), this, SLOT(setFadeSpeed(int)));
@@ -136,18 +115,25 @@ MainWindow::MainWindow()
 		}
 		
 		m_cons << input;
+
+		QUrl url = GLVideoInputDrawable::extractUrl(input);
+		QString host = url.host();
+		int port = url.port();
+		
+		// Start connection
+		VideoReceiver *rx = VideoReceiver::getReceiver(host,port);
+		rx->registerConsumer(this);
+		
 	}
 	
-		
- 	#ifdef PREVIEW_OPENGL
- 	GLScene *scene = new GLScene();
- 	
- 	int frameWidth  = 1000,
- 	    frameHeight =  750,
- 	    x = 0,
- 	    y = 0;
- 	#endif
- 	
+	m_host = host;
+	m_numInputs = numInputs;
+	qDebug() << "Waiting 10 sec to load filters...\n";
+	QTimer::singleShot(10000, this, SLOT(setupFilters()));
+}
+
+void MainWindow::setupFilters()
+{	
  	QString ipAddress = VideoSender::ipAddress();
  	QStringList myVideoPorts;
  	
@@ -176,17 +162,12 @@ MainWindow::MainWindow()
 		output->setVideoSource(rx);
 		#endif
 		
-		#ifdef PREVIEW_OPENGL
-		GLVideoDrawable *drw = new GLVideoDrawable();
-		#else
 		VideoWidget *drw = new VideoWidget(this);
-		hbox->addWidget(drw);
+		m_hbox->addWidget(drw);
 		
 		connect(drw, SIGNAL(clicked()), this, SLOT(widgetClicked()));
 		drw->setProperty("con", connection);
-		#endif
 		
-		#if 1
 		//AnalysisFilter *filter = new AnalysisFilter();
 		PointTrackingFilter *filter = new PointTrackingFilter();
 		
@@ -221,38 +202,24 @@ MainWindow::MainWindow()
 		#endif
 		
 		//filter->setOutputImagePrefix(tr("input%1").arg(port));
-		#else
-		drw->setVideoSource(rx);
-		#endif
+		//drw->setVideoSource(rx);
 		
-		#ifdef PREVIEW_OPENGL
-		drw->setRect(QRectF(x,y,frameWidth,frameHeight));
-		x += frameWidth;
 		
-		// Finally, add the drawable
-		scene->addDrawable(drw);
-		#endif
 	}
 	
-	#ifdef PREVIEW_OPENGL
-	// Add the drawables to the GLWidget
-	scene->setGLWidget(glw);
-	
-	glw->setViewport(QRect(0,0,frameWidth * inputs.size(), 750));
-	#endif
 	
 	#ifdef ENABLE_VIDEO_SENDERS
-	jsonServer->setInputList(myVideoPorts);
+	m_jsonServer->setInputList(myVideoPorts);
 	#endif
 	
 	#ifdef ENABLE_LIVEVIEW_PROXY
-	VideoReceiver *liveRx = VideoReceiver::getReceiver(host, 9978);
+	VideoReceiver *liveRx = VideoReceiver::getReceiver(m_host, 9978);
 	VideoSender *liveSend = new VideoSender(this);
 	liveSend->setVideoSource(liveRx);
 	liveSend->listen(QHostAddress::Any,9978);
 	#endif
 	
-	resize( 320 * numInputs, 240 );
+	resize( 320 * m_numInputs, 240 );
 }
 
 void MainWindow::resizeEvent(QResizeEvent*)

@@ -205,6 +205,8 @@ private:
 	QString m_debugText;
 	
 	double m_calculatedFps;
+
+	int m_startupCountdown;
 };
 
 #endif

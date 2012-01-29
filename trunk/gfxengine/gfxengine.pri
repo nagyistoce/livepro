@@ -32,7 +32,8 @@ unix: {
 # Specify via: qmake CONFIG+=opencv 
 opencv: {
 	DEFINES += OPENCV_ENABLED
-	LIBS += -L/usr/local/lib -lcv -lcxcore
+	LIBS += -L/usr/local/lib -lcv -lcxcore -L/opt/OpenCV-2.1.0/lib
+	INCLUDEPATH += /opt/OpenCV-2.1.0/include
 			
 	HEADERS += \
 		PointTrackingFilter.h

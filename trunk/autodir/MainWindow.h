@@ -6,6 +6,7 @@
 class AnalysisFilter;
 class PlayerConnection;
 class PointTrackingFilter;
+class VideoSwitcherJsonServer;
 
 class MainWindow : public QWidget
 {
@@ -18,7 +19,8 @@ private slots:
 	void widgetClicked();
 	void showCon(const QString&);
 	void showJsonCon(const QString&, int);
-
+	void setupFilters();
+	
 protected:
 	void resizeEvent(QResizeEvent*);
 	QList<int> m_ratings;
@@ -28,6 +30,10 @@ protected:
 	PlayerConnection *m_player;
 	int m_lastHighNum;
 	int m_ignoreCountdown;
+	VideoSwitcherJsonServer *m_jsonServer;
+	QHBoxLayout *m_hbox;
+	int m_numInputs;
+	QString m_host;
 };
 
 #include "../3rdparty/qjson/serializer.h"

@@ -112,9 +112,12 @@ void MainWindow::historyAvgZero()
 
 void MainWindow::historyAvg(int zero)
 {
-	qDebug() << "History: "<<zero;
+	//qDebug() << "History: "<<zero;
 	if(zero <= 5)
+	{
+		qDebug() << "History: "<<zero;
 		historyAvgZero();
+	}
 	else
 	if(m_labelChanged)
 	{

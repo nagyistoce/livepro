@@ -13,8 +13,9 @@ MainWindow::MainWindow()
 	QHBoxLayout *hbox = new QHBoxLayout(this);
 	hbox->setContentsMargins(0,0,0,0);
 	
-	QString host = "10.10.9.92"; //192.168.0.17";
+	QString host = "192.168.0.19"; //192.168.0.17";
 	int port = 9978;
+	//int port = 7756;
 		
 	VideoReceiver *rx = VideoReceiver::getReceiver(host,port);
 		
@@ -23,8 +24,8 @@ MainWindow::MainWindow()
 	QString outputDev = tr("/dev/video%1").arg(V4L_OUTPUT_NUM);
 	qDebug() << "Outputing connecting "<<tr("%1:%2").arg(host).arg(port)<<" to video device "<<outputDev;
 	
-	V4LOutput *output = new V4LOutput(outputDev);
-	output->setVideoSource(rx);
+// 	V4LOutput *output = new V4LOutput(outputDev);
+// 	output->setVideoSource(rx);
 		
 	VideoWidget *drw = new VideoWidget(this);
 	drw->setVideoSource(rx);

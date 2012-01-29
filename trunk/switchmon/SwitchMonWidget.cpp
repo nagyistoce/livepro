@@ -416,7 +416,7 @@ void SwitchMonWidget::createViewers()
 		m_viewerLayout->addWidget(widget);
 		
 		// Dont leave empty receivers visible - mainly for the first live viewer
-		if(!idx && !receiver->isConnected())
+		if(!idx && (!receiver || !receiver->isConnected()))
 			widget->hide();
 		
 		idx++;

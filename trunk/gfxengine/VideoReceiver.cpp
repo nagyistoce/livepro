@@ -542,7 +542,8 @@ void VideoReceiver::processBlock()
 					//QByteArray array;
 					//qDebug() << "m_byteCount:"<<m_byteCount<<", size:"<<imgX<<"x"<<imgY;
 					uchar *pointer = frame->allocPointer(m_byteCount);
-					memcpy(pointer, (const char*)block.constData(), m_byteCount);
+					//if(pointer && m_byteCount > 0)
+						memcpy(pointer, (const char*)block.constData(), m_byteCount);
 					//array.append((const char*)block.constData(), m_byteCount);
 					//frame->setByteArray(array);
 				}

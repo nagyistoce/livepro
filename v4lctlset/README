@@ -1,0 +1,5 @@
+v4lctlset
+
+Simple util to set custom v4l controls.
+
+Built primarily because I want to turn on the combfilter and the standard v4lctl doesn't set custom controls.

@@ -2,6 +2,13 @@
 #define SimpleV4L2_H
 
 #include <QStringList>
+#include <QSize>
+
+extern "C" {
+
+#include <linux/videodev2.h>
+
+}
 
 typedef enum {
 	IO_METHOD_READ,
@@ -52,6 +59,32 @@ public:
 	void setStandard(StandardInfo standard);
 	bool setStandard(const QString& name); // must be in the list return by standards()
 	
+	class ControlData {
+	public:
+		ControlData()
+		{
+			name = "";
+			value = 0;
+			defaultValue = 0;
+			min = 0;
+			max = 0;
+			id = -1;
+			idString = "";
+		}
+		bool isNull()  { return id < 0; }
+		
+		QString name;
+		int value;
+		int defaultValue;
+		int min;
+		int max;
+		int id;
+		QString idString;
+	};
+	
+	QList<ControlData> enumerateControls();
+	bool setControl(ControlData);
+	
 private:
 	void io_init_read(unsigned int buffer_size);
 	void io_init_mmap();
@@ -69,6 +102,8 @@ private:
 	
 	bool			  m_startedCapturing;
 	bool 			  m_deviceInited;
+	
+
 };
 
 

@@ -828,4 +828,106 @@ bool SimpleV4L2::setStandard(const QString& name)
 	return false;
 }
 
+
+
+QList<SimpleV4L2::ControlData> SimpleV4L2::enumerateControls()
+{	
+	struct v4l2_queryctrl   qctrl;
+	struct v4l2_control     control;
+
+	QList<ControlData> controls;
+	
+	int i;
+	for (i = 0;; i++) {
+		ControlData dataOut;
+		
+		memset(&qctrl,0,sizeof(qctrl));
+		qctrl.id = V4L2_CID_BASE+i;
+		if (-1 == ioctl(m_fd,VIDIOC_QUERYCTRL,&qctrl))
+			break;
+		if (qctrl.flags & V4L2_CTRL_FLAG_DISABLED)
+			continue;
+		
+		dataOut.idString = QString("VIDIOC_QUERYCTRL(BASE+%1)").arg(i);
+		//printf("    VIDIOC_QUERYCTRL(BASE+%d)\n",i);
+		//printf("        name: %s\n", qctrl.name);
+		dataOut.name = QString((const char*)qctrl.name);
+		dataOut.id   = qctrl.id;
+		dataOut.min  = qctrl.minimum;
+		dataOut.max  = qctrl.maximum;
+		dataOut.defaultValue = qctrl.default_value;
+		
+		memset (&control, 0, sizeof (control));
+		control.id = qctrl.id;
+		
+		if (-1 == ioctl (m_fd, VIDIOC_G_CTRL, &control))
+		{
+			//printf("\t Error reading value\n");
+			break;
+		}
+		
+		
+		//printf("        value: %d (default: %d, min/max: %d/%d)\n", control.value, qctrl.default_value, qctrl.minimum, qctrl.maximum);
+		//printf("        value: %d\n", control.value);
+		dataOut.value = control.value;
+		
+		controls.append(dataOut);
+	}
+	for (i = 0;; i++) {
+		ControlData dataOut;
+		
+		memset(&qctrl,0,sizeof(qctrl));
+		qctrl.id = V4L2_CID_PRIVATE_BASE+i;
+		if (-1 == ioctl(m_fd,VIDIOC_QUERYCTRL,&qctrl))
+			break;
+		if (qctrl.flags & V4L2_CTRL_FLAG_DISABLED)
+			continue;
+		
+		dataOut.idString = QString("VIDIOC_QUERYCTRL(PRIVATE_BASE+%1)").arg(i);
+		//printf("    VIDIOC_QUERYCTRL(PRIVATE_BASE+%d)\n",i);
+		//printf("        name: %s\n", qctrl.name);
+		dataOut.name = QString((const char*)qctrl.name);
+		dataOut.id   = qctrl.id;
+		dataOut.min  = qctrl.minimum;
+		dataOut.max  = qctrl.maximum;
+		dataOut.defaultValue = qctrl.default_value;
+		
+		memset (&control, 0, sizeof (control));
+		control.id = qctrl.id;
+		
+		if (-1 == ioctl (m_fd, VIDIOC_G_CTRL, &control))
+		{
+			printf("\t Error reading value\n");
+			break;
+		}
+		
+		//printf("        value: %d (default: %d, min/max: %d/%d)\n", control.value, qctrl.default_value, qctrl.minimum, qctrl.maximum);
+		//printf("        value: %d\n", control.value);
+		dataOut.value = control.value;
+		
+		controls.append(dataOut);
+	}
+	
+	return controls; 
+
+}
+
+bool SimpleV4L2::setControl(ControlData data)
+{
+	struct v4l2_control control;
+	memset (&control, 0, sizeof (control));
+	control.id    = data.id;
+	control.value = data.value;
+
+	if (-1 == ioctl (m_fd, VIDIOC_S_CTRL, &control) && errno != ERANGE)
+	{
+		qDebug() << "SimpleV4L2::setControl: Error in VIDIOC_S_CTRL when setting control "<<data.id<<", name:"<<data.name;
+		return false;
+	}
+	
+	return true;
+}
+
+
 #endif
+

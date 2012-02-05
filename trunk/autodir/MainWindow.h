@@ -34,6 +34,7 @@ protected:
 	QHBoxLayout *m_hbox;
 	int m_numInputs;
 	QString m_host;
+	QList<double> m_weights;
 };
 
 #include "../3rdparty/qjson/serializer.h"

@@ -116,6 +116,8 @@ MainWindow::MainWindow()
 		
 		m_cons << input;
 
+		m_weights << settings.value(tr("weight%1").arg(i), "1.0").toDouble();
+
 		QUrl url = GLVideoInputDrawable::extractUrl(input);
 		QString host = url.host();
 		int port = url.port();
@@ -238,7 +240,7 @@ void MainWindow::motionRatingChanged(int rating)
 	if(rating < 0)
 		rating = 0;
 	
-	m_ratings[num] += rating;
+	m_ratings[num] += rating * m_weights[num];
 	//qDebug() << num << rating;
 	m_filters[num]->setDebugText(tr("%2 %1").arg(m_ratings[num]).arg(m_lastHighNum == num ? " ** LIVE **":""));
 
@@ -309,6 +311,10 @@ void MainWindow::widgetClicked()
 {
 	QString con = sender()->property("con").toString();
 	showCon(con);
+
+	for(int i=0; i<m_ratings.size(); i++)
+		m_ratings[i] = 0; 
+		
 }
 
 void MainWindow::showCon(const QString& con)
@@ -326,8 +332,19 @@ void MainWindow::showCon(const QString& con)
 	
 	int idx = m_cons.indexOf(con);
 	if(idx > -1)
+	{
 		m_lastHighNum = idx;
-		
+		for(int i=0; i<m_ratings.size(); i++)
+			if(i!=idx)
+				m_ratings[i] = 0; 
+
+
+		/*for(int i=0; i<m_ratings.size(); i++)
+			m_ratings[i] = 0; 
+		*/	
+		//m_ratings[idx] = 0;	
+	}
+	
 	qDebug() << "MainWindow::showCon: "<<con<<", idx:"<<idx;
 	
 	group->deleteLater();
@@ -344,6 +361,8 @@ void MainWindow::showJsonCon(const QString& con, int /*ms*/)
 	}
 	
 	showCon(m_cons[conNum]);
+
+		
 }
 
 /// VideoSwitcherJsonServer

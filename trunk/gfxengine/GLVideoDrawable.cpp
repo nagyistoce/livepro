@@ -3913,6 +3913,10 @@ void GLVideoDrawable::loadHintsFromSource()
 			<< "cropBottom"
 			<< "cropLeft"
 			<< "cropRight"
+			<< "adjustTop"
+			<< "adjustBottom"
+			<< "adjustLeft"
+			<< "adjustRight"
 			<< "filterType"
 			<< "sharpAmount"
 			<< "rotation";
@@ -3947,6 +3951,10 @@ void GLVideoDrawable::storeHintsToSource()
 		<< "cropBottom"
 		<< "cropLeft"
 		<< "cropRight"
+		<< "adjustTop"
+		<< "adjustBottom"
+		<< "adjustLeft"
+		<< "adjustRight"
 		<< "filterType"
 		<< "sharpAmount"
 		<< "rotation";

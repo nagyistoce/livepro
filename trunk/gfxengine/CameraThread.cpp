@@ -30,8 +30,8 @@ extern "C" {
 
 #include "SimpleV4L2.h"
 
-//#define ENABLE_TEST_GENERATOR
-#define NUM_TEST_SIGNALS 3
+#define ENABLE_TEST_GENERATOR
+#define NUM_TEST_SIGNALS 1
 
 #define VIDEO_HINTS_STORAGE "/var/lib/livepro-videohints.dat"
 

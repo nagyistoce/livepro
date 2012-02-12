@@ -245,7 +245,7 @@ void MainWindow::createControlUI()
 		form->addRow("",btn);
 	}
 	
-	// Croping
+	// Color Adjust
 	{
 		NEW_SECTION("Color Adjustments");
 		
@@ -328,6 +328,32 @@ void MainWindow::createControlUI()
 		opts.value = item->rotation().z();
 		form->addRow(tr("&Straighten:"), PropertyEditorFactory::generatePropertyEditor(this, "zRotation", SLOT(setStraightValue(double)), opts));
 
+		
+		QPushButton *btn = new QPushButton("Apply to Player");
+		connect(btn, SIGNAL(clicked()), this, SLOT(sendVidOpts()));
+		form->addRow("",btn);
+	}
+	
+	// A/R Adjust
+	{
+		NEW_SECTION("A/R Adjust");
+		
+		opts.doubleIsPercentage = true;
+		opts.suffix = "%";
+		opts.type = QVariant::Int;
+		
+		opts.min = 0;
+		opts.max = 100;
+		form->addRow(tr("Adjust &Left:"),	PropertyEditorFactory::generatePropertyEditor(item, "adjustLeft",   SLOT(setAdjustLeft(int)), opts));
+		opts.min = -100;
+		opts.max = 0;
+		form->addRow(tr("Adjust &Right:"),	PropertyEditorFactory::generatePropertyEditor(item, "adjustRight",  SLOT(setAdjustRight(int)), opts));
+		opts.min = 0;
+		opts.max = 100;
+		form->addRow(tr("Adjust &Top:"),	PropertyEditorFactory::generatePropertyEditor(item, "adjustTop",    SLOT(setAdjustTop(int)), opts));
+		opts.min = -100;
+		opts.max = 0;
+		form->addRow(tr("Adjust &Bottom:"),	PropertyEditorFactory::generatePropertyEditor(item, "adjustBottom", SLOT(setAdjustBottom(int)), opts));
 		
 		QPushButton *btn = new QPushButton("Apply to Player");
 		connect(btn, SIGNAL(clicked()), this, SLOT(sendVidOpts()));
@@ -616,6 +642,10 @@ void MainWindow::sendVidOpts()
 		<< "cropBottom"
 		<< "cropLeft"
 		<< "cropRight"
+		<< "adjustTop"
+		<< "adjustBottom"
+		<< "adjustLeft"
+		<< "adjustRight"
 		<< "filterType"
 		<< "sharpAmount"
 		<< "rotation";
@@ -778,6 +808,11 @@ void MainWindow::savePreset()
 		<< "cropBottom"
 		<< "cropLeft"
 		<< "cropRight"
+		<< "adjustTop"
+		<< "adjustBottom"
+		<< "adjustLeft"
+		<< "adjustRight"
+		
 		<< "filterType"
 		<< "sharpAmount"
 		<< "rotation";

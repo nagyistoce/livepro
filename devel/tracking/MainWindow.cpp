@@ -19,12 +19,12 @@ MainWindow::MainWindow()
 	// but they don't use OpenGL for rendering, which makes them work under less-than-ideal circumstances.
 	RectSelectVideoWidget *videoWidget = new RectSelectVideoWidget(this);
 	
-	#if 1
+	#if 0
 	VideoReceiver *source = VideoReceiver::getReceiver("192.168.0.18",7755); 
 	#endif
 	
 	
-	#if 0
+	#if 1
 	// Use a video file for input
 	VideoThread * source = new VideoThread();
 	source->setVideo("../data/20120115/sermon.wmv");

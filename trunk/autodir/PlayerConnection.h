@@ -96,8 +96,8 @@ public:
 	
 	int useCount() { return m_useCount; }
 	
-	//const GLSceneGroup *lastGroup() { return m_group ? (GLSceneGroup*)m_group.data() : 0; }
-	//const GLScene *lastScene() { return m_group ? (GLScene*)m_scene.data() : 0; }
+	const GLSceneGroup *lastGroup();// { return m_group ? (GLSceneGroup*)m_group.data() : 0; }
+	const GLScene *lastScene();// { return m_group ? (GLScene*)m_scene.data() : 0; }
 	
 /* static: */
 	/// Sort by the useCount() property in ascending order (Z-A). For use as a 'LessThan' argument to a qSort() call (See http://doc.qt.nokia.com/latest/qtalgorithms.html#qSort)

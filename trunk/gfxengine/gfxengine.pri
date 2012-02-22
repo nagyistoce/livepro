@@ -137,6 +137,9 @@ include(../3rdparty/ffmpeg/ffmpeg.pri)
 # MD5 is used to cache scaled images by GLImageDrawable
 include(../3rdparty/md5/md5.pri)
 
+# Rich text editor dialog used by RichTextEditorWindow.cpp
+include(../3rdparty/richtextedit/richtextedit.pri)
+
 # EXIV2 is optional and not currently in subversion.
 # (but the code is in DViz if you *really* want to build with it.)
 # Used by GLImageDrawable to extract rotation information. 
@@ -170,6 +173,7 @@ HEADERS += BMDOutput.h \
            GLCommonShaders.h \
            GLDrawable.h \
            ExpandableWidget.h \
+           FlowLayout.h \
            GLDrawables.h \
            GLEditorGraphicsScene.h \
            GLImageDrawable.h \
@@ -198,6 +202,7 @@ HEADERS += BMDOutput.h \
            MjpegThread.h \
            RichTextRenderer.h \
            RssParser.h \
+           RtfEditorWindow.h \
 	   ScreenVideoSource.h \
            VideoConsumer.h \
            VideoDifferenceFilter.h \
@@ -219,6 +224,7 @@ SOURCES += BMDOutput.cpp \
            EditorUtilityWidgets.cpp \
            EntityList.cpp \
            ExpandableWidget.cpp \
+           FlowLayout.cpp \
            GLDrawable.cpp \
            GLEditorGraphicsScene.cpp \
            GLImageDrawable.cpp \
@@ -246,6 +252,7 @@ SOURCES += BMDOutput.cpp \
            MjpegThread.cpp \
            RichTextRenderer.cpp \
            RssParser.cpp \
+           RtfEditorWindow.cpp \
            ScreenVideoSource.cpp \
            VideoConsumer.cpp \
            VideoDifferenceFilter.cpp \

@@ -1017,3 +1017,14 @@ bool PlayerConnection::sortByUseCountDesc(PlayerConnection *a, PlayerConnection 
 		return false;
 	return a->useCount() < b->useCount();
 }
+
+const GLSceneGroup *PlayerConnection::lastGroup()
+{
+	// { return m_group ? (GLSceneGroup*)m_group.data() : 0; }
+	return (GLSceneGroup*)m_group;
+}
+const GLScene *PlayerConnection::lastScene()
+{
+	;// { return m_group ? (GLScene*)m_scene.data() : 0; }
+	return (GLScene*)m_scene;
+}

@@ -4,13 +4,13 @@
 #include "GLEditorGraphicsScene.h"
 #include "GLDrawables.h"
 
-#include "../livemix/ExpandableWidget.h"
-#include "../livemix/EditorUtilityWidgets.h"
+#include "ExpandableWidget.h"
+#include "EditorUtilityWidgets.h"
 
 #include "../3rdparty/richtextedit/richtexteditor_p.h"
-#include "../qtcolorpicker/qtcolorpicker.h"
+#include "../3rdparty/qtcolorpicker/qtcolorpicker.h"
 
-#include "../ImageFilters.h"
+#include "ImageFilters.h"
 
 #include "RtfEditorWindow.h"
 #include "EditorGraphicsView.h"

@@ -23,13 +23,42 @@ include(../varnet/varnet.pri)
 # Parse command line options
 include(../3rdparty/qtgetopt/getopt.pri)
 
-# Input
-HEADERS += \
-	PlayerWindow.h
+# Client for the 'miditcp' server
+include(/opt/miditcp/client/miditcp.pri)
 
+# Qt Color Picker widget
+include(../3rdparty/qtcolorpicker/qtcolorpicker.pri)
+
+# Input
+
+FORMS += \
+	DirectorWindow.ui  \
+	DrawableDirectorWidget.ui \
+	PlayerSetupDialog.ui \
+	ScenePropertiesDialog.ui
+
+HEADERS += \
+	DirectorMidiInputAdapter.h  \
+	DirectorWindow.h  \
+	DrawableDirectorWidget.h  \
+	EditorGraphicsView.h  \
+	EditorWindow.h \
+	../autodir/PlayerConnection.h \
+	PlayerSetupDialog.h \
+	ScenePropertiesDialog.h \
+	KeystonePointsEditor.h
+	
 SOURCES += \
 	main.cpp \
-	PlayerWindow.cpp 
+	DirectorMidiInputAdapter.cpp  \
+	DirectorWindow.cpp  \
+	DrawableDirectorWidget.cpp  \
+	EditorGraphicsView.cpp  \
+	EditorWindow.cpp \
+	../autodir/PlayerConnection.cpp \
+	PlayerSetupDialog.cpp \
+	ScenePropertiesDialog.cpp \
+	KeystonePointsEditor.cpp
 
 #win32 {
 #        CONFIG += console

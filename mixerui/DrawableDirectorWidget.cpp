@@ -1,9 +1,9 @@
 #include "DrawableDirectorWidget.h"
 #include "ui_DrawableDirectorWidget.h"
 #include "DirectorWindow.h"
-#include "../livemix/EditorUtilityWidgets.h"
+#include "EditorUtilityWidgets.h"
 #include "RtfEditorWindow.h"
-#include "../qtcolorpicker/qtcolorpicker.h"
+#include "../3rdparty/qtcolorpicker/qtcolorpicker.h"
 
 #include "FlowLayout.h"
 
@@ -15,11 +15,11 @@
 #include "GLDrawables.h"
 #include "GLSceneGroup.h"
 
-#include "../livemix/VideoWidget.h"
+#include "VideoWidget.h"
 #include "VideoInputSenderManager.h"
 #include "VideoReceiver.h"
 
-#include "PlayerConnection.h"
+#include "../autodir/PlayerConnection.h"
 
 DrawableDirectorWidget::DrawableDirectorWidget(GLDrawable *drawable, GLScene *scene, DirectorWindow *director)
 	: QWidget(director)

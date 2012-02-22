@@ -1,17 +1,22 @@
 #include "DirectorWindow.h"
 #include "ui_DirectorWindow.h"
-#include "PlayerSetupDialog.h"
-#include "EditorWindow.h"
-#include "../livemix/ExpandableWidget.h"
-#include "../livemix/EditorUtilityWidgets.h"
+
 #include "RtfEditorWindow.h"
+#include "FlowLayout.h"
+
+#include "PlayerSetupDialog.h"
+
+#include "../3rdparty/qtcolorpicker/qtcolorpicker.h"
+#include "../autodir/PlayerConnection.h"
+
+
+#include "EditorWindow.h"
+#include "ExpandableWidget.h"
+#include "EditorUtilityWidgets.h"
 #include "GLEditorGraphicsScene.h"
-#include "../qtcolorpicker/qtcolorpicker.h"
 
 #include "VideoInputColorBalancer.h"
 #include "HistogramFilter.h"
-
-#include "FlowLayout.h"
 
 #include <QFileInfo>
 #include <QFileDialog>
@@ -20,9 +25,8 @@
 
 #include "GLDrawables.h"
 #include "GLSceneGroup.h"
-#include "PlayerConnection.h"
 
-#include "../livemix/VideoWidget.h"
+#include "VideoWidget.h"
 #include "VideoInputSenderManager.h"
 #include "VideoReceiver.h"
 

@@ -32,6 +32,21 @@ namespace DirectorMidiAction
 		int m_source;
 	};
 	
+	class ToggleOverlayButton : public MidiInputAction
+	{
+		public:
+		ToggleOverlayButton(int source=0) : MidiInputAction(), m_source(source) {}
+		QString id() { return tr("d41ec12e-4b2e-4d48-8257-4ec005127c64:%1").arg(m_source); }
+		QString name() { return tr("Toggle Overlay %1").arg(m_source+1); }
+		void trigger(int)
+		{
+			if(mw->switcher())
+				mw->switcher()->toggleOverlay(m_source);	
+		}
+		
+		int m_source;
+	};
+	
 	class FadeSpeedFader : public MidiInputAction
 	{
 		QString id() { return "1188e63f-4723-424c-b5fc-a1068da669c7"; }
@@ -61,10 +76,13 @@ void DirectorMidiInputAdapter::setupActionList()
 		<< new DirectorMidiAction::ActivateSourceButton(3)
 		<< new DirectorMidiAction::ActivateSourceButton(4)
 		<< new DirectorMidiAction::ActivateSourceButton(5)
-		<< new DirectorMidiAction::ActivateSourceButton(6)
-		<< new DirectorMidiAction::ActivateSourceButton(7)
-		<< new DirectorMidiAction::ActivateSourceButton(8)
-		<< new DirectorMidiAction::ActivateSourceButton(9)
+		<< new DirectorMidiAction::ToggleOverlayButton(0)
+		<< new DirectorMidiAction::ToggleOverlayButton(1)
+		<< new DirectorMidiAction::ToggleOverlayButton(2)
+// 		<< new DirectorMidiAction::ActivateSourceButton(6)
+// 		<< new DirectorMidiAction::ActivateSourceButton(7)
+// 		<< new DirectorMidiAction::ActivateSourceButton(8)
+// 		<< new DirectorMidiAction::ActivateSourceButton(9)
 		;
 	
 	qDebug() << "DirectorMidiInputAdapter::setupActionList(): Added "<<m_actionList.size() <<" actions to the MIDI Action List";

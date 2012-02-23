@@ -1177,6 +1177,7 @@ OverlayWidget::OverlayWidget(DirectorWindow *d)
 	, m_scene(0)
 	, m_collection(0)
 	, m_director(d)
+	, m_lastIdxShown(-1)
 {
 	
 	QVBoxLayout *vbox = new QVBoxLayout(this);
@@ -1191,7 +1192,7 @@ OverlayWidget::OverlayWidget(DirectorWindow *d)
 		size /= 2.5;
 		//qDebug() << "MainWindow::createLeftPanel(): size:"<<size;
 		QImage bgImage(size, QImage::Format_ARGB32_Premultiplied);
-		QBrush bgTexture(QPixmap("../livemix/squares2.png"));
+		QBrush bgTexture(QPixmap("../data/squares2.png"));
 		QPainter bgPainter(&bgImage);
 		bgPainter.fillRect(bgImage.rect(), bgTexture);
 		bgPainter.end();
@@ -1347,6 +1348,25 @@ void OverlayWidget::showOverlay()
 {
 	int idx = m_combo->currentIndex();
 	
+	if(m_lastIdxShown>-1)
+		hideOverlay(m_lastIdxShown);
+	
+	showOverlay(idx);
+}
+
+bool OverlayWidget::toggleOverlay()
+{
+	if(m_lastIdxShown > -1)
+		hideOverlay(m_lastIdxShown);
+	else
+		showOverlay();
+	return true;
+}
+	
+void OverlayWidget::showOverlay(int idx)
+{
+	m_lastIdxShown = idx;
+	
 	GLSceneGroup *group = m_collection->at(0); 
 	GLScene *scene = group->at(idx);
 	
@@ -1358,7 +1378,12 @@ void OverlayWidget::showOverlay()
 void OverlayWidget::hideOverlay()
 {
 	int idx = m_combo->currentIndex();
-	
+	hideOverlay(idx);
+}
+
+void OverlayWidget::hideOverlay(int idx)
+{
+	m_lastIdxShown = -1;
 	GLSceneGroup *group = m_collection->at(0); 
 	GLScene *scene = group->at(idx);
 	
@@ -1769,6 +1794,24 @@ void SwitcherWindow::setupButtons()
 	//adjustSize();
 	
 	setWindowTitle("Switcher");
+}
+
+void SwitcherWindow::toggleOverlay(int idx)
+{
+	QList<QMdiSubWindow*> windows = m_dir->subwindows();
+	int count = 0;
+	foreach(QMdiSubWindow *win, windows)
+	{
+		if(OverlayWidget *src = dynamic_cast<OverlayWidget*>(win->widget()))
+		{
+			if(count == idx)
+			{
+				src->toggleOverlay();
+				return;
+			}
+			count ++;
+		}
+	}
 }
 
 void SwitcherWindow::showEvent(QShowEvent*)

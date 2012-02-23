@@ -297,6 +297,11 @@ public slots:
 	void browse();
 	void newFile();
 	
+	bool toggleOverlay();
+	
+	void showOverlay(int);
+	void hideOverlay(int);
+	
 private slots:
 	void clicked();
  	void selectedGroupIndexChanged(int);
@@ -308,6 +313,7 @@ private:
 	GLSceneGroupCollection *m_collection;
 	DirectorWindow *m_director;
 	QComboBox *m_combo;
+	int m_lastIdxShown;
 };
 
 class SwitcherWindow : public QWidget
@@ -319,6 +325,7 @@ public:
 public slots:
 	void notifyIsLive(DirectorSourceWidget*);
 	void activateSource(int);
+	void toggleOverlay(int);
 // 	void activateSource1() { activateSource(0); }
 // 	void activateSource2() { activateSource(1); }
 // 	void activateSource3() { activateSource(2); }

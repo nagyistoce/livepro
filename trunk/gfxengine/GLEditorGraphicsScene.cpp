@@ -48,7 +48,7 @@ GLEditorGraphicsScene::GLEditorGraphicsScene()
 // 	, m_lockClearSelection(false)
 // 	, m_ctrlPressedWithMouse(false)
 {
-	QBrush bgTexture(QPixmap("../livemix/squares2.png"));
+	QBrush bgTexture(QPixmap("../data/squares2.png"));
 	
 	m_bgRect = new RectItem();
 	m_bgRect->brush = bgTexture; //Qt::black;

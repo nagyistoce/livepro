@@ -32,7 +32,7 @@ include(../3rdparty/qtcolorpicker/qtcolorpicker.pri)
 # Input
 
 # Include dviz resources to get the rich text editor icons
-RESOURCES += icons.qrc
+RESOURCES += ../data/icons.qrc
 
 FORMS += \
 	DirectorWindow.ui  \

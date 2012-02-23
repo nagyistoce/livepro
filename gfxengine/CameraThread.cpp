@@ -30,8 +30,18 @@ extern "C" {
 
 #include "SimpleV4L2.h"
 
-//#define ENABLE_TEST_GENERATOR
-#define NUM_TEST_SIGNALS 1
+// This define must be enabled for m_enabTest to have any effect
+#define ENABLE_TEST_GENERATOR
+#define NUM_TEST_SIGNALS 3
+
+bool CameraThread::m_enabTest = false;
+int CameraThread::m_numTestChan = 0;
+
+void CameraThread::enableTestSignalGenerator(bool flag, int num)
+{
+	m_enabTest = flag;
+	m_numTestChan = num;
+}
 
 #define VIDEO_HINTS_STORAGE "/var/lib/livepro-videohints.dat"
 
@@ -161,7 +171,7 @@ public: /* static */
 	{
 		srand(QTime::currentTime().msec());
 		QStringList list;
- 		for(int i=0; i<NUM_TEST_SIGNALS; i++)
+ 		for(int i=0; i<qMin(CameraThread::numTestChannels(), NUM_TEST_SIGNALS); i++)
  			list << QString("test:%1").arg(i+1);
 //  		list << "test:/opt/livepro/devel/data/2012-01-08 SS Test/test2.mpg";
 //  		list << "test:/opt/livepro/devel/data/2012-01-08 SS Test/test3.mpg";
@@ -621,8 +631,9 @@ QStringList CameraThread::enumerateDevices(bool forceReenum)
 	
 	#ifdef ENABLE_TEST_GENERATOR
 	// NOTE: Only for testing!!!
-	//list << TestSignalGenerator::enumDeviceNames(forceReenum);
-	list = TestSignalGenerator::enumDeviceNames(forceReenum);
+	if(m_enabTest)
+		list << TestSignalGenerator::enumDeviceNames(forceReenum);
+	//list = TestSignalGenerator::enumDeviceNames(forceReenum);
 	#endif
 	
         //#ifdef DEBUG

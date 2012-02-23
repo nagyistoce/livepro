@@ -52,6 +52,10 @@ public:
 	
 	static QStringList enumerateDevices(bool forceReenum=false);
 	
+	// Must be called at start of app before enumerateDevices() has a chance to be called
+	static void enableTestSignalGenerator(bool flag=false, int numChan=2);
+	static int numTestChannels() { return m_numTestChan; }
+	
 	QStringList inputs();
 	int input();
 	
@@ -181,6 +185,9 @@ private:
 	SimpleV4L2 * m_v4l2;
 	BMDCaptureDelegate *m_bmd;
 	TestSignalGenerator *m_testGen;
+	
+	static bool m_enabTest;
+	static int m_numTestChan;
 	
 	QMutex m_initMutex;
 	

@@ -152,8 +152,8 @@ void GLVideoInputDrawable::setNetworkSource(const QString& src)
 		isLocalHost = true;
 	
 	// If we already tried opening a local device, force to use the network
-	if((m_source && m_source->hasError()) ||
-	   m_videoInput.startsWith("test:"))
+	if((m_source && m_source->hasError())/* ||
+	   m_videoInput.startsWith("test:")*/)
 	{
 		qDebug() << "GLVideoInputDrawable::setNetworkSource: Forcing to use the network for src:"<<src<<" due to local device error.";
 		isLocalHost = false;

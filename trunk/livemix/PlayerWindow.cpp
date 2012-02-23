@@ -26,6 +26,9 @@
 
 //#include "SharedMemorySender.h"
 
+// Needed to access CameraThread::enableTestSignalGenerator 
+#include "CameraThread.h"
+
 #ifndef Q_OS_WIN
 // Output to a V4L device (used primarily with vloopback)
 #include "V4LOutput.h"
@@ -210,6 +213,19 @@ void PlayerWindow::loadConfig(const QString& configFile, bool verbose)
 		point = QPoint(parts[0].toInt(),parts[1].toInt()); \
 		if(verbose) qDebug() << "PlayerWindow: " key ": " << point;
 		
+	
+	bool testEnab = READ_STRING("enab-test-gen","false") == "true";
+	if(testEnab)
+	{
+		int numTestChan = READ_STRING("num-test-chan","2").toInt();
+		CameraThread::enableTestSignalGenerator(testEnab, numTestChan);
+	}
+	else
+	{
+		CameraThread::enableTestSignalGenerator(false,0);
+	}
+	
+	
 	bool vidSendEnab = READ_STRING("input-monitor-enabled","true") == "true";
 	//WinXP - m_vidSendMgr causes the app to freeze
 	#ifdef Q_OS_WIN

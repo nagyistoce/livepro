@@ -255,19 +255,19 @@ void EditorWindow::createUI()
 	connect(act, SIGNAL(triggered()), this, SLOT(addSvg()));
 	toolbar->addAction(act);
 	
-	act = toolbar->addAction(QIcon(":/data/insert-rect-24.png"), tr("New Rectangle"));
+	act = toolbar->addAction(QIcon(":/data/icons/insert-rect-24.png"), tr("New Rectangle"));
 	act->setShortcut(QString(tr("CTRL+SHIFT+R")));
 	connect(act, SIGNAL(triggered()), this, SLOT(addRect()));
 	
-	act = toolbar->addAction(QIcon(":/data/stock-connect.png"), tr("Add MJPEG Feed"));
+	act = toolbar->addAction(QIcon(":/data/icons/stock-connect.png"), tr("Add MJPEG Feed"));
 	act->setShortcut(QString(tr("CTRL+SHIFT+M")));
 	connect(act, SIGNAL(triggered()), this, SLOT(addMjpeg()));
 	
-	act = toolbar->addAction(QIcon(":/data/stock-refresh.png"), tr("Add Spinner"));
+	act = toolbar->addAction(QIcon(":/data/icons/stock-refresh.png"), tr("Add Spinner"));
 	act->setShortcut(QString(tr("CTRL+SHIFT+S")));
 	connect(act, SIGNAL(triggered()), this, SLOT(addSpinner()));
 	
-	act = toolbar->addAction(QIcon(":/data/stock-insert-image.png"), tr("Add HTTP Image"));
+	act = toolbar->addAction(QIcon(":/data/icons/stock-insert-image.png"), tr("Add HTTP Image"));
 	act->setShortcut(QString(tr("CTRL+SHIFT+H")));
 	connect(act, SIGNAL(triggered()), this, SLOT(addHttpImage()));
 	
@@ -288,7 +288,7 @@ void EditorWindow::createUI()
 	
 	toolbar->addSeparator();
 	
-	QAction  *slideProp = toolbar->addAction(QIcon(":/data/stock-properties.png"), tr("Scene Properties"));
+	QAction  *slideProp = toolbar->addAction(QIcon(":/data/icons/stock-properties.png"), tr("Scene Properties"));
 	slideProp->setShortcut(QString(tr("SHIFT+F2")));
 	connect(slideProp, SIGNAL(triggered()), this, SLOT(slideProperties()));
 
@@ -962,7 +962,7 @@ QWidget *EditorWindow::createPropertyEditors(GLDrawable *gld)
 			connect(btn, SIGNAL(clicked()), this, SLOT(textFitNaturally()));
 			buttonLayout->addWidget(btn);
 			
-			btn = new QPushButton(QIcon(":/data/stock-sort-descending.png"), "");
+			btn = new QPushButton(QIcon(":/data/icons/stock-sort-descending.png"), "");
 			btn->setToolTip(tr("Increase Font Size"));
 			//btn->setShortcut(QString(tr("CTRL+SHFIT++")));
 			connect(btn, SIGNAL(clicked()), this, SLOT(textPlus()));

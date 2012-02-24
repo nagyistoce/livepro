@@ -131,8 +131,8 @@ void GLVideoInputDrawable::setNetworkSource(const QString& src)
 	//if(!m_thread->connectTo(url.host(), url.port(), url.path(), url.userName(), url.password()))
 
 	bool isLocalHost = false;
-	
-	#ifndef Q_OS_WIN32
+        //#ifndef Q_OS_WIN32
+
 	QList<QHostAddress> ipAddressesList = QNetworkInterface::allAddresses();
 	// use the first non-localhost IPv4 address
 	for (int i = 0; i < ipAddressesList.size(); ++i)
@@ -159,11 +159,13 @@ void GLVideoInputDrawable::setNetworkSource(const QString& src)
 		isLocalHost = false;
 		m_localHasError[m_videoInput] = true;
 	}
+        /*
 	#else
 	qDebug() << "GLVideoInputDrawable::setNetworkSource: Forcing to use the network for src:"<<src<<" due to Win32 OS";
 	isLocalHost = false;
 	m_localHasError[m_videoInput] = true;
 	#endif
+        */
 
 	setUseNetworkSource(!isLocalHost);
 

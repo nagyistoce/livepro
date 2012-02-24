@@ -361,6 +361,10 @@ void SwitchMonWidget::createViewers()
 		m_vbox->addLayout(m_viewerLayout);
 		m_vbox->addLayout(m_bottomRow);
 	}
+
+	if(m_inputList.isEmpty())
+	    // Add in the "Live" output
+	    m_inputList.prepend(tr("net=%1:9978").arg(m_host));
 	
 	// Add in the "Live" output because when we generate a layout with 
 	// no viewers at all to start out with, the layout doesn't

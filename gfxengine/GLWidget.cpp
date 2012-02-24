@@ -288,7 +288,7 @@ GLWidget::GLWidget(QWidget *parent, QGLWidget *shareWidget, const QGLFormat &for
 // 	, m_blackAnim(0)
 	, m_isBlack(false)
 	, m_crossfadeSpeed(300)
-	, m_fboEnabled(true)
+	, m_fboEnabled(false)
 	//, m_fboEnabled(true)
 	, m_readbackSizeAuto(false)
 	//, m_readbackSizeAuto(true)

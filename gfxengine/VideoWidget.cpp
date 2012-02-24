@@ -357,7 +357,12 @@ void VideoWidget::updateOverlay()
 	if(!m_showOverlayText)
 		return;
 
+	if(m_overlay.rect().isEmpty())
+		return;
+
 	QPainter painter(&m_overlay);
+	if(!painter.isActive())
+		return;
 
 	QRect window = QRect(0,0,m_sourceRect.size().width(),m_sourceRect.size().height());
 	painter.setWindow(window);
@@ -596,7 +601,12 @@ void VideoWidget::setFps(int fps)
 
 void VideoWidget::paintEvent(QPaintEvent*)
 {
+	if(rect().isEmpty() || !isVisible())
+		return;
+		
 	QPainter p(this);
+	if(!p.isActive())
+		return;
 	//p.setRenderHint(QPainter::SmoothPixmapTransform);
 	//p.setRenderHint(QPainter::Antialiasing);
 

@@ -5,7 +5,7 @@ INCLUDEPATH += .
 
 QT += network
 
-include(../../gfxengine/gfxengine.pri)
+include(../gfxengine/gfxengine.pri)
 
 MOC_DIR = ../.build
 OBJECTS_DIR = ../.build

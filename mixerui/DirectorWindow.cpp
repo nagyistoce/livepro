@@ -991,9 +991,9 @@ GroupPlayerWidget::GroupPlayerWidget(DirectorWindow *d)
 	hbox->addWidget(m_combo);
 	hbox->addStretch(1);
 	
-	QPushButton *newf = new QPushButton(QPixmap(":/data/stock-new.png"), "");
-	QPushButton *edit = new QPushButton(QPixmap(":/data/stock-edit.png"), "");
-	QPushButton *browse = new QPushButton(QPixmap(":/data/stock-open.png"), "");
+	QPushButton *newf = new QPushButton(QPixmap(":/data/icons/stock-new.png"), "");
+	QPushButton *edit = new QPushButton(QPixmap(":/data/icons/stock-edit.png"), "");
+	QPushButton *browse = new QPushButton(QPixmap(":/data/icons/stock-open.png"), "");
 	hbox->addWidget(newf);
 	hbox->addWidget(edit);
 	hbox->addWidget(browse);
@@ -1192,7 +1192,7 @@ OverlayWidget::OverlayWidget(DirectorWindow *d)
 		size /= 2.5;
 		//qDebug() << "MainWindow::createLeftPanel(): size:"<<size;
 		QImage bgImage(size, QImage::Format_ARGB32_Premultiplied);
-		QBrush bgTexture(QPixmap("../data/squares2.png"));
+		QBrush bgTexture(QPixmap("../data/icons/squares2.png"));
 		QPainter bgPainter(&bgImage);
 		bgPainter.fillRect(bgImage.rect(), bgTexture);
 		bgPainter.end();
@@ -1215,12 +1215,12 @@ OverlayWidget::OverlayWidget(DirectorWindow *d)
 	hbox->addWidget(m_combo);
 	hbox->addStretch(1);
 	
-	QPushButton *show = new QPushButton(QPixmap(":/data/stock-media-play.png"), "");
-	QPushButton *hide = new QPushButton(QPixmap(":/data/stock-media-stop.png"), "");
+	QPushButton *show = new QPushButton(QPixmap(":/data/icons/stock-media-play.png"), "");
+	QPushButton *hide = new QPushButton(QPixmap(":/data/icons/stock-media-stop.png"), "");
 	
-	QPushButton *newf = new QPushButton(QPixmap(":/data/stock-new.png"), "");
-	QPushButton *edit = new QPushButton(QPixmap(":/data/stock-edit.png"), "");
-	QPushButton *browse = new QPushButton(QPixmap(":/data/stock-open.png"), "");
+	QPushButton *newf = new QPushButton(QPixmap(":/data/icons/stock-new.png"), "");
+	QPushButton *edit = new QPushButton(QPixmap(":/data/icons/stock-edit.png"), "");
+	QPushButton *browse = new QPushButton(QPixmap(":/data/icons/stock-open.png"), "");
 	
 	hbox->addWidget(show);
 	hbox->addWidget(hide);
@@ -1672,10 +1672,10 @@ void SwitcherWindow::notifyIsLive(DirectorSourceWidget* src)
 		return;
 	
 	if(m_lastBtn)
-		m_lastBtn->setIcon(QPixmap(":/data/stock-media-play.png"));
+		m_lastBtn->setIcon(QPixmap(":/data/icons/stock-media-play.png"));
 	m_lastBtn = btn;
 	
-	btn->setIcon(QPixmap(":/data/stock-media-rec.png"));
+	btn->setIcon(QPixmap(":/data/icons/stock-media-rec.png"));
 }
 
 bool SwitcherWindow::eventFilter(QObject *obj, QEvent *event)
@@ -1713,10 +1713,10 @@ void SwitcherWindow::buttonClicked()
 		return;
 		
 	if(m_lastBtn)
-		m_lastBtn->setIcon(QPixmap(":/data/stock-media-play.png"));
+		m_lastBtn->setIcon(QPixmap(":/data/icons/stock-media-play.png"));
 	m_lastBtn = btn;
 	
-	btn->setIcon(QPixmap(":/data/stock-media-rec.png"));
+	btn->setIcon(QPixmap(":/data/icons/stock-media-rec.png"));
 	
 	//src->setFocus(Qt::OtherFocusReason);
 	src->raise();
@@ -1777,7 +1777,7 @@ void SwitcherWindow::setupButtons()
 				
 			connect(src, SIGNAL(destroyed()), this, SLOT(windowClosed()));
 			
-			QPushButton *btn = new QPushButton(QPixmap(":/data/stock-media-play.png"),tr("%1: %2").arg(count++).arg(src->windowTitle()));
+			QPushButton *btn = new QPushButton(QPixmap(":/data/icons/stock-media-play.png"),tr("%1: %2").arg(count++).arg(src->windowTitle()));
 			//btn->setToolTip(src->windowTitle());
 			//count++;
 			
@@ -3002,9 +3002,9 @@ VideoPlayerWidget::VideoPlayerWidget(DirectorWindow *d)
 	
 	QHBoxLayout *hbox = new QHBoxLayout();
 	
-	//QPushButton *hide = new QPushButton(QPixmap(":/data/stock-media-stop.png"), "");
+	//QPushButton *hide = new QPushButton(QPixmap(":/data/icons/stock-media-stop.png"), "");
 	
-	m_playPauseBtn	= new QPushButton(QPixmap(":/data/stock-media-play.png"), ""); // stock-media-stop.png when playing
+	m_playPauseBtn	= new QPushButton(QPixmap(":/data/icons/stock-media-play.png"), ""); // stock-media-stop.png when playing
 	{
 		connect(m_playPauseBtn, SIGNAL(clicked()), this, SLOT(togglePlay()));
 		hbox->addWidget(m_playPauseBtn);
@@ -3044,13 +3044,13 @@ VideoPlayerWidget::VideoPlayerWidget(DirectorWindow *d)
 		hbox->addWidget(m_volumeSlider);
 	}
 	
-	QPushButton *browse = new QPushButton(QPixmap(":/data/stock-open.png"), "");
+	QPushButton *browse = new QPushButton(QPixmap(":/data/icons/stock-open.png"), "");
 	{
 		connect(browse, SIGNAL(clicked()), this, SLOT(browse()));
 		hbox->addWidget(browse);
 	}
 	
-	QPushButton *props = new QPushButton(QPixmap(":/data/stock-properties.png"), "");
+	QPushButton *props = new QPushButton(QPixmap(":/data/icons/stock-properties.png"), "");
 	{
 		connect(browse, SIGNAL(clicked()), this, SLOT(showPropertyEditor()));
 		hbox->addWidget(props);
@@ -3124,14 +3124,14 @@ void VideoPlayerWidget::statusChanged(int status)
 	switch(status)
 	{
 		case 0:
-			m_playPauseBtn->setIcon(QPixmap(":/data/stock-media-play.png"));
+			m_playPauseBtn->setIcon(QPixmap(":/data/icons/stock-media-play.png"));
 			break;
 		case 1:
-			m_playPauseBtn->setIcon(QPixmap(":/data/stock-media-pause.png"));
+			m_playPauseBtn->setIcon(QPixmap(":/data/icons/stock-media-pause.png"));
 			break;
 		case 2:
 		default:
-			m_playPauseBtn->setIcon(QPixmap(":/data/stock-media-play.png"));
+			m_playPauseBtn->setIcon(QPixmap(":/data/icons/stock-media-play.png"));
 			break;
 	}
 }
@@ -3284,14 +3284,14 @@ void VideoPlayerWidget::play()
 {
 	m_video->setStatus(1);
 	syncProperty("status", 1);
-	m_playPauseBtn->setIcon(QPixmap(":/data/stock-media-pause.png"));
+	m_playPauseBtn->setIcon(QPixmap(":/data/icons/stock-media-pause.png"));
 }
 
 void VideoPlayerWidget::pause()
 {
 	m_video->setStatus(2);
 	syncProperty("status", 2);
-	m_playPauseBtn->setIcon(QPixmap(":/data/stock-media-play.png"));
+	m_playPauseBtn->setIcon(QPixmap(":/data/icons/stock-media-play.png"));
 }
 
 void VideoPlayerWidget::togglePlay()

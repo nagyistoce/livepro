@@ -28,7 +28,9 @@ GLVideoInputDrawable::~GLVideoInputDrawable()
 	setVideoSource(0);
 	if(m_rx)
 	{
+		//qDebug() << "GLVideoInputDrawable::~GLVideoInputDrawable(): Releasing m_rx:"<<m_rx;
 		m_rx->release(this);
+		m_rx = 0;
 		//delete m_rx;
 	}
 }
@@ -152,8 +154,9 @@ void GLVideoInputDrawable::setNetworkSource(const QString& src)
 		isLocalHost = true;
 	
 	// If we already tried opening a local device, force to use the network
-	if((m_source && m_source->hasError())/* ||
-	   m_videoInput.startsWith("test:")*/)
+	if((m_source && m_source->hasError())
+	   //|| m_videoInput.startsWith("test:")
+	   )
 	{
 		qDebug() << "GLVideoInputDrawable::setNetworkSource: Forcing to use the network for src:"<<src<<" due to local device error.";
 		isLocalHost = false;
@@ -179,7 +182,14 @@ void GLVideoInputDrawable::setUseNetworkSource(bool flag)
 	m_useNetworkSource = flag;
 
 	if(m_networkSource.isEmpty())
+	{
+		if(m_rx)
+		{
+			m_rx->release(this);
+			m_rx = 0;
+		}
 		return;
+	}
 
 	if(flag)
 	{
@@ -218,6 +228,11 @@ void GLVideoInputDrawable::setUseNetworkSource(bool flag)
 	{
 		setVideoInput(videoInput());
 		setCardInput(cardInput());
+		if(m_rx)
+		{
+			m_rx->release(this);
+			m_rx = 0;
+		}
 	}
 }
 

@@ -1,0 +1,18 @@
+StageDisplay (SD) is a simple video feed display app, designed to be used for 
+stage-facing screens.
+
+Configuration is read from 'stagedisplay.ini' in the working folder.
+
+SD receives a video feed from a 'VideoSender' (../gfxengine/VideoSender), (or
+possibly directly from a capture card - future feature) and displays it in the 
+configured location. 
+
+A 'control' UI can be enabled which can be displayed on a second screen. The
+control UI can be used to:
+	- Add a timer overlay at a configurable location on the output
+		- Start/stop/reset the timer
+	- Display text overlays on the output
+		- Configurable font, font size, background, position
+		- Show/hide text
+	- Blank/unblank the output
+	

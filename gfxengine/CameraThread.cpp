@@ -28,7 +28,9 @@ extern "C" {
 
 #include <QSettings>
 
+#ifndef Q_OS_WIN
 #include "SimpleV4L2.h"
+#endif
 
 // This define must be enabled for m_enabTest to have any effect
 #define ENABLE_TEST_GENERATOR
@@ -109,7 +111,9 @@ QStringList BMDCaptureDelegate::s_knownDevices = QStringList();
 
 #ifdef ENABLE_TEST_GENERATOR
 #include <QPainter>
+#ifdef HAS_QT_VIDEO_SOURCE
 #include "QtVideoSource.h"
+#endif
 #include "GLVideoDrawable.h"
 #include "VideoThread.h"
 
@@ -666,7 +670,7 @@ QStringList CameraThread::enumerateDevices(bool forceReenum)
 
 bool CameraThread::hasSignal()
 {
-	bool hasSignal;
+        bool hasSignal = false;
 	#ifdef ENABLE_DECKLINK_CAPTURE
 	if(m_bmd)
 	{
@@ -681,11 +685,13 @@ bool CameraThread::hasSignal()
 	}
 	else
 	#endif
+        #ifndef Q_OS_WIN
 	{
 		GET_API_PTR(true); // assume we have signal 
 		hasSignal = api->hasSignal();
 		FREE_API_PTR();
 	}
+        #endif
 	return hasSignal;
 }
 
@@ -722,14 +728,15 @@ QStringList CameraThread::inputs()
 	if(m_testGen)
 		return QStringList() << "Default";
 	#endif
-
+        #ifndef Q_OS_WIN
 	GET_API_PTR(QStringList() << "Default");
 
-	QStringList inputs = api->inputs();
+        QStringList inputs = api->inputs();
 
 	FREE_API_PTR();
-	
-	return inputs;
+
+        return inputs;
+        #endif
 }
 
 int CameraThread::input()
@@ -747,13 +754,15 @@ int CameraThread::input()
 		return 0;
 	#endif
 	
-	GET_API_PTR(0);
+        #ifndef Q_OS_WIN
+        GET_API_PTR(0);
 
 	int idx = api->input();
 
 	FREE_API_PTR();
 
 	return idx;
+        #endif
 }
 
 void CameraThread::setInput(int idx)
@@ -770,13 +779,14 @@ void CameraThread::setInput(int idx)
 	if(m_testGen)
 		return;
 	#endif
-
+        #ifndef Q_OS_WIN
 	GET_API_PTR();
 
 	api->setInput(idx);
 	api->setStandard("NTSC");
 
 	FREE_API_PTR();
+        #endif
 }
 
 bool CameraThread::setInput(const QString& name)
@@ -796,7 +806,8 @@ bool CameraThread::setInput(const QString& name)
 		return false;
 	#endif
 
-	GET_API_PTR(false);
+        #ifndef Q_OS_WIN
+        GET_API_PTR(false);
 
 	bool flag = api->setInput(name);
 	if(flag)
@@ -805,6 +816,7 @@ bool CameraThread::setInput(const QString& name)
 	FREE_API_PTR();
 
 	return flag;
+        #endif
 }
 
 

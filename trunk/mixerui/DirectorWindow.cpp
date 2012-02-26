@@ -1493,6 +1493,7 @@ CameraWidget::CameraWidget(DirectorWindow* dir, VideoReceiver *rx, QString con, 
 	GLScene *scene = new GLScene();
 	GLVideoInputDrawable *vidgld = new GLVideoInputDrawable();
 	vidgld->setVideoConnection(con);
+	vidgld->loadHintsFromSource();
 	scene->addDrawable(vidgld);
 	m_camSceneGroup->addScene(scene);
 	
@@ -1507,7 +1508,7 @@ CameraWidget::CameraWidget(DirectorWindow* dir, VideoReceiver *rx, QString con, 
 	//GLVideoDrawable *gld = new GLVideoDrawable();
 	//gld->setVideoSource(rx);
 	//vid->addDrawable(gld);
-	vidgld->setVideoConnection(con);
+	//vidgld->setVideoConnection(con);
 	m_glWidget->addDrawable(vidgld);
 	
 	setWindowTitle(QString("Camera %1").arg(index));
@@ -1938,33 +1939,33 @@ void PropertyEditorWindow::setSourceWidget(DirectorSourceWidget* source)
 		m_vid = item;
 		
 		// Histo
-		{
-			NEW_SECTION("Histogram");
-			
-			GLWidget *vid = new GLWidget();
-			vid->setBackgroundColor(palette().color(QPalette::Window));
-			vid->setViewport(QRectF(0,0,255*3,128*3)); // approx histogram output size for a 4:3 video frame
-			
-			HistogramFilter *filter = new HistogramFilter();
-			
-			GLVideoDrawable *gld = new GLVideoDrawable();
-			gld->setVideoSource(filter);
-			
-			gld->setFilterType(GLVideoDrawable::Filter_Sharp);
-			gld->setSharpAmount(1.25); // creates a nice relief/outline effect on the histogram
-			
-			vid->addDrawable(gld);
-			gld->setRect(vid->viewport());
-			
-			form->addWidget(vid);
-			
-			filter->setHistoType(HistogramFilter::Gray);
-			//filter->setVideoSource(item->videoSource());
-			filter->setVideoSource(item->glWidget()->outputStream());
-			filter->setIncludeOriginalImage(false);
-			filter->setFpsLimit(10);
-			filter->setDrawBorder(true);
-		}
+// 		{
+// 			NEW_SECTION("Histogram");
+// 			
+// 			GLWidget *vid = new GLWidget();
+// 			vid->setBackgroundColor(palette().color(QPalette::Window));
+// 			vid->setViewport(QRectF(0,0,255*3,128*3)); // approx histogram output size for a 4:3 video frame
+// 			
+// 			HistogramFilter *filter = new HistogramFilter();
+// 			
+// 			GLVideoDrawable *gld = new GLVideoDrawable();
+// 			gld->setVideoSource(filter);
+// 			
+// 			gld->setFilterType(GLVideoDrawable::Filter_Sharp);
+// 			gld->setSharpAmount(1.25); // creates a nice relief/outline effect on the histogram
+// 			
+// 			vid->addDrawable(gld);
+// 			gld->setRect(vid->viewport());
+// 			
+// 			form->addWidget(vid);
+// 			
+// 			filter->setHistoType(HistogramFilter::Gray);
+// 			//filter->setVideoSource(item->videoSource());
+// 			filter->setVideoSource(item->glWidget()->outputStream());
+// 			filter->setIncludeOriginalImage(false);
+// 			filter->setFpsLimit(10);
+// 			filter->setDrawBorder(true);
+// 		}
 		
 		// Profiles
 		{
@@ -2125,6 +2126,32 @@ void PropertyEditorWindow::setSourceWidget(DirectorSourceWidget* source)
 			form->addRow("",btn);
 		}
 		
+		// A/R Adjust
+		{
+			NEW_SECTION("A/R Adjust");
+			
+			opts.doubleIsPercentage = true;
+			opts.suffix = "%";
+			opts.type = QVariant::Int;
+			
+			opts.min = 0;
+			opts.max = 100;
+			form->addRow(tr("Adjust &Left:"),	PropertyEditorFactory::generatePropertyEditor(item, "adjustLeft",   SLOT(setAdjustLeft(int)), opts));
+			opts.min = -100;
+			opts.max = 0;
+			form->addRow(tr("Adjust &Right:"),	PropertyEditorFactory::generatePropertyEditor(item, "adjustRight",  SLOT(setAdjustRight(int)), opts));
+			opts.min = 0;
+			opts.max = 100;
+			form->addRow(tr("Adjust &Top:"),	PropertyEditorFactory::generatePropertyEditor(item, "adjustTop",    SLOT(setAdjustTop(int)), opts));
+			opts.min = -100;
+			opts.max = 0;
+			form->addRow(tr("Adjust &Bottom:"),	PropertyEditorFactory::generatePropertyEditor(item, "adjustBottom", SLOT(setAdjustBottom(int)), opts));
+			
+			QPushButton *btn = new QPushButton("Apply to Player");
+			connect(btn, SIGNAL(clicked()), this, SLOT(sendVidOpts()));
+			form->addRow("",btn);
+		}
+		
 		// Flip
 		{
 			NEW_SECTION("Flip/Mirror");
@@ -2272,6 +2299,10 @@ void PropertyEditorWindow::sendVidOpts()
 		<< "cropBottom"
 		<< "cropLeft"
 		<< "cropRight"
+		<< "adjustTop"
+		<< "adjustBottom"
+		<< "adjustLeft"
+		<< "adjustRight"
 		<< "filterType"
 		<< "sharpAmount"
 		<< "rotation";
@@ -2288,6 +2319,8 @@ void PropertyEditorWindow::sendVidOpts()
 			}
 		}
 	}
+	
+	m_vid->storeHintsToSource();
 }
 
 void PropertyEditorWindow::deleteVidOpt()
@@ -2381,6 +2414,10 @@ void PropertyEditorWindow::saveVidOpts()
 		<< "cropBottom"
 		<< "cropLeft"
 		<< "cropRight"
+		<< "adjustTop"
+		<< "adjustBottom"
+		<< "adjustLeft"
+		<< "adjustRight"
 		<< "filterType"
 		<< "sharpAmount"
 		<< "rotation";
@@ -2884,6 +2921,7 @@ void CameraMixerWidget::input1Changed(int x)
 		
 	qDebug() << "CameraMixerWidget::input1changed: x:"<<x<<", new source:"<<m_conList[x];
 	m_cam1->setVideoConnection(m_conList[x]);
+	m_cam1->loadHintsFromSource();
 	
 	foreach(PlayerConnection *player, m_dir->players()->players())
  	{
@@ -2904,6 +2942,7 @@ void CameraMixerWidget::input2Changed(int x)
 		
 	qDebug() << "CameraMixerWidget::input2changed: x:"<<x<<", new source:"<<m_conList[x];
 	m_cam2->setVideoConnection(m_conList[x]);
+	m_cam2->loadHintsFromSource();
 	
 	foreach(PlayerConnection *player, m_dir->players()->players())
  	{

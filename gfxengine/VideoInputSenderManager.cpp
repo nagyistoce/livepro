@@ -54,7 +54,8 @@ void VideoInputSenderManager::setSendingEnabled(bool flag)
 
 	if(m_sendingEnabled)
 	{
-		foreach(QString dev, m_videoSenders.keys())
+		QStringList devs = CameraThread::enumerateDevices();
+		foreach(QString dev, devs) //m_videoSenders.keys())
 		{
 			VideoSender *sender = m_videoSenders[dev];
 			int port = sender->start(); // auto-allocate a port by leaving the port argument empty
@@ -86,7 +87,8 @@ QStringList VideoInputSenderManager::videoConnections(bool justNetString)
 	
 	QStringList list;
 	
-	foreach(QString dev, m_videoSenders.keys())
+	QStringList devs = CameraThread::enumerateDevices();
+	foreach(QString dev, devs) //m_videoSenders.keys())
 	{
 		VideoSender *sender = m_videoSenders[dev];
 // 		qDebug() << "VideoInputSenderManager::setSendingEnabled: Stopped transmitter for "<<dev<<";

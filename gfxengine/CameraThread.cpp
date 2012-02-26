@@ -263,7 +263,7 @@ public:
 		
 		// Render the name text
 		p.setPen(Qt::black);
-		p.drawText(rect.topLeft() + QPoint(0, rect.height() - 5), string);
+		p.drawText(rect.topLeft() + QPoint(0, (int)(rect.height() - 5)), string);
 		
 		
 		// Generate a string with current time (including milliseconds)
@@ -278,7 +278,7 @@ public:
 		
 		// Render the text
 		p.setPen(Qt::black);
-		p.drawText(rect.topLeft() + QPoint(0, rect.height() - 5), string);
+		p.drawText(rect.topLeft() + QPoint(0, (int)(rect.height() - 5)), string);
 		
 		
 		// Release the painter from the image
@@ -549,6 +549,12 @@ QStringList CameraThread::enumerateDevices(bool forceReenum)
 	m_devicesEnumerated = true;
 
 	QStringList list;
+	
+	#ifdef ENABLE_DECKLINK_CAPTURE
+	list << BMDCaptureDelegate::enumDeviceNames(forceReenum);
+	#endif
+	
+	
 
 	#ifdef Q_OS_WIN32
 		QString deviceBase = "vfwcap://";
@@ -629,10 +635,6 @@ QStringList CameraThread::enumerateDevices(bool forceReenum)
 
 	#endif
 
-	#ifdef ENABLE_DECKLINK_CAPTURE
-	list << BMDCaptureDelegate::enumDeviceNames(forceReenum);
-	#endif
-	
 	#ifdef ENABLE_TEST_GENERATOR
 	// NOTE: Only for testing!!!
 	if(m_enabTest)

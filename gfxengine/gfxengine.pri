@@ -147,7 +147,7 @@ exiv2-qt: {
 	DEFINES += HAVE_EXIV2_QT
 	
 	; Not in subversion yet ...
-	include(3rdparty/exiv2-0.18.2-qtbuild/qt_build_root.pri)
+	include(../3rdparty/exiv2-0.18.2-qtbuild/qt_build_root.pri)
 }
 
 # qrencode used by the 'news' scene type to add a QR code to the scene.
@@ -156,7 +156,7 @@ qrcode: {
 	DEFINES += HAVE_QRCODE
 	
 	; Not in subversion yet ...
-	include(3rdparty/qrencode-3.1.0/qrencode-3.1.0.pri)
+	include(../3rdparty/qrencode-3.1.0/qrencode-3.1.0.pri)
 	
 	HEADERS += QRCodeQtUtil.h
 	SOURCES += QRCodeQtUtil.cpp
@@ -165,58 +165,58 @@ qrcode: {
 
 
 # Input
-HEADERS += BMDOutput.h \
-           CameraThread.h \
-           CornerItem.h \
-           EditorUtilityWidgets.h \
-           EntityList.h \
-           GLCommonShaders.h \
-           GLDrawable.h \
-           ExpandableWidget.h \
-           FlowLayout.h \
-           GLDrawables.h \
-           GLEditorGraphicsScene.h \
-           GLImageDrawable.h \
-           GLImageHttpDrawable.h \
-           GLRectDrawable.h \
-           GLSceneGroup.h \
-           GLSceneGroupType.h \
-           GLSceneTypeCurrentWeather.h \
-           GLSceneTypeNewsFeed.h \
-           GLSceneTypeRandomImage.h \
-           GLSceneTypeRandomVideo.h \
-           GLSceneTypes.h \
-           GLSpinnerDrawable.h \
-           GLSvgDrawable.h \
-           GLTextDrawable.h \
-           GLVideoDrawable.h \
-           GLVideoFileDrawable.h \
-           GLVideoInputDrawable.h \
-           GLVideoLoopDrawable.h \
-           GLVideoMjpegDrawable.h \
-           GLVideoReceiverDrawable.h \
-           GLWidget.h \
-           HistogramFilter.h \
-           ImageFilters.h \
-           MetaObjectUtil.h \
-           MjpegThread.h \
-           RichTextRenderer.h \
-           RssParser.h \
-           RtfEditorWindow.h \
-	   ScreenVideoSource.h \
-           VideoConsumer.h \
-           VideoDifferenceFilter.h \
-           VideoEncoder.h \
-           VideoFilter.h \
-           VideoFrame.h \
-           VideoInputColorBalancer.h \
-           VideoInputSenderManager.h \
-           VideoReceiver.h \
-           VideoSender.h \
-           VideoSenderCommands.h \
-           VideoSource.h \
-           VideoThread.h \
-           VideoWidget.h
+HEADERS += BMDOutput.h \		# Output to a DeckLink-compatible device or card. Currently a slow/low framerate process
+           CameraThread.h \		# Primary capture interface (inherits VideoSource) - uses SimpleV4L2 internally on Linux, or libav on Windows/non-linux. Also supports BlackMagic (DeckLink) devices (see 'blackmagic' above)
+           CornerItem.h \		# Creates a draggable corner for editing scenes
+           EditorUtilityWidgets.h \	# Utility widgets for editing properties
+           EntityList.h \		# List of HTML entities
+           GLCommonShaders.h \		# GLSL code for shaders (used by GLWidget and GLVideoDrawable)
+           GLDrawable.h \		# Common base class for drawables
+           ExpandableWidget.h \		# A standalone utility widget which provides a header and content area, and click-header-to-expand/collapse-content functionality
+           FlowLayout.h \		# FlowLayout, similar to java's flow layout
+           GLDrawables.h \		# Generic header to include all drawables that inherit from GLDrawable
+           GLEditorGraphicsScene.h \	# A QGraphicsScene-derivitive for editing GLSceneGroup
+           GLImageDrawable.h \		# Draw a QImage 
+           GLImageHttpDrawable.h \	# Draw a QImage received via a HTTP URL (supports polling and DViz) 
+           GLRectDrawable.h \		# Draw a styled rectangle (border/fill/shadow/transparency)
+           GLSceneGroup.h \		# Defines GLScene and GLSceneGroup classes - GLScene is a list of GLDrawables, and GLSceneGroup is a list of GLScenes
+           GLSceneGroupType.h \		# Base class for custom GLSceneGroup types 
+           GLSceneTypeCurrentWeather.h \# A simple current-day weather group
+           GLSceneTypeNewsFeed.h \	# News feed based on Google News or an RSS feed
+           GLSceneTypeRandomImage.h \	# Load a series of random images from a specified folder
+           GLSceneTypeRandomVideo.h \	# Load a series of random videos from a specified folder
+           GLSceneTypes.h \		# Includes all currently defined GLSceneTypes for easy access
+           GLSpinnerDrawable.h \	# Draws an animated 'spinner'
+           GLSvgDrawable.h \		# Draw a SVG loaded from a file
+           GLTextDrawable.h \		# Draw rich text - also supports border, fill, shadow
+           GLVideoDrawable.h \		# Base class to render a VideoSource using OpenGL or QGraphicsItem
+           GLVideoFileDrawable.h \	# Play a video file using Qt's multimedia classes (with audio)
+           GLVideoInputDrawable.h \	# Draw a video capture source (either from a remote source via VideoReceiver or locally captured using CameraThread)
+           GLVideoLoopDrawable.h \	# Draw a video file using libav, no audio
+           GLVideoMjpegDrawable.h \	# Draw a video feed from an MJPEG URL
+           GLVideoReceiverDrawable.h \	# Draw a video feed from a VideoReceiver
+           GLWidget.h \			# OpenGL widget for rendering GLScenes and GLDrawables
+           HistogramFilter.h \		# A VideoFilter which converts a VideoSource into a histogram of that source
+           ImageFilters.h \		# Blur filter
+           MetaObjectUtil.h \		# Utilities for storing pointers to QMetaObjects and creating them
+           MjpegThread.h \		# A VideoSource for MJPEG URLs
+           RichTextRenderer.h \		# Rich text rendering engine
+           RssParser.h \		# RSS feed parser
+           RtfEditorWindow.h \		# Rich text editor
+	   ScreenVideoSource.h \	# A VideoSource subclass which provides a video feed from a specified rectangle on the screen (screencap video feed)
+           VideoConsumer.h \		# Base class for VideoConsumers such as VideoWidget and GLVideoDrawable
+           VideoDifferenceFilter.h \	# A beta class for some background analysis research - defunct, not currently under development
+           VideoEncoder.h \		# Development class for encoding video - not currently under development
+           VideoFilter.h \		# Base class for VideoFilters such as HistogramFilter
+           VideoFrame.h \		# VideoFrame is the core class for moving frames of video around this project
+           VideoInputColorBalancer.h \	# A simple color blancer for two video sources - works, but needs revised
+           VideoInputSenderManager.h \	# Manages setting up VideoSenders for all the enumerated video capture sources as reported by CameraThread
+           VideoReceiver.h \		# Receive a video feed over the network from VideoSender, inherits VideoSource
+           VideoSender.h \		# Send a feed over the network to a VideoRecever (functions as a server, listens on a given port), inherits VideoConsumer
+           VideoSenderCommands.h \	# Common command string definition for VideoRecevier/VideoConsumer
+           VideoSource.h \		# Base class definition of a VideoSource, used by GLVideoDrawable and VideoWidget
+           VideoThread.h \		# Old interface for libav to place video loops, no audio - still used internally by GLVideoLoopDrawable
+           VideoWidget.h		# Draw a single VideoSource in a QWidget (optionally uses QGLWidget)
 
 SOURCES += BMDOutput.cpp \
            CameraThread.cpp \

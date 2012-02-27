@@ -50,7 +50,7 @@ public slots:
 	void setImage(QImage);
 	
 	void setCounterActive(bool);
-	void resetCounter();
+	//void resetCounter();
 	
 	void setCounterAlignment(Qt::Alignment);
 	void setOverlayAlignment(Qt::Alignment);
@@ -75,9 +75,9 @@ private slots:
 	//void toggleCounter();
 	void counterTick();
 	
-	void setPollDvizEnabled(bool flag);
+	//void setPollDvizEnabled(bool flag);
 	
-	bool blinkOverlaySlot();
+	void blinkOverlaySlot();
 
 private:
 	QGraphicsPixmapItem *m_pixmap;

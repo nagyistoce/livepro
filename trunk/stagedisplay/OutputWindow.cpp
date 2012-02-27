@@ -1,6 +1,6 @@
 #include "OutputWindow.h"
 
-#define OPEN_CONFIG() QSettings config("stagedisplay.ini", QSettings::IniFormat);
+#define GET_CONFIG() QSettings config("stagedisplay.ini", QSettings::IniFormat);
 
 OutputWindow::OutputWindow()
 	: QGraphicsView(new QGraphicsScene())
@@ -10,7 +10,7 @@ OutputWindow::OutputWindow()
 	, m_isDataPoll(false)
 	, m_slideId(-1)
 	, m_slideName("")
-	, m_startStopButton(0)
+	//, m_startStopButton(0)
         , m_countValue(0)
 {
 	// Setup graphics view
@@ -44,7 +44,7 @@ OutputWindow::OutputWindow()
 	// Background behind text
         m_overlayBgRect = scene()->addRect(0,300,100,60,QPen(), Qt::black);
         // Add text (for use with clock)
-        QFont font("Monospace", 50, 600);
+        //QFont font("Monospace", 50, 600);
         m_overlayText = new QGraphicsSimpleTextItem("Hello, World!");
 	m_overlayText->setFont(font);
 	m_overlayText->setPen(QPen(Qt::black));
@@ -55,7 +55,7 @@ OutputWindow::OutputWindow()
 	m_blinkOverlay = false;
 	connect(&m_blinkOverlayTimer, SIGNAL(timeout()), this, SLOT(blinkOverlaySlot()));
 	
-	OPEN_CONFIG();
+	GET_CONFIG();
 	
 	QPoint windowPos(1024,0);
 	QPoint windowSize(1024,768);
@@ -95,7 +95,7 @@ OutputWindow::OutputWindow()
 	
 	QString source = config.value("source","dviz://192.168.0.10:8081/image").toString();
 	
-	if(source.startsWidth("dviz:"))
+	if(source.startsWith("dviz:"))
 	{
 		setUrl(source.replace("dviz:","http:"));
 		setPollDviz(true);
@@ -116,7 +116,7 @@ OutputWindow::OutputWindow()
 			qDebug() << "OutputWindow: Error connecting to source "<<source;
 		}
 		
-		m_drw = new GLDrawable();
+		m_drw = new GLVideoDrawable();
 		m_drw->setVideoSource(m_rx);
 		m_drw->setPos(0,0);
 		m_drw->setRect(scene()->sceneRect());
@@ -183,9 +183,9 @@ void OutputWindow::setOverlayText(QString text)
 	m_overlayText->setText(text);
 	
 	GET_CONFIG();
-	config.setVallue("overlay-text", text);
+	config.setValue("overlay-text", text);
 	
-	m_overlayBgRect->setRect(m_overlayText.boundingRect().adjusted(0,13,0,0));
+	m_overlayBgRect->setRect(m_overlayText->boundingRect().adjusted(0,13,0,0));
 }
 
 
@@ -204,28 +204,28 @@ void OutputWindow::setBlinkOverlay(bool flag, int speed)
 			m_overlayText->show();
 	}
 	
-	OPEN_CONFIG();
+	GET_CONFIG();
 	config.setValue("blink-overlay", flag ? "true" : "false");
 	config.setValue("blink-speed", speed);
 }
 
-void OutputWindow:setCounterVisible(bool flag)
+void OutputWindow::setCounterVisible(bool flag)
 {
 	m_counterVisible = flag;
 	m_counterText->setVisible(flag);
 	m_counterBgRect->setVisible(flag);
 	
-	OPEN_CONFIG();
+	GET_CONFIG();
 	config.setValue("counter-visible", flag ? "true" : "false");
 }
 
-void OutputWindow:setOverlayVisible(bool flag)
+void OutputWindow::setOverlayVisible(bool flag)
 {
 	m_overlayVisible = flag;
 	m_overlayText->setVisible(flag);
 	m_overlayBgRect->setVisible(flag);
 	
-	OPEN_CONFIG();
+	GET_CONFIG();
 	config.setValue("overlay-visible", flag ? "true" : "false");
 }
 
@@ -462,3 +462,7 @@ void OutputWindow::handleNetworkData(QNetworkReply *networkReply)
 	networkReply->manager()->deleteLater();
 }
 
+void OutputWindow::blinkOverlaySlot()
+{
+	/// TODO
+}

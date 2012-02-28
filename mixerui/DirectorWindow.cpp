@@ -2134,17 +2134,17 @@ void PropertyEditorWindow::setSourceWidget(DirectorSourceWidget* source)
 			opts.suffix = "%";
 			opts.type = QVariant::Int;
 			
-			opts.min = 0;
+			opts.min = -100;
 			opts.max = 100;
 			form->addRow(tr("Adjust &Left:"),	PropertyEditorFactory::generatePropertyEditor(item, "adjustLeft",   SLOT(setAdjustLeft(int)), opts));
 			opts.min = -100;
-			opts.max = 0;
+			opts.max = 100;
 			form->addRow(tr("Adjust &Right:"),	PropertyEditorFactory::generatePropertyEditor(item, "adjustRight",  SLOT(setAdjustRight(int)), opts));
-			opts.min = 0;
+			opts.min = -100;
 			opts.max = 100;
 			form->addRow(tr("Adjust &Top:"),	PropertyEditorFactory::generatePropertyEditor(item, "adjustTop",    SLOT(setAdjustTop(int)), opts));
 			opts.min = -100;
-			opts.max = 0;
+			opts.max = 100;
 			form->addRow(tr("Adjust &Bottom:"),	PropertyEditorFactory::generatePropertyEditor(item, "adjustBottom", SLOT(setAdjustBottom(int)), opts));
 			
 			QPushButton *btn = new QPushButton("Apply to Player");

@@ -1,5 +1,7 @@
 #include "GLImageHttpDrawable.h"
 
+#include "VideoReceiver.h"
+
 GLImageHttpDrawable::GLImageHttpDrawable(QObject *parent)
 	: GLImageDrawable("",parent)
 	, m_url("")
@@ -8,6 +10,7 @@ GLImageHttpDrawable::GLImageHttpDrawable(QObject *parent)
 	, m_isDataPoll(false)
 	, m_slideId(-1)
 	, m_slideName("")
+	, m_rx(0)
 {
 	//setImage(QImage("Pm5544.jpg"));
 	setImage(QImage("dot.gif"));
@@ -34,9 +37,35 @@ void GLImageHttpDrawable::setUrl(const QString& url)
 	m_url = url;
 	if(url.isEmpty())
 		return;
-
+		
+	QUrl parsedUrl(url);
+	qDebug() << "GLImageHttpDrawable::setUrl: URL Sceme:"<<parsedUrl.scheme();
+	if(parsedUrl.scheme() == "raw")
+	{
+		qDebug() << "GLImageHttpDrawable::setUrl: Connecting to RAW host: "<<parsedUrl;
+		if(m_rx)
+		{
+			m_rx->release(this);
+			disconnect(m_rx, 0, this, 0);
+			delete m_rx;
+			m_rx = 0;
+		}
+		
+		m_rx = VideoReceiver::getReceiver(parsedUrl.host(), parsedUrl.port());
+		if(m_rx)
+		{
+			m_rx->registerConsumer(this);
+			connect(m_rx, SIGNAL(frameReady()), this, SLOT(videoRxFrameReady()));
+		}
+		
+		qDebug() << "GLImageHttpDrawable::setUrl: Got receiver:"<<m_rx;
+		m_pollDvizTimer.stop();
+		m_pollImageTimer.stop();
+	}
+	else
 	//if(liveStatus())
 	{
+		qDebug() << "GLImageHttpDrawable::setUrl: Connecting to HTTP host: "<<parsedUrl;
 		if(m_pollDviz)
 			initDvizPoll();
 		else
@@ -58,13 +87,23 @@ void GLImageHttpDrawable::setPollDviz(bool flag)
 	}
 	else
 	{
+		QUrl parsedUrl(m_url);
+		if(parsedUrl.scheme() == "raw")
+		{
+			qDebug() << "GLImageHttpDrawable::setPollDviz: RAW host, stopping poll timers";
+			m_pollDvizTimer.stop();
+			m_pollImageTimer.stop();
+		}
+		else
 		if(flag)
 		{
+			qDebug() << "GLImageHttpDrawable::setPollDviz: true flag, starting dviz, stopping image";
 			m_pollDvizTimer.start();
 			m_pollImageTimer.stop();
 		}
 		else
 		{
+			qDebug() << "GLImageHttpDrawable::setPollDviz: false flag, stopping dviz, starting image";
 			m_pollDvizTimer.stop();
 			m_pollImageTimer.start();
 		}
@@ -184,3 +223,16 @@ void GLImageHttpDrawable::handleNetworkData(QNetworkReply *networkReply)
 	networkReply->deleteLater();
 	networkReply->manager()->deleteLater();
 }
+
+void GLImageHttpDrawable::videoRxFrameReady()
+{
+	if(!m_rx)
+		return;
+		
+	VideoFramePtr frame = m_rx->frame();
+	if(!frame)
+		return;
+		
+	setImage(frame->toImage());
+}
+

@@ -5,6 +5,8 @@
 
 #include <QtNetwork>
 
+class VideoReceiver;
+
 class GLImageHttpDrawable : public GLImageDrawable
 {
 	Q_OBJECT
@@ -43,6 +45,8 @@ private slots:
 	void loadUrl(const QString& url);
 	void handleNetworkData(QNetworkReply *networkReply);
 	
+	void videoRxFrameReady();
+	
 private:
 	QString m_url;
 	bool m_pollDviz;
@@ -57,6 +61,9 @@ private:
 	// for polling DViz
 	int m_slideId;
 	QString m_slideName;
+	
+	// for receiving raw images from dviz
+	VideoReceiver *m_rx;
 	
 };
 

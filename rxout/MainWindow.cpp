@@ -13,8 +13,9 @@ MainWindow::MainWindow()
 	QHBoxLayout *hbox = new QHBoxLayout(this);
 	hbox->setContentsMargins(0,0,0,0);
 	
-	QString host = "192.168.0.19"; //192.168.0.17";
-	int port = 9978;
+	QString host = "localhost"; //192.168.0.19"; //192.168.0.17";
+	int port = 8929;
+	//int port = 9978;
 	//int port = 7756;
 		
 	VideoReceiver *rx = VideoReceiver::getReceiver(host,port);

@@ -231,27 +231,27 @@ void EditorWindow::createUI()
 	
 	QAction *act;
 	
-	act = new QAction(QIcon("../data/stock-panel-screenshot.png"), tr("Add Video Input"), this);
+	act = new QAction(QIcon("../data/icons/icons/stock-panel-screenshot.png"), tr("Add Video Input"), this);
 	connect(act, SIGNAL(triggered()), this, SLOT(addVideoInput()));
 	toolbar->addAction(act);
 	
-	act = new QAction(QIcon("../data/stock-panel-multimedia.png"), tr("New Video Layer"), this);
+	act = new QAction(QIcon("../data/icons/stock-panel-multimedia.png"), tr("New Video Layer"), this);
 	connect(act, SIGNAL(triggered()), this, SLOT(addVideoFile()));
 	toolbar->addAction(act);
 	
-	act = new QAction(QIcon("../data/stock-insert-object.png"), tr("Add Video Loop"), this);
+	act = new QAction(QIcon("../data/icons/stock-insert-object.png"), tr("Add Video Loop"), this);
 	connect(act, SIGNAL(triggered()), this, SLOT(addVideoLoop()));
 	toolbar->addAction(act);
 		
-	act = new QAction(QIcon("../data/stock-font.png"), tr("New Text Layer"), this);
+	act = new QAction(QIcon("../data/icons/stock-font.png"), tr("New Text Layer"), this);
 	connect(act, SIGNAL(triggered()), this, SLOT(addText()));
 	toolbar->addAction(act);
 	
-	act = new QAction(QIcon("../data/stock-insert-image.png"), tr("New Image Layer"), this);
+	act = new QAction(QIcon("../data/icons/stock-insert-image.png"), tr("New Image Layer"), this);
 	connect(act, SIGNAL(triggered()), this, SLOT(addImage()));
 	toolbar->addAction(act);
 	
-	act = new QAction(QIcon("../data/stock-jump-to.png"), tr("New SVG Layer"), this);
+	act = new QAction(QIcon("../data/icons/stock-jump-to.png"), tr("New SVG Layer"), this);
 	connect(act, SIGNAL(triggered()), this, SLOT(addSvg()));
 	toolbar->addAction(act);
 	
@@ -274,15 +274,15 @@ void EditorWindow::createUI()
 	//toolbar->addSeparator();
 	toolbar = sceneActionToolbar;
 	
-	act = new QAction(QIcon("../data/action-add.png"), tr("Add New Slide"), this);
+	act = new QAction(QIcon("../data/icons/action-add.png"), tr("Add New Slide"), this);
 	connect(act, SIGNAL(triggered()), this, SLOT(addScene()));
 	toolbar->addAction(act);
 	
-	act = new QAction(QIcon("../data/action-delete.png"), tr("Delete Current Slide"), this);
+	act = new QAction(QIcon("../data/icons/action-delete.png"), tr("Delete Current Slide"), this);
 	connect(act, SIGNAL(triggered()), this, SLOT(delScene()));
 	toolbar->addAction(act);
 	
-	act = new QAction(QIcon("../data/stock-convert.png"), tr("Duplicate Current Slide"), this);
+	act = new QAction(QIcon("../data/icons/stock-convert.png"), tr("Duplicate Current Slide"), this);
 	connect(act, SIGNAL(triggered()), this, SLOT(dupScene()));
 	toolbar->addAction(act);
 	
@@ -296,15 +296,15 @@ void EditorWindow::createUI()
 	toolbar = itemActionToolbar;
 	//addToolBar(tr("Editor Actions"));
 	
-	QAction  *centerHor = toolbar->addAction(QIcon("../data/obj-center-hor.png"), tr("Center Items Horizontally"));
+	QAction  *centerHor = toolbar->addAction(QIcon("../data/icons/obj-center-hor.png"), tr("Center Items Horizontally"));
 	centerHor->setShortcut(QString(tr("CTRL+SHIFT+H")));
 	connect(centerHor, SIGNAL(triggered()), this, SLOT(centerSelectionHorizontally()));
 
-	QAction  *centerVer = toolbar->addAction(QIcon("../data/obj-center-ver.png"), tr("Center Items Vertically"));
+	QAction  *centerVer = toolbar->addAction(QIcon("../data/icons/obj-center-ver.png"), tr("Center Items Vertically"));
 	centerVer->setShortcut(QString(tr("CTRL+SHIFT+V")));
 	connect(centerVer, SIGNAL(triggered()), this, SLOT(centerSelectionVertically()));
 	
-	act = toolbar->addAction(QIcon("../data/stock-fit-in.png"), tr("Fit Items to Natural Size"));
+	act = toolbar->addAction(QIcon("../data/icons/stock-fit-in.png"), tr("Fit Items to Natural Size"));
 	act ->setShortcut(QString(tr("CTRL+SHIFT+F")));
 	connect(act , SIGNAL(triggered()), this, SLOT(naturalItemFit()));
 	
@@ -511,13 +511,13 @@ void EditorWindow::addVideoInput()
 
 void EditorWindow::addVideoLoop()
 {
-	addDrawable(new GLVideoLoopDrawable("../data/Seasons_Loop_3_SD.mpg"));
+	addDrawable(new GLVideoLoopDrawable("../data/icons/Seasons_Loop_3_SD.mpg"));
 }
 
 void EditorWindow::addVideoFile()
 {
-	addDrawable(new GLVideoFileDrawable("../data/Seasons_Loop_3_SD.mpg"));
-	//addDrawable(new GLVideoLoopDrawable("../data/Seasons_Loop_3_SD.mpg"));
+	addDrawable(new GLVideoFileDrawable("../data/icons/Seasons_Loop_3_SD.mpg"));
+	//addDrawable(new GLVideoLoopDrawable("../data/icons/Seasons_Loop_3_SD.mpg"));
 }
 
 void EditorWindow::addImage()
@@ -957,7 +957,7 @@ QWidget *EditorWindow::createPropertyEditors(GLDrawable *gld)
 			QHBoxLayout *buttonLayout = new QHBoxLayout(buttons);
 			
 			QPushButton *btn;
-			btn = new QPushButton(QIcon("../data/stock-fit-in.png"),"");
+			btn = new QPushButton(QIcon("../data/icons/stock-fit-in.png"),"");
 			btn->setToolTip(tr("Fit Box to Text Naturally"));
 			connect(btn, SIGNAL(clicked()), this, SLOT(textFitNaturally()));
 			buttonLayout->addWidget(btn);
@@ -968,7 +968,7 @@ QWidget *EditorWindow::createPropertyEditors(GLDrawable *gld)
 			connect(btn, SIGNAL(clicked()), this, SLOT(textPlus()));
 			buttonLayout->addWidget(btn);
 			
-			btn = new QPushButton(QIcon("../data/stock-sort-ascending.png"), "");
+			btn = new QPushButton(QIcon("../data/icons/stock-sort-ascending.png"), "");
 			btn->setToolTip(tr("Decrease Font Size"));
 			//btn->setShortcut(QString(tr("CTRL+SHFIT+-")));
 			connect(btn, SIGNAL(clicked()), this, SLOT(textMinus()));

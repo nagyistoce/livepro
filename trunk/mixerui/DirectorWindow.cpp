@@ -1220,13 +1220,13 @@ OverlayWidget::OverlayWidget(DirectorWindow *d)
 	
 	QPushButton *newf = new QPushButton(QPixmap(":/data/icons/stock-new.png"), "");
 	QPushButton *edit = new QPushButton(QPixmap(":/data/icons/stock-edit.png"), "");
-	QPushButton *browse = new QPushButton(QPixmap(":/data/icons/stock-open.png"), "");
+	QPushButton *browsef = new QPushButton(QPixmap(":/data/icons/stock-open.png"), "");
 	
 	hbox->addWidget(show);
 	hbox->addWidget(hide);
 	hbox->addWidget(newf);
 	hbox->addWidget(edit);
-	hbox->addWidget(browse);
+	hbox->addWidget(browsef);
 	
 	vbox->addLayout(hbox);
 	
@@ -1235,10 +1235,11 @@ OverlayWidget::OverlayWidget(DirectorWindow *d)
 	connect(hide, SIGNAL(clicked()), this, SLOT(hideOverlay()));
 	connect(newf, SIGNAL(clicked()), this, SLOT(newFile()));
 	connect(edit, SIGNAL(clicked()), this, SLOT(openEditor()));
-	connect(browse, SIGNAL(clicked()), this, SLOT(browse()));
+	connect(browsef, SIGNAL(clicked()), this, SLOT(browse()));
 	connect(m_combo, SIGNAL(currentIndexChanged(int)), this, SLOT(selectedGroupIndexChanged(int)));
 	
 	newFile();
+	browse();
 }
 
 QVariantMap OverlayWidget::saveToMap()

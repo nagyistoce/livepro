@@ -34,6 +34,11 @@ GLImageDrawable::GLImageDrawable(QString file, QObject *parent)
 	, m_shadowColor(Qt::black)
 	, m_shadowOpacity(1.0)
 	, m_shadowDrawable(0)
+	, m_hqXfadeEnabled(false) 
+	, m_hqXfadeActive(false)
+	, m_fadeValue(0.)
+	, m_fadeTimeStarted(false)
+	
 {
 	//setImage(QImage("dot.gif"));
 	setCrossFadeMode(GLVideoDrawable::FrontAndBack);
@@ -48,10 +53,23 @@ GLImageDrawable::GLImageDrawable(QString file, QObject *parent)
 	connect(&m_borderDirtyBatchTimer, SIGNAL(timeout()), this, SLOT(reapplyBorder()));
 	m_borderDirtyBatchTimer.setSingleShot(true);
 	m_borderDirtyBatchTimer.setInterval(50);
+	
+	connect(&m_fadeTick, SIGNAL(timeout()), this, SLOT(hqXfadeTick()));
+	m_fadeTick.setInterval(1000/25);
+	
+	// TODO just for testing - future it should only be for overlays
+	setHqXfadeEnabled(false);
+	//setCrossFadeMode(GLVideoDrawable::JustFront);
 }
 
 GLImageDrawable::~GLImageDrawable()
 {}
+
+void GLImageDrawable::setHqXfadeEnabled(bool flag)
+{
+	GLVideoDrawable::setXFadeEnabled(!flag);
+	m_hqXfadeEnabled = flag;
+}
 
 void GLImageDrawable::setImage(const QImage& image, bool insidePaint)
 {
@@ -80,11 +98,19 @@ void GLImageDrawable::setImage(const QImage& image, bool insidePaint)
 	   xfadeEnabled() &&
 	   !insidePaint)
 	{
- 		m_frame2 = m_frame;
- 		//sqDebug() << "GLImageDrawable::setImage(): "<<(QObject*)this<<" Starting crossfade with m_frame2";
-		//m_frame2 = VideoFramePtr(new VideoFrame(m_image,1000/30));
-		updateTexture(true); // true = read from m_frame2
-		xfadeStart();
+		if(m_hqXfadeEnabled)
+		{
+			m_oldImage = m_image;
+			hqXfadeStart();
+		}
+		else
+		{
+			m_frame2 = m_frame;
+			//sqDebug() << "GLImageDrawable::setImage(): "<<(QObject*)this<<" Starting crossfade with m_frame2";
+			//m_frame2 = VideoFramePtr(new VideoFrame(m_image,1000/30));
+			updateTexture(true); // true = read from m_frame2
+			xfadeStart();
+		}
 	}
 
 
@@ -162,7 +188,11 @@ void GLImageDrawable::setImage(const QImage& image, bool insidePaint)
  	qDebug() << "GLImageDrawable::setImage(): "<<(QObject*)this<<" Allocated memory up to:"<<(m_allocatedMemory/1024/1024)<<"MB";
  	#endif
 	//qDebug() << "GLImageDrawable::setImage(): "<<(QObject*)this<<" mark7";
-	updateTexture();
+	
+	// Don't updateTexture if m_hqXfadeActive because
+	// we'll updateTexture inside hqXfadeTick with a blended image
+	if(!m_hqXfadeActive)
+		updateTexture();
 
 // 	QString file = QString("debug-%1-%2.png").arg(metaObject()->className()).arg(QString().sprintf("%p",((void*)this)));
 // 	m_image.save(file);
@@ -189,6 +219,98 @@ void GLImageDrawable::setImage(const QImage& image, bool insidePaint)
 // 		m_visiblePendingFrame = false;
 // 		GLDrawable::setVisible(m_tempVisibleValue);
 // 	}
+}
+
+void GLImageDrawable::hqXfadeStart(bool invertStart)
+{
+	// invertStart probably won't be used in GLImageDrawable - just here for compat with GLVideoDrawable 
+	
+	qDebug() << "GLImageDrawable::hqXfadeStart()";
+// 	m_oldImage.save("hqx-old.jpg");
+// 	m_image.save("hqx-new.jpg");
+	
+	if(xfadeLength() <= 50/1000)
+	{
+		hqXfadeStop();
+		//qDebug() << "GLVideoDrawable::xfadeStart(): "<<(QObject*)this<<" xfadeLength() is "<<xfadeLength()<<", less than "<<(50/1000)<<", not running fade";
+		return;
+	}
+
+	m_fadeTick.start();
+	//m_fadeTime.start();
+	m_hqXfadeActive = true;
+	m_fadeTimeStarted = false;
+	m_startOpacity = invertStart ? 1.0 - m_fadeValue : m_fadeValue;
+//	m_fadeValue = 0.0;
+	//qDebug() << "GLVideoDrawable::xfadeStart(): "<<(QObject*)this<<" start opacity: "<<m_startOpacity;
+	
+	m_fadeCurve.setType(QEasingCurve::InOutQuad);
+//	m_fadeCurve.setType(QEasingCurve::OutCubic);
+}
+
+void GLImageDrawable::hqXfadeTick(bool callUpdate)
+{
+	// Only start the counter once we actually get the first 'tick' of the timer
+	// because there may be a significant delay between the time the timer is started
+	// and the first 'tick' is received, which (if we started the counter above), would
+	// cause a noticable and undesirable jump in the opacity
+	if(!m_fadeTimeStarted)
+	{
+		m_fadeTime.start();
+		m_fadeTimeStarted = true;
+	}
+
+	double elapsed = m_fadeTime.elapsed() + (m_startOpacity * xfadeLength());
+	double progress = ((double)elapsed) / ((double)xfadeLength());
+	//m_fadeValue = m_fadeCurve.valueForProgress(progress);
+	m_fadeValue = progress; //m_fadeCurve.valueForProgress(progress);
+	//qDebug() << "GLVideoDrawable::xfadeTick(): elapsed:"<<elapsed<<", start:"<<m_startOpacity<<", progress:"<<progress<<", fadeValue:"<<m_fadeValue;
+
+	if(elapsed >= xfadeLength())
+		hqXfadeStop();
+	else
+	{
+		QSize size = m_image.rect().united(m_oldImage.rect()).size();
+		QImage intermImage(size, QImage::Format_ARGB32_Premultiplied);
+		QPainter p(&intermImage);
+		//p.setCompositionMode(QPainter::CompositionMode_SourceOver); // mixes, not summed to 100% tho
+		//p.setCompositionMode(QPainter::CompositionMode_SourceIn); // only 100% at end, no interm
+		//p.setCompositionMode(QPainter::CompositionMode_SourceAtop); // no response
+		//p.setCompositionMode(QPainter::CompositionMode_Clear); // only 100% at end, no interm
+		//p.setCompositionMode(QPainter::CompositionMode_Source); // no response
+		//p.setCompositionMode(QPainter::CompositionMode_SourceOut); // wierd blend-thru look - jumps at end - not right
+		//p.setCompositionMode(QPainter::CompositionMode_DestinationAtop); // close, but never works quite right (old on top, jumps at end)
+		
+		p.setOpacity(m_fadeValue);
+		p.drawImage(0,0,m_image);
+		p.setOpacity(1-m_fadeValue);
+		p.drawImage(0,0,m_oldImage);
+		p.end();
+		qDebug() << "GLImageDrawable::hqXfadeTick: interm size:"<<size<<", fadeValue:"<<m_fadeValue;
+		//intermImage.save(tr("hqx-interm-%1.jpg").arg((int)(m_fadeValue*10.)));
+		
+		m_frame = VideoFramePtr(new VideoFrame(intermImage.convertToFormat(QImage::Format_ARGB32), 1000/30));
+		updateTexture();
+	}
+
+	if(callUpdate)
+		updateGL();
+}
+
+void GLImageDrawable::hqXfadeStop()
+{
+	//qDebug() << "GLVideoDrawable::xfadeStop()";
+	m_hqXfadeActive = false;
+	m_fadeTick.stop();
+	m_fadeValue = 0.0;
+
+	m_oldImage = QImage();
+	
+	m_frame = VideoFramePtr(new VideoFrame(m_image, 1000/30));
+	updateTexture();
+	
+	//disconnectVideoSource2();
+	updateGL();
 }
 
 bool GLImageDrawable::setImageFile(const QString& file)

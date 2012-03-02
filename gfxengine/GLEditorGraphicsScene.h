@@ -44,6 +44,7 @@ private:
 	
 	//QList<GLDrawable*> m_selection;
 	RectItem * m_bgRect;
+	RectItem * m_titleSafeRect;
 	//RectItem * m_dragRect;
 	//bool m_lockClearSelection;	
 	bool m_editingMode;

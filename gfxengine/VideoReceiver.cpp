@@ -159,7 +159,7 @@ bool VideoReceiver::connectTo(const QString& host, int port, QString url, const 
 	connect(m_socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(lostConnection(QAbstractSocket::SocketError)));
 	
 	m_socket->connectToHost(host,port);
-	m_socket->setReadBufferSize(1024 * 1024);
+	m_socket->setReadBufferSize(1024 * 1024 * 5);
 	
 	//qDebug() << "VideoReceiver::connectTo: Connecting to"<<host<<"with socket:"<<m_socket;
 	
@@ -391,20 +391,20 @@ void VideoReceiver::processBlock()
 		if(m_dataBlock.size() >= HEADER_SIZE)
 		{
 			QByteArray header = m_dataBlock.left(HEADER_SIZE);
-			m_dataBlock.remove(0,HEADER_SIZE);
+			//m_dataBlock.remove(0,HEADER_SIZE);
 			
 			const char *headerData = header.constData();
 			sscanf(headerData,"%d",&m_byteCount);
+			//qDebug() << "VideoReceiver::processBlock(): First frame on connect, m_byteCount:"<<m_byteCount; 
 		}
 	}
 	
 	if(m_byteCount >= 0)
 	{
-		//qDebug() << "VideoReceiver::processBlock: Port: "<<m_port<<": received "<<m_byteCount<<" bytes";
-	
-	
 		int frameSize = m_byteCount+HEADER_SIZE;
 		
+		//qDebug() << "VideoReceiver::processBlock: Port: "<<m_port<<": m_byteCount:"<<m_byteCount<<" bytes, m_dataBlock size:"<<m_dataBlock.size()<<", frameSize:"<<frameSize;
+	
 		while(m_dataBlock.size() >= frameSize)
 		{
 			QByteArray block = m_dataBlock.left(frameSize);
@@ -418,6 +418,8 @@ void VideoReceiver::processBlock()
 								
 			int byteTmp,imgX,imgY,pixelFormatId,imageFormatId,bufferType,timestamp,holdTime,origX,origY;
 			
+			//qDebug() << "VideoReceiver::processBlock: header data:"<<headerData;
+				
 			sscanf(headerData,
 					"%d " // byteCount
 					"%d " // w
@@ -464,6 +466,7 @@ void VideoReceiver::processBlock()
 			// No need to create and emit frames if noone is listeneing for frames!
 			if(m_consumerList.isEmpty())
 			{
+				//qDebug() << "VideoReceiver::processBlock: Port: "<<m_port<<": No consumers, not processingframe";
 				m_dataBlock.clear();
 				return;
 			}
@@ -476,7 +479,7 @@ void VideoReceiver::processBlock()
 					imgX > 1900 || imgX < 0 ||
 					imgY > 1900 || imgY < 0)
 				{
-					//qDebug() << "VideoReceiver::processBlock: Frame too large (bytes > 1GB or invalid W/H): "<<byteTmp<<imgX<<imgY;
+					qDebug() << "VideoReceiver::processBlock: Frame too large (bytes > 1GB or invalid W/H): "<<byteTmp<<imgX<<imgY;
 					m_dataBlock.clear();
 					
 					QImage blueImage(16,16, QImage::Format_RGB32);
@@ -492,7 +495,6 @@ void VideoReceiver::processBlock()
 					frameSize = m_byteCount + HEADER_SIZE;
 					//qDebug() << "VideoReceiver::processBlock: Frame size changed: "<<frameSize;
 				}
-				//qDebug() << "VideoReceiver::processBlock: header data:"<<headerData;
 				//QImage frame = QImage::fromData(block);
 			
 				//QImage frame = QImage::fromData(block);
@@ -553,7 +555,8 @@ void VideoReceiver::processBlock()
 // 				else
 					frame->setSize(QSize(imgX,imgY));
 					
-				//qDebug() << "VideoReceiver::processBlock: Port: "<<m_port<<": received "<<m_byteCount<<" bytes, frame size:"<<frame->size()<<", consumers size:"<< m_consumerList.size();
+				//qDebug() << "VideoReceiver::processBlock: Port: "<<m_port<<": New Frame, frame size:"<<frame->size()<<", consumers size:"<< m_consumerList.size();
+				//frame->image().save("frametest.jpg");
 	
 				#ifdef DEBUG_VIDEOFRAME_POINTERS
 				qDebug() << "VideoReceiver::processBlock(): Enqueing new frame:"<<frame;

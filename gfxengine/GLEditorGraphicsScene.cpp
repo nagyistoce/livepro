@@ -21,13 +21,22 @@ public:
 			p->fillRect(boundingRect(), brush);
 		else
 		{
-			QRectF r = boundingRect();
-			p->setPen(Qt::black);
-			p->setBrush(QBrush());
-			p->drawRect(r);
-			
-			p->setPen(Qt::white);
-			p->drawRect(r.adjusted(-0.5, -0.5, +0.5, +0.5));
+			if(brush == Qt::transparent)
+			{
+				p->setPen(pen);
+				p->setBrush(QBrush());
+				p->drawRect(boundingRect());
+			}
+			else
+			{
+				QRectF r = boundingRect();
+				p->setPen(Qt::black);
+				p->setBrush(QBrush());
+				p->drawRect(r);
+				
+				p->setPen(Qt::white);
+				p->drawRect(r.adjusted(-0.5, -0.5, +0.5, +0.5));
+			}
 		}
 		p->restore();
 	}
@@ -44,6 +53,7 @@ public:
 GLEditorGraphicsScene::GLEditorGraphicsScene()
 	: QGraphicsScene()
 	, m_bgRect(0)
+	, m_titleSafeRect(0)
 // 	, m_dragRect(0)
 // 	, m_lockClearSelection(false)
 // 	, m_ctrlPressedWithMouse(false)
@@ -56,6 +66,12 @@ GLEditorGraphicsScene::GLEditorGraphicsScene()
 	m_bgRect->setZValue(-999999999);
 	//qDebug() << "m_bgRect:"<<m_bgRect;
 	
+	m_titleSafeRect = new RectItem();
+	m_titleSafeRect->brush = Qt::transparent; //Qt::black;
+	m_titleSafeRect->filled = false;
+	m_titleSafeRect->pen = QPen(Qt::red, 1.);
+	m_titleSafeRect->setZValue(999999999);
+	
 // 	m_dragRect = new RectItem();
 // 	m_dragRect->diff = true;
 // 	m_dragRect->filled = false;
@@ -64,14 +80,18 @@ GLEditorGraphicsScene::GLEditorGraphicsScene()
 // 	m_dragRect->rect = QRectF(0,0,0,0);
 	
 	addItem(m_bgRect);
+	addItem(m_titleSafeRect);
 //	addItem(m_dragRect);
 	//qDebug() << "m_dragRect:"<<m_dragRect;
+	
+	setSceneRect(QRectF(0,0,1000,750));
 }
 
 void GLEditorGraphicsScene::clear()
 {
 	// Remove before clear, because ::clear() deletes all items
 	removeItem(m_bgRect);
+	removeItem(m_titleSafeRect);
 	//removeItem(m_dragRect);
 	
 	// Drawables are owned by the GLScene they are a member of,
@@ -90,6 +110,7 @@ void GLEditorGraphicsScene::clear()
 	
 	// Add back in our internal items
 	addItem(m_bgRect);
+	addItem(m_titleSafeRect);
 //	addItem(m_dragRect);
 }
 
@@ -97,6 +118,10 @@ void GLEditorGraphicsScene::setSceneRect(const QRectF& rect)
 {
 	QGraphicsScene::setSceneRect(rect);
 	m_bgRect->setBoundingRect(rect);
+	
+	double xMargin = rect.width() * 0.075;
+	double yMargin = rect.height() * 0.075;
+	m_titleSafeRect->setBoundingRect(rect.adjusted(xMargin,yMargin,-xMargin,-yMargin));
 }
 
 // void GLEditorGraphicsScene::itemSelected(GLDrawable *item)

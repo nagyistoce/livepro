@@ -30,6 +30,18 @@ void GLImageHttpDrawable::setUpdateTime(int ms)
 
 GLImageHttpDrawable::~GLImageHttpDrawable()
 {
+	releaseVideoReceiver();
+}
+
+void GLImageHttpDrawable::releaseVideoReceiver()
+{
+	//qDebug() << "GLImageHttpDrawable::releaseVideoReceiver()";
+	if(m_rx)
+	{
+		m_rx->release(this);
+		disconnect(m_rx, 0, this, 0);
+		m_rx = 0;
+	}
 }
 
 void GLImageHttpDrawable::setUrl(const QString& url)
@@ -39,17 +51,12 @@ void GLImageHttpDrawable::setUrl(const QString& url)
 		return;
 		
 	QUrl parsedUrl(url);
-	qDebug() << "GLImageHttpDrawable::setUrl: URL Sceme:"<<parsedUrl.scheme();
+	//qDebug() << "GLImageHttpDrawable::setUrl: URL Sceme:"<<parsedUrl.scheme();
 	if(parsedUrl.scheme() == "raw")
 	{
 		qDebug() << "GLImageHttpDrawable::setUrl: Connecting to RAW host: "<<parsedUrl;
-		if(m_rx)
-		{
-			m_rx->release(this);
-			disconnect(m_rx, 0, this, 0);
-			delete m_rx;
-			m_rx = 0;
-		}
+		
+		releaseVideoReceiver();
 		
 		m_rx = VideoReceiver::getReceiver(parsedUrl.host(), parsedUrl.port());
 		if(m_rx)
@@ -61,10 +68,15 @@ void GLImageHttpDrawable::setUrl(const QString& url)
 		qDebug() << "GLImageHttpDrawable::setUrl: Got receiver:"<<m_rx;
 		m_pollDvizTimer.stop();
 		m_pollImageTimer.stop();
+		
+		// Pull in first frame if one is available
+		videoRxFrameReady();
 	}
 	else
 	//if(liveStatus())
 	{
+		releaseVideoReceiver();
+		
 		qDebug() << "GLImageHttpDrawable::setUrl: Connecting to HTTP host: "<<parsedUrl;
 		if(m_pollDviz)
 			initDvizPoll();
@@ -90,20 +102,20 @@ void GLImageHttpDrawable::setPollDviz(bool flag)
 		QUrl parsedUrl(m_url);
 		if(parsedUrl.scheme() == "raw")
 		{
-			qDebug() << "GLImageHttpDrawable::setPollDviz: RAW host, stopping poll timers";
+			//qDebug() << "GLImageHttpDrawable::setPollDviz: RAW host, stopping poll timers";
 			m_pollDvizTimer.stop();
 			m_pollImageTimer.stop();
 		}
 		else
 		if(flag)
 		{
-			qDebug() << "GLImageHttpDrawable::setPollDviz: true flag, starting dviz, stopping image";
+			//qDebug() << "GLImageHttpDrawable::setPollDviz: true flag, starting dviz, stopping image";
 			m_pollDvizTimer.start();
 			m_pollImageTimer.stop();
 		}
 		else
 		{
-			qDebug() << "GLImageHttpDrawable::setPollDviz: false flag, stopping dviz, starting image";
+			//qDebug() << "GLImageHttpDrawable::setPollDviz: false flag, stopping dviz, starting image";
 			m_pollDvizTimer.stop();
 			m_pollImageTimer.start();
 		}
@@ -233,6 +245,7 @@ void GLImageHttpDrawable::videoRxFrameReady()
 	if(!frame)
 		return;
 		
+	//qDebug() << "GLImageHttpDrawable::videoRxFrameReady(): Got image";
 	setImage(frame->toImage());
 }
 

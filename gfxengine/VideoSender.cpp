@@ -315,6 +315,93 @@ void VideoSender::frameReady()
 		processFrame();
 }
 
+void VideoSender::transmitImage(QImage image)
+{
+	QMutexLocker lock(&m_sendMutex);
+	
+	m_origSize = image.size();
+	#ifdef DEBUG_VIDEOFRAME_POINTERS
+	qDebug() << "VideoSender::transmitImage(): Mark1: image:"<<image;
+	#endif
+	
+	if(m_transmitSize.isEmpty())
+		m_transmitSize = m_origSize;
+		
+	// Use 16bit format for transmission because:
+	//  320x240x16bits / 8bits/byte = 153,600 bytes
+	//  320x240x32bits / 8bits/byte = 307,200 bytes
+	//  Half as much bandwidth required to transmit the same image - at the expense of 1ms on the sending side.
+
+	//qDebug() << "VideoSender::processFrame: Downscaling video for transmission to "<<m_transmitSize;
+	// To scale the video frame, first we must convert it to a QImage if its not already an image.
+	// If we're lucky, it already is. Otherwise, we have to jump thru hoops to convert the byte 
+	// array to a QImage then scale it.
+	QImage scaledImage;
+		
+	scaledImage = m_transmitSize == m_origSize ? 
+		image : 
+		image.scaled(m_transmitSize);
+	
+	// Only convert format if we're scaling - hackish method rightnow to allow user to preserve alpha channel if not scaling // TODO figure better method
+	if(m_transmitSize != m_origSize)
+		scaledImage = scaledImage.convertToFormat(QImage::Format_RGB16);
+	
+	#ifdef DEBUG_VIDEOFRAME_POINTERS
+	qDebug() << "VideoSender::transmitImage(): Mark2: image:"<<image;
+	#endif
+	
+	// Now that we've got the image out of the original frame and scaled it, we have to construct a new
+	// video frame to transmit on the wire from the scaledImage (assuming the sccaledImage is valid.)
+	// We attempt to transmit in its native format without converting it if we can to save local CPU power.
+	if(!scaledImage.isNull())
+	{
+		m_captureTime = QTime::currentTime(); //m_frame->captureTime();
+
+		QImage::Format format = scaledImage.format();
+		m_pixelFormat = 
+			format == QImage::Format_ARGB32 ? QVideoFrame::Format_ARGB32 :
+			format == QImage::Format_RGB32  ? QVideoFrame::Format_RGB32  :
+			format == QImage::Format_RGB888 ? QVideoFrame::Format_RGB24  :
+			format == QImage::Format_RGB16  ? QVideoFrame::Format_RGB565 :
+			format == QImage::Format_RGB555 ? QVideoFrame::Format_RGB555 :
+			//format == QImage::Format_ARGB32_Premultiplied ? QVideoFrame::Format_ARGB32_Premultiplied :
+			// GLVideoDrawable doesn't support premultiplied - so the format conversion below will convert it to ARGB32 automatically
+			QVideoFrame::Format_Invalid;
+			
+		if(m_pixelFormat == QVideoFrame::Format_Invalid)
+		{
+			qDebug() << "VideoSender::transmitImage(): image was not in an acceptable format, converting to ARGB32 automatically.";
+			scaledImage = scaledImage.convertToFormat(QImage::Format_ARGB32);
+			m_pixelFormat = QVideoFrame::Format_ARGB32;
+		}
+		
+		uchar *ptr = (uchar*)malloc(sizeof(uchar) * scaledImage.byteCount());
+		const uchar *src = (const uchar*)scaledImage.bits();
+		memcpy(ptr, src, scaledImage.byteCount());
+		
+		m_dataPtr = QSharedPointer<uchar>(ptr);
+		m_byteCount = scaledImage.byteCount();
+		m_imageFormat = scaledImage.format();
+		m_imageSize = scaledImage.size();
+		
+		// HACK
+		m_holdTime = 33; //m_transmitFps <= 0 ? m_frame->holdTime() : 1000/m_transmitFps;
+		
+		#ifdef DEBUG_VIDEOFRAME_POINTERS
+		qDebug() << "VideoSender::processFrame(): Mark5: image:"<<image;
+		#endif
+	}
+	
+	//sendUnlock();
+	
+	#ifdef DEBUG_VIDEOFRAME_POINTERS
+	qDebug() << "VideoSender::transmitImage(): Mark6: image:"<<image;
+	#endif
+	
+	//qDebug() << "VideoSender::processFrame(): "<<this<<" mark end";
+	emit receivedFrame();
+}
+
 
 void VideoSender::incomingConnection(int socketDescriptor)
 {
@@ -329,9 +416,11 @@ void VideoSender::incomingConnection(int socketDescriptor)
 	if(!m_consumerRegistered)
 	{
 		m_consumerRegistered = true;
-		m_source->registerConsumer(this);
+		if(m_source)
+			m_source->registerConsumer(this);
 	}
 		
+	QTimer::singleShot(0, this, SIGNAL(receivedFrame()));
 		
 	//qDebug() << "VideoSender: "<<this<<" Client Connected, Socket Descriptor:"<<socketDescriptor;
 }
@@ -429,16 +518,17 @@ void VideoSenderThread::frameReady()
 			
 			#define HEADER_SIZE 256
 			
-			if(!m_sentFirstHeader)
-			{
-				m_sentFirstHeader = true;
-				char headerData[HEADER_SIZE];
-				memset(&headerData, 0, HEADER_SIZE);
-				sprintf((char*)&headerData,"%d",byteCount);
-				//qDebug() << "header data:"<<headerData;
-				
-				m_socket->write((const char*)&headerData,HEADER_SIZE);
-			}
+			// We dont need to send a "first header" because the VideoReceiver now can handle it just fine without a 'first header'
+// 			if(!m_sentFirstHeader)
+// 			{
+// 				m_sentFirstHeader = true;
+// 				char headerData[HEADER_SIZE];
+// 				memset(&headerData, 0, HEADER_SIZE);
+// 				sprintf((char*)&headerData,"%d",byteCount);
+// 				//qDebug() << "header data:"<<headerData;
+// 				
+// 				m_socket->write((const char*)&headerData,HEADER_SIZE);
+// 			}
 			
 			if(byteCount > 0)
 			{

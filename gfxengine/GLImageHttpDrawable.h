@@ -48,6 +48,8 @@ private slots:
 	void videoRxFrameReady();
 	
 private:
+	void releaseVideoReceiver();
+	
 	QString m_url;
 	bool m_pollDviz;
 	int m_updateTime;

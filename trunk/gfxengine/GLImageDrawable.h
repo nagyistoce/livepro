@@ -38,7 +38,9 @@ public:
 	QPointF shadowOffset() { return m_shadowOffset; }
 	QColor shadowColor() { return m_shadowColor; }
 	double shadowOpacity() { return m_shadowOpacity; }
-		
+	
+	bool hqXfadeEnabled() { return m_hqXfadeEnabled; }
+	
 signals:
 	void imageFileChanged(const QString&);
 
@@ -58,6 +60,13 @@ public slots:
 	void setShadowColor(const QColor&);
 	void setShadowOpacity(double);
 	void setShadowOpacity(int percent) { setShadowOpacity(((double)percent) / 100.); }
+	
+	void setHqXfadeEnabled(bool flag);
+	
+private slots:
+	void hqXfadeStart(bool invertStart=false);
+	void hqXfadeTick(bool callUpdate=true);
+	void hqXfadeStop();
 	
 	
 protected:
@@ -116,6 +125,16 @@ protected:
 	
 	GLImageDrawable *m_shadowDrawable;
 	virtual void drawableResized(const QSizeF&);
+	
+	bool m_hqXfadeEnabled;
+	bool m_hqXfadeActive;
+	QTimer m_fadeTick;
+	QImage m_oldImage;
+	bool m_fadeTimeStarted;
+	double m_startOpacity;
+	QEasingCurve m_fadeCurve;
+	QTime m_fadeTime;
+	double m_fadeValue;
 	
 protected slots:
 	void reapplyBorder();

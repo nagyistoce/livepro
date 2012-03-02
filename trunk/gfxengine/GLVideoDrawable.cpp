@@ -428,7 +428,7 @@ void GLVideoDrawable::xfadeTick(bool callUpdate)
 
 	double elapsed = m_fadeTime.elapsed() + (m_startOpacity * m_xfadeLength);
 	double progress = ((double)elapsed) / ((double)m_xfadeLength);
-	m_fadeValue = m_fadeCurve.valueForProgress(progress);
+	m_fadeValue = progress; //m_fadeCurve.valueForProgress(progress);
 	//qDebug() << "GLVideoDrawable::xfadeTick(): elapsed:"<<elapsed<<", start:"<<m_startOpacity<<", progress:"<<progress<<", fadeValue:"<<m_fadeValue;
 
 	if(elapsed >= m_xfadeLength)

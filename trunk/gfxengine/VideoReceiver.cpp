@@ -403,7 +403,7 @@ void VideoReceiver::processBlock()
 	{
 		int frameSize = m_byteCount+HEADER_SIZE;
 		
-		//qDebug() << "VideoReceiver::processBlock: Port: "<<m_port<<": m_byteCount:"<<m_byteCount<<" bytes, m_dataBlock size:"<<m_dataBlock.size()<<", frameSize:"<<frameSize;
+		qDebug() << "VideoReceiver::processBlock: Port: "<<m_port<<": m_byteCount:"<<m_byteCount<<" bytes, m_dataBlock size:"<<m_dataBlock.size()<<", frameSize:"<<frameSize;
 	
 		while(m_dataBlock.size() >= frameSize)
 		{
@@ -555,7 +555,7 @@ void VideoReceiver::processBlock()
 // 				else
 					frame->setSize(QSize(imgX,imgY));
 					
-				//qDebug() << "VideoReceiver::processBlock: Port: "<<m_port<<": New Frame, frame size:"<<frame->size()<<", consumers size:"<< m_consumerList.size();
+				qDebug() << "VideoReceiver::processBlock: Port: "<<m_port<<": New Frame, frame size:"<<frame->size()<<", consumers size:"<< m_consumerList.size();
 				//frame->image().save("frametest.jpg");
 	
 				#ifdef DEBUG_VIDEOFRAME_POINTERS

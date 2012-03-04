@@ -278,6 +278,8 @@ protected:
 	
 	QPointer<GLScene> m_fadeSyncLeader;
 	QPointer<GLScene> m_fadeSyncFollower;
+
+	bool m_recalcLocked;
 };
 
 class GLSceneGroupPlaylist;

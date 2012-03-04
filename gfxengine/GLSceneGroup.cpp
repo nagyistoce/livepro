@@ -259,6 +259,7 @@ GLScene::GLScene(QObject *parent)
 	, m_rootObj(0)
 	, m_fadeSyncLeader(0)
 	, m_fadeSyncFollower(0)
+	, m_recalcLocked(false)
 {
 	connect(&m_fadeTimer, SIGNAL(timeout()), this, SLOT(fadeTick()));
 }
@@ -280,6 +281,7 @@ GLScene::GLScene(QByteArray& ba, QObject *parent)
 	, m_sceneType(0)
 	, m_group(0)
 	, m_rootObj(0)
+	, m_recalcLocked(false)
 {
 	connect(&m_fadeTimer, SIGNAL(timeout()), this, SLOT(fadeTick()));
 	fromByteArray(ba);
@@ -871,7 +873,7 @@ void GLScene::fadeTick()
 		m_fadeActive = true;
 	}
 	
-	if(m_fadeSyncFollower)
+	if(m_fadeSyncFollower && m_fadeSyncFollower != this)
 		m_fadeSyncFollower->fadeTick();
 
 	if(m_fadeClock.elapsed() >= m_crossfadeSpeed)
@@ -902,6 +904,9 @@ void GLScene::setFadeSyncFollower(GLScene *other)
 
 void GLScene::recalcFadeOpacity(bool setOpac)
 {
+	if(m_recalcLocked)
+		return;
+	m_recalcLocked = true;	
 // 	if(m_fadeClock.elapsed() >= m_crossfadeSpeed)
 // 	{
 // 		qDebug() << "GLScene::recalcFadeOpacity: fade ended ("<<m_fadeClock.elapsed()<<" > "<<m_crossfadeSpeed<<")";
@@ -950,6 +955,8 @@ void GLScene::recalcFadeOpacity(bool setOpac)
 //		qDebug() << "GLScene::recalcFadeOpacity (!setOpac): "<<fadeVal<<", elapsed:"<<elapsed
 		m_opacity = fadeVal;
 	}
+
+	m_recalcLocked = false;
 }
 
 

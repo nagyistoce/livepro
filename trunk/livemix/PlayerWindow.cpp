@@ -1281,6 +1281,14 @@ void PlayerWindow::setCrossfadeSpeed(int ms)
 			if(GLVideoDrawable *vid = dynamic_cast<GLVideoDrawable*>(drawable))
 				vid->setXFadeLength(ms);
 	}
+	
+	foreach(GLScene *scene, m_overlays->sceneList())
+	{
+		GLDrawableList list = scene->drawableList();
+		foreach(GLDrawable *drawable, list)
+			if(GLVideoDrawable *vid = dynamic_cast<GLVideoDrawable*>(drawable))
+				vid->setXFadeLength(ms);
+	}
 
 	m_xfadeSpeed = ms;
 }

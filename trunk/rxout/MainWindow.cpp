@@ -14,7 +14,7 @@ MainWindow::MainWindow()
 	hbox->setContentsMargins(0,0,0,0);
 	
 	QString host = "localhost"; //192.168.0.19"; //192.168.0.17";
-	int port = 8929;
+	int port = 8092;
 	//int port = 9978;
 	//int port = 7756;
 		

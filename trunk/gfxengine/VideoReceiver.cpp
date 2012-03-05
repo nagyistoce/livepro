@@ -161,7 +161,9 @@ bool VideoReceiver::connectTo(const QString& host, int port, QString url, const 
 	m_socket->connectToHost(host,port);
 	m_socket->setReadBufferSize(1024 * 1024 * 5);
 	
-	//qDebug() << "VideoReceiver::connectTo: Connecting to"<<host<<"with socket:"<<m_socket;
+	#ifdef DEBUG
+	qDebug() << "VideoReceiver::connectTo: Connecting to"<<host<<":"<<port<<" with socket:"<<m_socket;
+	#endif
 	
 	
 	m_time.start();
@@ -174,7 +176,9 @@ bool VideoReceiver::connectTo(const QString& host, int port, QString url, const 
 
 void VideoReceiver::connectionReady()
 {
-	//qDebug() << "Connected";
+	#ifdef DEBUG
+	qDebug() << "VideoReceiver::connectionReady(): Connected";
+	#endif
 	m_connected = true;
 	
 	emit connected();
@@ -192,7 +196,9 @@ void VideoReceiver::lostConnection()
 {
 	if(m_autoReconnect)
 	{
-		//qDebug() << "VideoReceiver::lostSonnection: Lost server, attempting to reconnect in 1sec";
+		#ifdef DEBUG
+		qDebug() << "VideoReceiver::lostSonnection: Lost server, attempting to reconnect in 5 sec";
+		#endif
 		
 		enqueue(new VideoFrame(QImage("dot.gif"),1000/30));
 		QTimer::singleShot(5000,this,SLOT(reconnect()));
@@ -245,7 +251,9 @@ void VideoReceiver::sendCommand(QVariantList reply)
 	QVariantMap map;
 	if(reply.size() % 2 != 0)
 	{
+		#ifdef DEBUG
 		qDebug() << "VideoReceiver::sendCommand: [WARNING]: Odd number of elelements in reply: "<<reply;
+		#endif
 	}
 
 	for(int i=0; i<reply.size(); i+=2)
@@ -361,17 +369,26 @@ void VideoReceiver::queryVideoHints()
 
 void VideoReceiver::dataReady()
 {
+	#ifdef DEBUG
+	qDebug() << "VideoReceiver::dataReady()";
+	#endif
+	
 	if(!m_connected)
 	{
 		m_dataBlock.clear();
 		return;
 	}
 	QByteArray bytes = m_socket->readAll();
-	//qDebug() << "VideoReceiver::dataReady(): Reading from socket:"<<m_socket<<", read:"<<bytes.size()<<" bytes"; 
+	#ifdef DEBUG
+	qDebug() << "VideoReceiver::dataReady(): Reading from socket:"<<m_socket<<", read:"<<bytes.size()<<" bytes";
+	#endif
+	 
 	if(bytes.size() > 0)
 	{
 		m_dataBlock.append(bytes);
-//		qDebug() << "dataReady(), read bytes:"<<bytes.count()<<", buffer size:"<<m_dataBlock.size();
+		#ifdef DEBUG
+		qDebug() << "VideoReceiver::dataReady(): Read bytes:"<<bytes.count()<<", buffer size:"<<m_dataBlock.size();
+		#endif
 		
 		processBlock();
 	}
@@ -403,7 +420,9 @@ void VideoReceiver::processBlock()
 	{
 		int frameSize = m_byteCount+HEADER_SIZE;
 		
+		#ifdef DEBUG
 		qDebug() << "VideoReceiver::processBlock: Port: "<<m_port<<": m_byteCount:"<<m_byteCount<<" bytes, m_dataBlock size:"<<m_dataBlock.size()<<", frameSize:"<<frameSize;
+		#endif
 	
 		while(m_dataBlock.size() >= frameSize)
 		{
@@ -458,7 +477,9 @@ void VideoReceiver::processBlock()
 				QVariantMap map;
 				stream >> map;
 				
+				#ifdef DEBUG
 				qDebug() << "VideoReceiver::processBlock: Port: "<<m_port<<": Received MAP block: "<<map;
+				#endif
 				
 				processReceivedMap(map);
 			}
@@ -479,7 +500,9 @@ void VideoReceiver::processBlock()
 					imgX > 1900 || imgX < 0 ||
 					imgY > 1900 || imgY < 0)
 				{
+					#ifdef DEBUG
 					qDebug() << "VideoReceiver::processBlock: Frame too large (bytes > 1GB or invalid W/H): "<<byteTmp<<imgX<<imgY;
+					#endif
 					m_dataBlock.clear();
 					
 					QImage blueImage(16,16, QImage::Format_RGB32);
@@ -555,7 +578,9 @@ void VideoReceiver::processBlock()
 // 				else
 					frame->setSize(QSize(imgX,imgY));
 					
+				#ifdef DEBUG
 				qDebug() << "VideoReceiver::processBlock: Port: "<<m_port<<": New Frame, frame size:"<<frame->size()<<", consumers size:"<< m_consumerList.size();
+				#endif
 				//frame->image().save("frametest.jpg");
 	
 				#ifdef DEBUG_VIDEOFRAME_POINTERS
@@ -643,7 +668,9 @@ void VideoReceiver::exit()
 {
 	if(m_socket)
 	{
+		#ifdef DEBUG
 		qDebug() << "VideoReceiver::exit: Discarding old socket:"<<m_socket;
+		#endif
 		disconnect(m_socket,0,this,0);
 		m_dataBlock.clear();
 		
@@ -708,7 +735,9 @@ void VideoReceiver::processReceivedMap(const QVariantMap & map)
 	}
 	else
 	{
+		#ifdef DEBUG
 		qDebug() << "VideoReceiver::processReceivedMap: Unknown map received, cmd:"<<cmd<<", full map:"<<map;
+		#endif
 	}
 	
 }

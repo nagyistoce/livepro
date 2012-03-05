@@ -245,7 +245,7 @@ void GLImageHttpDrawable::videoRxFrameReady()
 	if(!frame)
 		return;
 		
-	qDebug() << "GLImageHttpDrawable::videoRxFrameReady(): Got image";
+	//qDebug() << "GLImageHttpDrawable::videoRxFrameReady(): Got image";
 	setImage(frame->toImage());
 }
 

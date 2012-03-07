@@ -105,6 +105,7 @@ void GLImageHttpDrawable::setPollDviz(bool flag)
 			//qDebug() << "GLImageHttpDrawable::setPollDviz: RAW host, stopping poll timers";
 			m_pollDvizTimer.stop();
 			m_pollImageTimer.stop();
+			setUrl(m_url);
 		}
 		else
 		if(flag)
@@ -135,6 +136,7 @@ void GLImageHttpDrawable::setLiveStatus(bool flag)
 	{
 		m_pollDvizTimer.stop();
 		m_pollImageTimer.stop();
+		releaseVideoReceiver();
 	}
 }
 
@@ -246,6 +248,9 @@ void GLImageHttpDrawable::videoRxFrameReady()
 		return;
 		
 	//qDebug() << "GLImageHttpDrawable::videoRxFrameReady(): Got image";
-	setImage(frame->toImage());
+	QImage img = frame->toImage();
+	qDebug() << "GLImageHttpDrawable::videoRxFrameReady(): Got image: size:"<<img.size()<<", format:"<<img.format();
+	if(img.size().width() > 1 && img.size().height() > 1)
+		setImage(img);
 }
 

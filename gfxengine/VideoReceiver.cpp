@@ -94,15 +94,16 @@ VideoReceiver::VideoReceiver(QObject *parent)
 // #endif
 	setIsBuffered(false);
 	
-	QImage blueImage(16,16, QImage::Format_RGB32);
-	blueImage.fill(Qt::blue);
+	//QImage blueImage(1,1, QImage::Format_ARGB32);
+	//blueImage.fill(Qt::transparent);
 	
-	enqueue(new VideoFrame(blueImage,1000/30));
+	// For some reason, GLVideoDrawable WONT WORK if I sent the QImage (above) first - it HAS to use the dot.gif!!!! Grrr.
+	enqueue(new VideoFrame(QImage("../data/icons/dot.gif"),1000/30));
 }
 VideoReceiver::~VideoReceiver()
 {
 	#ifdef DEBUG
-	//qDebug() << "VideoReceiver::~VideoReceiver(): "<<this;
+	qDebug() << "VideoReceiver::~VideoReceiver(): "<<this;
 	#endif
 	
 	if(m_socket)
@@ -200,7 +201,12 @@ void VideoReceiver::lostConnection()
 		qDebug() << "VideoReceiver::lostSonnection: Lost server, attempting to reconnect in 5 sec";
 		#endif
 		
-		enqueue(new VideoFrame(QImage("dot.gif"),1000/30));
+		// GLVideoDrawable MUSt use dot.gif, not a transparent image as below
+		enqueue(new VideoFrame(QImage("../data/icons/dot.gif"),1000/30));
+		//QImage blueImage(1,1, QImage::Format_ARGB32);
+	        //blueImage.fill(Qt::transparent);
+		//enqueue(new VideoFrame(blueImage,1000/30));
+
 		QTimer::singleShot(5000,this,SLOT(reconnect()));
 	}
 	else
@@ -505,9 +511,7 @@ void VideoReceiver::processBlock()
 					#endif
 					m_dataBlock.clear();
 					
-					QImage blueImage(16,16, QImage::Format_RGB32);
-					blueImage.fill(Qt::blue);
-					enqueue(new VideoFrame(blueImage,1000/30));
+					enqueue(new VideoFrame(QImage("../data/icons/dot.gif"),1000/30));
 					
 					return;
 				}

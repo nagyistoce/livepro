@@ -7,43 +7,47 @@
     <x>0</x>
     <y>0</y>
     <width>517</width>
-    <height>535</height>
+    <height>543</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout_3">
+  <layout class="QVBoxLayout" name="verticalLayout_4">
    <item>
     <widget class="QGroupBox" name="groupBox">
      <property name="title">
       <string>Source</string>
      </property>
-     <layout class="QHBoxLayout" name="horizontalLayout">
+     <layout class="QVBoxLayout" name="verticalLayout_3">
       <item>
-       <widget class="QLabel" name="label">
-        <property name="text">
-         <string>Video Source:</string>
-        </property>
-       </widget>
+       <layout class="QHBoxLayout" name="horizontalLayout">
+        <item>
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string>Video Source:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="sourceBox"/>
+        </item>
+        <item>
+         <widget class="QPushButton" name="connectBtn">
+          <property name="text">
+           <string>Connect</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
       <item>
-       <widget class="QComboBox" name="sourceBox">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
+       <widget class="QLabel" name="label_9">
+        <property name="text">
+         <string>Use protocal dviz:// to indicate a DViz-pollable source, raw:// to indicate a VideoSender-compatible source, and local:// or vfwcap:// to capture directly.</string>
         </property>
-        <property name="editable">
+        <property name="wordWrap">
          <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="connectBtn">
-        <property name="text">
-         <string>Connect</string>
         </property>
        </widget>
       </item>
@@ -125,7 +129,7 @@
      </property>
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
-       <widget class="QCheckBox" name="checkBox">
+       <widget class="QCheckBox" name="timerEnabled">
         <property name="text">
          <string>Enabled</string>
         </property>
@@ -136,48 +140,20 @@
         <item>
          <widget class="QLabel" name="label_2">
           <property name="text">
-           <string>Starting Time:</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QSpinBox" name="startTime">
-          <property name="suffix">
-           <string> minutes</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLabel" name="label_3">
-          <property name="text">
            <string>Current Time:</string>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QLabel" name="currentTime">
-          <property name="text">
-           <string>TextLabel</string>
+         <widget class="QSpinBox" name="currentTime">
+          <property name="suffix">
+           <string> minutes</string>
+          </property>
+          <property name="maximum">
+           <number>999</number>
           </property>
          </widget>
         </item>
-        <item>
-         <spacer name="horizontalSpacer_5">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>40</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-       </layout>
-      </item>
-      <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_3">
         <item>
          <widget class="QPushButton" name="timerBtn">
           <property name="text">
@@ -193,7 +169,7 @@
          </widget>
         </item>
         <item>
-         <spacer name="horizontalSpacer">
+         <spacer name="horizontalSpacer_5">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
@@ -362,7 +338,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="pushButton_4">
+         <widget class="QPushButton" name="hideMsgBtn">
           <property name="text">
            <string>Hide Message</string>
           </property>

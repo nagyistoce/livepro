@@ -1444,7 +1444,6 @@ bool PlayerWindow::setGroup(GLSceneGroup *group)
 	if(m_group)
 	{
 		connect(m_group->playlist(), SIGNAL(currentItemChanged(GLScene*)), this, SLOT(setScene(GLScene*)));
-		//// NB: DISABLED *JUST* FOR TESTING!!!
 		m_group->playlist()->play();
 	}
 	

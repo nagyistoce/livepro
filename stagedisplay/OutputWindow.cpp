@@ -12,6 +12,8 @@ OutputWindow::OutputWindow()
 	, m_slideName("")
 	//, m_startStopButton(0)
         , m_countValue(0)
+        , m_drw(0)
+        , m_blinkCount(0)
 {
 	// Setup graphics view
 	setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::SmoothPixmapTransform );
@@ -29,27 +31,31 @@ OutputWindow::OutputWindow()
 	bluePixmap.fill(Qt::blue);
 	m_pixmap = scene()->addPixmap(bluePixmap);
 	
-        // Background behind text
-        m_counterBgRect = scene()->addRect(0,0,100,60,QPen(), Qt::black);
-        // Add text (for use with clock)
-        QFont font("Monospace", 50, 600);
-        m_counterText = new QGraphicsSimpleTextItem("0");
+	// Background behind text
+	m_counterBgRect = scene()->addRect(0,0,100,60,QPen(), Qt::black);
+	m_counterBgRect->setZValue(99);
+	// Add text (for use with clock)
+	QFont font("Monospace", 50, 600);
+	m_counterText = new QGraphicsSimpleTextItem("0");
 	m_counterText->setFont(font);
 	m_counterText->setPen(QPen(Qt::black));
 	m_counterText->setBrush(Qt::white);
-        m_counterText->setPos(0, -13);
+	m_counterText->setPos(0, -13);
+	m_counterText->setZValue(100);
 	scene()->addItem(m_counterText);
 	
 	
 	// Background behind text
-        m_overlayBgRect = scene()->addRect(0,300,100,60,QPen(), Qt::black);
-        // Add text (for use with clock)
-        //QFont font("Monospace", 50, 600);
-        m_overlayText = new QGraphicsSimpleTextItem("Hello, World!");
+	m_overlayBgRect = scene()->addRect(0,300,100,60,QPen(), Qt::black);
+	m_overlayBgRect->setZValue(99);
+	// Add text (for use with clock)
+	//QFont font("Monospace", 50, 600);
+	m_overlayText = new QGraphicsSimpleTextItem("Hello, World!");
 	m_overlayText->setFont(font);
 	m_overlayText->setPen(QPen(Qt::black));
 	m_overlayText->setBrush(Qt::white);
-        m_overlayText->setPos(0, 300-13);
+	m_overlayText->setPos(0, 300-13);
+	m_overlayText->setZValue(100);
 	scene()->addItem(m_overlayText);
 	
 	m_blinkOverlay = false;
@@ -70,15 +76,8 @@ OutputWindow::OutputWindow()
 		windowSize = QPoint(list[2].toInt(), list[3].toInt());
 	}
 	
-
-	scene()->setSceneRect(0,0,windowSize.x(),windowSize.y());
-	m_pixmap->setPixmap(bluePixmap.scaled(windowSize.x(),windowSize.y()));
+	setWindowGeom(QRect(windowPos.x(),windowPos.y(),windowSize.x(),windowSize.y()));
 	
-// 	if(verbose)
-// 		qDebug() << "SlideShowWindow: pos:"<<windowPos<<", size:"<<windowSize;
-	
-	resize(windowSize.x(),windowSize.y());
-	move(windowPos.x(),windowPos.y());
 	
 	bool frameless = config.value("frameless","true").toString() == "true";
 	if(frameless)
@@ -93,18 +92,91 @@ OutputWindow::OutputWindow()
         //setUrl("");
 	//setPollDviz(true);
 	
-	QString source = config.value("source","dviz://192.168.0.10:8081/image").toString();
+	setInputSource(config.value("source","dviz://192.168.0.10:8081/image").toString());
 	
-	if(source.startsWith("dviz:"))
+// 	m_startStopButton = new QPushButton("Start Counter");
+// 	connect(m_startStopButton, SIGNAL(clicked()), this, SLOT(toggleCounter()));
+ 	connect(&m_counterTimer, SIGNAL(timeout()), this, SLOT(counterTick()));
+ 	m_counterTimer.setInterval(1000);
+// 	
+// 	m_startStopButton->show();
+
+	//toggleCounter();
+	setCounterActive(false);
+		
+	
+	setBlinkOverlay(config.value("blink-overlay","false").toString() == "true", config.value("blink-speed", 333).toInt());
+	//setOverlayVisible(config.value("overlay-visible", "true").toString() == "true");
+	setCounterVisible(config.value("counter-visible", "true").toString() == "true");
+	
+	setCounterAlignment((Qt::Alignment)config.value("counter-alignment", (int)(Qt::AlignLeft | Qt::AlignTop)).toInt());
+	setOverlayAlignment((Qt::Alignment)config.value("overlay-alignment", (int)(Qt::AlignCenter | Qt::AlignBottom)).toInt());
+	
+	setOverlayText(config.value("overlay-text").toString());
+}
+
+// void OutputWindow::setCounterVisible(bool flag)
+// {
+// 	m_counterBgRect->setVisible(flag);
+//         m_counterText->setVisible(flag);
+// }
+
+
+void OutputWindow::setWindowGeom(QRect geom)
+{
+	scene()->setSceneRect(0,0,geom.size().width(),geom.size().height());
+	
+	QPixmap bluePixmap(32,23);
+	bluePixmap.fill(Qt::blue);
+	
+	m_pixmap->setPixmap(bluePixmap.scaled(geom.size()));
+	
+	if(m_drw)
+		m_drw->setRect(scene()->sceneRect());
+	
+// 	if(verbose)
+// 		qDebug() << "SlideShowWindow: pos:"<<windowPos<<", size:"<<windowSize;
+	
+	resize(geom.width(),geom.height());
+	move(geom.x(),geom.y());
+	
+	m_geom = geom;
+	
+	GET_CONFIG();
+	config.setValue("geom",tr("%1,%2,%3,%4").arg(geom.x()).arg(geom.y()).arg(geom.width()).arg(geom.height()));
+	
+}
+
+void OutputWindow::setInputSource(QString source)
+{
+	if(m_drw)
+	{
+		scene()->removeItem(m_drw);
+		delete m_drw;
+		m_drw = 0;
+	}
+	
+	GET_CONFIG();
+	config.setValue("source",source);
+
+	qDebug() << "OutputWindow::setInputSource: source:"<<source;
+
+	if(source.startsWith("dviz:") ||
+	   source.startsWith("http:"))
 	{
 		setUrl(source.replace("dviz:","http:"));
 		setPollDviz(true);
+		m_pixmap->show();
+		qDebug() << "OutputWindow: dviz source:"<<source;
 	}
 	else
-	if(source.startsWith("tx://"))
+	if(source.startsWith("tx:") ||
+	   source.startsWith("raw:"))
 	{
+		setPollDviz(false);
 		// ex: tx://192.168.0.18:7758
 		source = source.replace("tx://","");
+		source = source.replace("raw://","");
 		QStringList hostPort = source.split(":");
 		QString host = hostPort[0];
 		int port     = hostPort[1].toInt();
@@ -115,11 +187,19 @@ OutputWindow::OutputWindow()
 		{
 			qDebug() << "OutputWindow: Error connecting to source "<<source;
 		}
+		else
+		{
+			qDebug() << "OutputWindow: raw source, host:"<<host<<", port:"<<port<<", rx:"<<m_rx;
+		}
 		
 		m_drw = new GLVideoDrawable();
 		m_drw->setVideoSource(m_rx);
 		m_drw->setPos(0,0);
 		m_drw->setRect(scene()->sceneRect());
+		
+		scene()->addItem(m_drw);
+		m_drw->show();
+		m_drw->setZIndex(-99);
 		
 		m_pixmap->hide();
 	}
@@ -139,27 +219,6 @@ OutputWindow::OutputWindow()
 // 		
 // 		m_pixmap->hide();
 	}
-	
-	
-// 	m_startStopButton = new QPushButton("Start Counter");
-// 	connect(m_startStopButton, SIGNAL(clicked()), this, SLOT(toggleCounter()));
-// 	connect(&m_counterTimer, SIGNAL(timeout()), this, SLOT(counterTick()));
-// 	m_counterTimer.setInterval(1000);
-// 	
-// 	m_startStopButton->show();
-
-	//toggleCounter();
-	setCounterActive(false);
-		
-	
-	setBlinkOverlay(config.value("blink-overlay","false").toString() == "true", config.value("blink-speed", 333).toInt());
-	setOverlayVisible(config.value("overlay-visible", "true").toString() == "true");
-	setCounterVisible(config.value("counter-visible", "true").toString() == "true");
-	
-	setCounterAlignment((Qt::Alignment)config.value("counter-alignment", (int)(Qt::AlignLeft | Qt::AlignTop)).toInt());
-	setOverlayAlignment((Qt::Alignment)config.value("overlay-alignment", (int)(Qt::AlignCenter | Qt::AlignBottom)).toInt());
-	
-	setOverlayText(config.value("overlay-text").toString());
 }
 
 void OutputWindow::setCounterAlignment(Qt::Alignment align)
@@ -185,7 +244,8 @@ void OutputWindow::setOverlayText(QString text)
 	GET_CONFIG();
 	config.setValue("overlay-text", text);
 	
-	m_overlayBgRect->setRect(m_overlayText->boundingRect().adjusted(0,13,0,0));
+	m_overlayBgRect->setPos(m_overlayText->pos());
+	m_overlayBgRect->setRect(m_overlayText->boundingRect().adjusted(0,13/2,0,0));
 }
 
 
@@ -225,8 +285,8 @@ void OutputWindow::setOverlayVisible(bool flag)
 	m_overlayText->setVisible(flag);
 	m_overlayBgRect->setVisible(flag);
 	
-	GET_CONFIG();
-	config.setValue("overlay-visible", flag ? "true" : "false");
+// 	GET_CONFIG();
+// 	config.setValue("overlay-visible", flag ? "true" : "false");
 }
 
 void OutputWindow::counterTick()
@@ -264,7 +324,18 @@ void OutputWindow::counterTick()
                             .arg(sec)
                             );
         */
-        m_counterText->setText(QString("%1").arg(int(m_countValue/60)));
+	setCounterValue(m_countValue);
+}
+
+void OutputWindow::setCounterValue(int val)
+{
+	m_countValue = val;
+	m_counterText->setText(QString("%1").arg(int(m_countValue/60)));
+	
+	m_counterBgRect->setPos(m_counterText->pos());
+	m_counterBgRect->setRect(m_counterText->boundingRect().adjusted(0,13/2,0,0));
+	
+        emit counterValueChanged(m_countValue);
 }
 
 void OutputWindow::setCounterActive(bool flag)
@@ -464,5 +535,15 @@ void OutputWindow::handleNetworkData(QNetworkReply *networkReply)
 
 void OutputWindow::blinkOverlaySlot()
 {
-	/// TODO
+	m_blinkCount ++;
+	if(m_blinkCount % 3 == 0)
+	{
+		m_overlayBgRect->setVisible(false);
+		m_overlayText->setVisible(false);
+	}
+	else
+	{
+		m_overlayBgRect->setVisible(true);
+		m_overlayText->setVisible(true);
+	}
 }

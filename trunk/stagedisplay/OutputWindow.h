@@ -27,8 +27,20 @@ public:
 // 
 // 	// If source==SrcCapture, host is the capture device, port is ignored
 // 	void setInputSource(InputSource source, QString host, int port=-1);
+
+	void setInputSource(QString source);
+	QString inputSource() { return m_inputSource; }
 	
-	bool isCounterActive(bool);
+	QRect windowGeom() { return m_geom; }
+	void setWindowGeom(QRect);
+	
+	//bool isCounterVisible() { return m_counterText->isVisible(); }
+	bool isCounterActive() { return m_counterTimer.isActive(); }
+	
+	int counterValue() { return m_countValue; }
+	
+	QString overlayText() { return m_overlayText->text(); }
+	int blinkSpeed() { return m_blinkOverlayTimer.interval(); }
 	
 	QGraphicsSimpleTextItem *counterTextItem() { return m_counterText; }
 	QGraphicsSimpleTextItem *overlayTextItem() { return m_overlayText; }
@@ -41,6 +53,9 @@ public:
 	bool isOverlayVisible() { return m_overlayVisible; }
 	bool isCounterVisible() { return m_counterVisible; }
 	
+signals:
+	void counterValueChanged(int);
+	
 public slots:
 	//virtual bool setImageFile(const QString&);
 	void setUrl(const QString& url);
@@ -50,14 +65,17 @@ public slots:
 	void setImage(QImage);
 	
 	void setCounterActive(bool);
+	void setCounterVisible(bool);
 	//void resetCounter();
+	
+	void setCounterValue(int val);
 	
 	void setCounterAlignment(Qt::Alignment);
 	void setOverlayAlignment(Qt::Alignment);
 	
 	void setBlinkOverlay(bool blink, int speed = 333);
 	
-	void setCounterVisible(bool flag);
+	//void setCounterVisible(bool flag);
 	void setOverlayVisible(bool flag);
 	
 	void setOverlayText(QString text);
@@ -117,9 +135,13 @@ private:
 	
 	QTimer m_blinkOverlayTimer;
 	bool m_blinkOverlay;
+	int m_blinkCount;
 	
 	bool m_overlayVisible;
 	bool m_counterVisible;
+	
+	QRect m_geom;
+	QString m_inputSource;
 	
 };
 

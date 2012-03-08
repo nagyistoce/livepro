@@ -2204,7 +2204,7 @@ bool GLDrawablePlaylist::setPlayTime(double time)
 			foundItem = item;
 			break;
 		}
-		timeSum += item->duration();
+		timeSum += qMax(0.,item->duration());
 	}
 	if(foundItem)
 	{

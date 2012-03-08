@@ -7,6 +7,8 @@ namespace Ui {
     class ControlWindow;
 }
 
+class OutputWindow;
+
 class ControlWindow : public QWidget 
 {
 	Q_OBJECT
@@ -14,6 +16,8 @@ class ControlWindow : public QWidget
 public:
 	ControlWindow(QWidget *parent = 0);
 	~ControlWindow();
+	
+	void setOutputWindow(OutputWindow *);
 
 protected slots:
 	void setVideoSource(QString);
@@ -25,7 +29,7 @@ protected slots:
 	void setOutputH(int);
 	
 	void setTimerEnabled(bool);
-	void setStartTime(int);
+	void setCurrentTime(int);
 	void currentTimeChanged(int);
 	void timerBtn();
 	void resetTimerBtn();
@@ -44,9 +48,14 @@ protected slots:
 	
 protected:
 	void changeEvent(QEvent *e);
+	void closeEvent(QCloseEvent *);
+	void setupUi();
 
 private:
 	Ui::ControlWindow *ui;
+	OutputWindow *m_ow;
+	
+	QString m_source;
 };
 
 #endif // CONTROLWINDOW_H

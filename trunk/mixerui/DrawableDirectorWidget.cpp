@@ -147,7 +147,7 @@ void DrawableDirectorWidget::btnAddToPlaylist()
 	if(GLTextDrawable *casted = dynamic_cast<GLTextDrawable*>(gld))
 	{
 		item->setTitle(casted->plainText());
-		item->setDuration(5.0); /// just a guess
+		item->setDuration(-1); /// just a guess
 	}
 	else
 	if(GLVideoFileDrawable *casted = dynamic_cast<GLVideoFileDrawable*>(gld))
@@ -165,16 +165,16 @@ void DrawableDirectorWidget::btnAddToPlaylist()
 	if(GLImageDrawable *casted = dynamic_cast<GLImageDrawable*>(gld))
 	{
 		item->setTitle(QFileInfo(casted->imageFile()).fileName());
-		item->setDuration(5.0); /// just a guess
+		item->setDuration(-1); /// just a guess
 	}
 	else
 	{
 		item->setTitle(prop.toString());
-		item->setDuration(5.0); /// just a guess
+		item->setDuration(-1); /// just a guess
 	}
 
 	if(item->duration() <= 0.)
-		item->setDuration(5.0);
+		item->setDuration(-1);
 
 	item->setAutoDuration(true);
 

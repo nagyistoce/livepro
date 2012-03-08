@@ -1,21 +1,52 @@
-#ifndef ControlWindow_H
-#define ControlWindow_H
+#ifndef CONTROLWINDOW_H
+#define CONTROLWINDOW_H
 
-#include <QtGui>
-class OutputWindow;
+#include <QWidget>
 
-class ControlWindow : public QWidget
+namespace Ui {
+    class ControlWindow;
+}
+
+class ControlWindow : public QWidget 
 {
 	Q_OBJECT
+
 public:
-	ControlWindow();
+	ControlWindow(QWidget *parent = 0);
+	~ControlWindow();
+
+protected slots:
+	void setVideoSource(QString);
+	void connectSource();
 	
-	void setOutputWindow(OutputWindow *);
+	void setOutputX(int);
+	void setOutputY(int);
+	void setOutputW(int);
+	void setOutputH(int);
+	
+	void setTimerEnabled(bool);
+	void setStartTime(int);
+	void currentTimeChanged(int);
+	void timerBtn();
+	void resetTimerBtn();
+	void timerFontSizeChanged(int);
+	void timerDrawBgChanged(bool);
+	void timerPositionChanged(int);
+	
+	void messageChanged(QString);
+	void showMsgBtn();
+	void hideMsgBtn();
+	void flashMsgBtnToggled(bool);
+	void flashSpeedChanged(int);
+	void msgFontSizeChanged(int);
+	void msgDrawBgChanged(bool);
+	void msgPositionChanged(int);
 	
 protected:
-	void setupUi();
-	
-	OutputWindow *m_outputWin;
+	void changeEvent(QEvent *e);
+
+private:
+	Ui::ControlWindow *ui;
 };
 
-#endif
+#endif // CONTROLWINDOW_H

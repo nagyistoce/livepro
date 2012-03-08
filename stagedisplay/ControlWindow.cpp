@@ -1,22 +1,28 @@
 #include "ControlWindow.h"
+#include "ui_ControlWindow.h"
 
-ControlWindow::ControlWindow()
-	: QWidget()
-	, m_outputWin(0)
+ControlWindow::ControlWindow(QWidget *parent)
+	: QWidget(parent)
+	, ui(new Ui::ControlWindow)
 {
+	ui->setupUi(this);
 	setWindowTitle("StageDisplay Control");
-	setupUi();
 }
 
-void ControlWindow::setupUi()
+ControlWindow::~ControlWindow()
 {
-	QVBoxLayout *vbox = new QVBoxLayout();
-	
-	/// TODO build layout
+	delete ui;
 }
 
-void ControlWindow::setOutputWindow(OutputWindow *output)
+void ControlWindow::changeEvent(QEvent *e)
 {
-	m_outputWin = output;
-	/// TODO connect slots
+	QWidget::changeEvent(e);
+	switch (e->type())
+	{
+	case QEvent::LanguageChange:
+		ui->retranslateUi(this);
+		break;
+	default:
+		break;
+	}
 }

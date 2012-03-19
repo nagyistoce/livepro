@@ -248,6 +248,43 @@ void GLImageDrawable::hqXfadeStart(bool invertStart)
 //	m_fadeCurve.setType(QEasingCurve::OutCubic);
 }
 
+
+inline int qt_div_255(int x) { return (x + (x>>8) + 0x80) >> 8; }
+void forceSetAlphaChannel(QImage &image, const QImage &alphaChannel)
+{
+	int w = image.width();
+	int h = image.height();
+	
+	if (w != alphaChannel.width() || h != alphaChannel.height()) {
+		qWarning("forceSetAlphaChannel: "
+			 "Alpha channel must have same dimensions as the target image");
+		return;
+	}
+	
+	const QImage sourceImage = alphaChannel.convertToFormat(QImage::Format_RGB32);
+	const uchar *src_data = sourceImage.bits();
+	const uchar *dest_data = image.bits();
+	for (int y=0; y<h; ++y) 
+	{
+		const QRgb *src = (const QRgb *) src_data;
+		QRgb *dest = (QRgb *) dest_data;
+		for (int x=0; x<w; ++x) 
+		{
+			int alpha = qGray(*src);
+			int destAlpha = qt_div_255(alpha * 255); //qAlpha(*dest));
+			
+			*dest = ((destAlpha << 24)
+				| (qt_div_255(qRed(*dest) * alpha) << 16)
+				| (qt_div_255(qGreen(*dest) * alpha) << 8)
+				| (qt_div_255(qBlue(*dest) * alpha)));
+			++dest;
+			++src;
+		}
+		src_data += sourceImage.bytesPerLine();
+		dest_data += image.bytesPerLine();
+	}
+}
+
 void GLImageDrawable::hqXfadeTick(bool callUpdate)
 {
 	// Only start the counter once we actually get the first 'tick' of the timer
@@ -273,20 +310,30 @@ void GLImageDrawable::hqXfadeTick(bool callUpdate)
 		QSize size = m_image.rect().united(m_oldImage.rect()).size();
 		QImage intermImage(size, QImage::Format_ARGB32_Premultiplied);
 		QPainter p(&intermImage);
-		//p.setCompositionMode(QPainter::CompositionMode_SourceOver); // mixes, not summed to 100% tho
-		//p.setCompositionMode(QPainter::CompositionMode_SourceIn); // only 100% at end, no interm
-		//p.setCompositionMode(QPainter::CompositionMode_SourceAtop); // no response
-		//p.setCompositionMode(QPainter::CompositionMode_Clear); // only 100% at end, no interm
-		//p.setCompositionMode(QPainter::CompositionMode_Source); // no response
-		//p.setCompositionMode(QPainter::CompositionMode_SourceOut); // wierd blend-thru look - jumps at end - not right
-		//p.setCompositionMode(QPainter::CompositionMode_DestinationAtop); // close, but never works quite right (old on top, jumps at end)
 		
 		p.setOpacity(m_fadeValue);
 		p.drawImage(0,0,m_image);
 		p.setOpacity(1-m_fadeValue);
 		p.drawImage(0,0,m_oldImage);
 		p.end();
-		qDebug() << "GLImageDrawable::hqXfadeTick: interm size:"<<size<<", fadeValue:"<<m_fadeValue;
+		
+		QImage alphaImage(intermImage.size(), intermImage.format());
+		QPainter alphaPainter(&alphaImage);
+
+		QImage a2 = m_image.alphaChannel();
+		QImage a1 = m_oldImage.alphaChannel();
+		alphaPainter.setOpacity(m_fadeValue);
+		alphaPainter.drawImage(0,0,a2);
+		alphaPainter.setOpacity(1.0-m_fadeValue);
+		alphaPainter.drawImage(0,0,a1);
+		
+		alphaPainter.end();
+		
+		//intermImage = intermImage.convertToFormat(QImage::Format_ARGB32_Premultiplied);
+		forceSetAlphaChannel(intermImage, alphaImage);
+		
+		
+		//qDebug() << "GLImageDrawable::hqXfadeTick: interm size:"<<size<<", fadeValue:"<<m_fadeValue;
 		//intermImage.save(tr("hqx-interm-%1.jpg").arg((int)(m_fadeValue*10.)));
 		
 		m_frame = VideoFramePtr(new VideoFrame(intermImage.convertToFormat(QImage::Format_ARGB32), 1000/30));

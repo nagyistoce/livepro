@@ -1,4 +1,9 @@
-I've constantly been copying one development folder or another, stripping the devel-specific logic inorder to start a new project. Therefore, I've created this app-template as a starting point.
+I've constantly been copying one development folder or 
+another, stripping the devel-specific logic inorder to 
+start a new project. Therefore, I've created this 
+app-template as a starting point.
 
-To use this folder as a starting point, go to the parent folder (../) and do 'svn export app-template my-new-folder', then cd into 'my-new-folder' and mv app-template.pro my-new-app-name.pro. 
+To use this folder as a starting point, go to the parent 
+folder (../) and do 'svn export app-template my-new-folder', 
+then cd into 'my-new-folder' and 'mv app-template.pro my-new-app-name.pro'. 
 

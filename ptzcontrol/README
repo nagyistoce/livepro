@@ -1,0 +1,21 @@
+ptzcontrol is a simple app designed to control a Pan/Tilt/Zoom head via TCP.
+
+In it's present form, it's designed to send commands to an Arduino with an
+Ethernet shield running the Arduino/PanTiltServer2.ino sketch. However, the
+command protocal is both simple and easily adaptable. (Example command:
+"115s" - Tilt to angle 200)
+
+By itself, 'ptzcontrol' works just fine. However, it also can connect to a 
+livemix server and display a video feed (assuming that video feed is from
+the camera mounted on top of the PTZ head) and allow the user to 
+click-to-pan/tilt on the video feed.
+
+The 'zoom' control functionality is based around the idea of using a simple
+servo connected to the Zoom control on the camera to zoom in/out. The
+zoom command recognized by the Arduino sketch (Ex: 101w - zoom in 1 unit,
+95w - zoom out 5 units) triggers the servo to it's "in" or "out" position
+(configurable from the UI). The "units" (e.g. zoom in 1 unit or out 5) is
+the length of time in milliseconds that the Arduino will hold the servo
+at the in or out position - currently, one unit is 250ms, which I've found
+to be the minimum time the the control must be displaced for my camera to
+recognize the zoom action.

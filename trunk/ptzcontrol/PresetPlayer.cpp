@@ -634,16 +634,16 @@ void PlayerZoomAdapter::setZoom(int zoom, bool zero)
 		m_hasZeroed = true;
 	}
 	
-	if(zero)// || (zoom==0 && m_zoom!=0))
+	if(zero)
 	{
+		// offset by 100 to encode +/- around 100
 		m_client->setZoom((m_zeroTime / m_pulseTime)*-1 + 100);
-		m_client->setZoom(zoom + 100); // offset by 100 to encode +/- around 100 
+		m_zoom = 0; 
 	}
-	else
-	{
-		int delta = zoom - m_zoom;
+	
+	int delta = zoom - m_zoom;
+	if(delta != 0)
 		m_client->setZoom(delta + 100); // arduino will take -100 off the value
-	}
 	m_zoom = zoom;
 }
 

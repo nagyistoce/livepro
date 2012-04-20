@@ -186,8 +186,8 @@ AVStream *VideoEncoder::addVideoStream(AVFormatContext *oc, enum CodecID codec_i
 	//c->bit_rate = 2000000;
 
 	/* resolution must be a multiple of two */
-	c->width  = 1024;
-	c->height = 768;
+	c->width  = 640;
+	c->height = 480;
 
 	/* time base: this is the fundamental unit of time (in seconds) in terms
 	   of which frame timestamps are represented. for fixed-fps content,
@@ -429,13 +429,14 @@ void VideoEncoder::writeVideoFrame(AVFormatContext *oc, AVStream *st)
 				//int my_pts = (int)(m_runtime.elapsed() / 1000. * 30);
 				pkt.pts = av_rescale_q(c->coded_frame->pts, c->time_base, st->time_base);
 				
+				/*
 				qDebug() << "VideoEncoder::writeFrame: pkt.pts:"<<pkt.pts<<", c->coded_frame->pts:"<<c->coded_frame->pts
 					//<<", c->time_base:"<<c->time_base.num<<"/"<<c->time_base.den
 					//<<", st->time_base:"<<st->time_base.num<<"/"<<st->time_base.den
 					<<", my_pts:"<<my_pts
 					;//<<", m_lastPts:"<<m_lastPts
 					//<<", m_captureTime:"<<m_captureTime.second() * 1000 + m_captureTime.msec();
-					
+				*/	
 				pkt.pts   = my_pts;
 				m_lastPts = my_pts;
 			}
@@ -638,7 +639,7 @@ void VideoEncoder::frameReady()
 
 	if(img.size() != QSize(c->width,c->height))
 	{
-		//qDebug() << "VideoEncoder::frameReady: Scaling from:"<<img.size()<<" to "<<c->width<<"x"<<c->height;
+		qDebug() << "VideoEncoder::frameReady: Scaling from:"<<img.size()<<" to "<<c->width<<"x"<<c->height;
 		img = img.scaled(c->width,c->height, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 	}
 
@@ -769,6 +770,7 @@ void VideoEncoder::run()
 	m_killed = false;
 	while(!m_killed)
 	{
+		qDebug() << "VideoEncoder::run(): m_killed:"<<m_killed; 
 		/* compute current audio and video time */
 		if (m_audioStream)
 			m_audioPts = (double)m_audioStream->pts.val * m_audioStream->time_base.num / m_audioStream->time_base.den;
@@ -819,18 +821,24 @@ void VideoEncoder::run()
 		//yieldCurrentThread();
 	}
 
+	qDebug() << "VideoEncoder::run(): Done in loop, calling teardownInternal()";
 	teardownInternal();
 }
 
 void VideoEncoder::stopEncoder()
 {
 	if(m_encodingStopped)
+	{
+		qDebug() << "VideoEncoder::stopEncoder(): already stopped";
 		return;
+	}
 
 	// Wait for the encoder to stop
+	qDebug() << "VideoEncoder::stopEncoder(): Setting m_killed flag and waiting";
 	m_killed = true;
 	quit();
 	wait();
+	qDebug() << "VideoEncoder::stopEncoder(): Done";
 }
 
 void VideoEncoder::teardownInternal()

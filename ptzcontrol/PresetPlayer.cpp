@@ -139,63 +139,74 @@ void PresetPlayer::setupGui()
 	vbox->addWidget(split);
 	m_split = split; // store ptr for saving state
 	
-	VideoWidget *drw = new VideoWidget(split);
-	split->addWidget(drw);
-	
-	connect(drw, SIGNAL(pointClicked(QPoint)), this, SLOT(pointClicked(QPoint)));
-	drw->setVideoSource(m_src);
-	
-	QSettings set;
-	int lastX = 129; //set.value("lastX",127).toInt();
-	int lastY = 115; //set.value("lastY",127).toInt();
-	int lastZ = 0; //set.value("lastZ",0).toInt();
-	
 	QHBoxLayout *hbox;
+	QSettings set;
 	
-	QWidget *bottomBase = new QWidget();
-	vbox = new QVBoxLayout(bottomBase);
-	split->addWidget(bottomBase);
 	
-	hbox = new QHBoxLayout();
-	hbox->addStretch(1);
+	QWidget *topBase = new QWidget();
+	hbox = new QHBoxLayout(topBase);
+	
+	VideoWidget *drw = new VideoWidget(topBase);
+	hbox->addWidget(drw);
+	
+	QVBoxLayout *vbox2 = new QVBoxLayout();
 	
 	QSpinBox *zoom;
-	hbox->addWidget(new QLabel("Click Tune: "));
+	vbox2->addWidget(new QLabel("Click Tune: "));
 	int w1,h1,w2,h2;
 	
 	zoom = new QSpinBox();
 	zoom->setPrefix("(+W) ");
 	SETUP_WIN_SPINBOX(zoom, w1 = set.value("winMaxW", SERVO_MAX).toInt());
 	connect(zoom, SIGNAL(valueChanged(int)), this, SLOT(setWinMaxW(int)));
-	hbox->addWidget(zoom);
+	vbox2->addWidget(zoom);
 	
 	zoom = new QSpinBox();
 	zoom->setPrefix("(+H) ");
 	SETUP_WIN_SPINBOX(zoom, h1 = set.value("winMaxH", SERVO_MAX).toInt());
 	connect(zoom, SIGNAL(valueChanged(int)), this, SLOT(setWinMaxH(int)));
-	hbox->addWidget(zoom);
+	vbox2->addWidget(zoom);
 	
 	zoom = new QSpinBox();
 	zoom->setPrefix("(-W) ");
 	SETUP_WIN_SPINBOX(zoom, w2 = set.value("winMinW", SERVO_MAX).toInt());
 	connect(zoom, SIGNAL(valueChanged(int)), this, SLOT(setWinMinW(int)));
-	hbox->addWidget(zoom);
+	vbox2->addWidget(zoom);
 	
 	zoom = new QSpinBox();
 	zoom->setPrefix("(-H) ");
 	SETUP_WIN_SPINBOX(zoom, h2 = set.value("winMinW", SERVO_MAX).toInt());
 	connect(zoom, SIGNAL(valueChanged(int)), this, SLOT(setWinMinW(int)));
-	hbox->addWidget(zoom);
+	vbox2->addWidget(zoom);
+	
+	vbox2->addStretch(1);
+	
+	hbox->addLayout(vbox2);
+	
+	RelDragWidget *reldrag = new RelDragWidget();
+	hbox->addWidget(reldrag);
+	
+	
 	
 	m_winMax = QSize(w1,h1);
 	m_winMin = QSize(w2,h2);
 
 
-	vbox->addLayout(hbox);
+
+	split->addWidget(topBase);
 	
-	QFrame *frame = new QFrame();
-	frame->setFrameStyle(QFrame::HLine);
-	vbox->addWidget(frame);
+	connect(drw, SIGNAL(pointClicked(QPoint)), this, SLOT(pointClicked(QPoint)));
+	drw->setVideoSource(m_src);
+	
+	int lastX = 129; //set.value("lastX",127).toInt();
+	int lastY = 115; //set.value("lastY",127).toInt();
+	int lastZ = 0; //set.value("lastZ",0).toInt();
+	
+	
+	QWidget *bottomBase = new QWidget();
+	vbox = new QVBoxLayout(bottomBase);
+	split->addWidget(bottomBase);
+	
 	///
 	
 	hbox = new QHBoxLayout();
@@ -212,6 +223,9 @@ void PresetPlayer::setupGui()
 	SETUP_SERVO_SPINBOX(m_yBox,lastY);
 	connect(m_yBox, SIGNAL(valueChanged(int)), this, SLOT(yChanged(int)));
 	hbox->addWidget(m_yBox);
+	
+	reldrag->setXBox(m_xBox);
+	reldrag->setYBox(m_yBox);
 	
 	hbox->addWidget(new QLabel("Z: "));
 	m_zBox = new QSpinBox();
@@ -238,7 +252,7 @@ void PresetPlayer::setupGui()
 	vbox->addLayout(hbox);
 	///
 	
-	frame = new QFrame();
+	QFrame *frame = new QFrame();
 	frame->setFrameStyle(QFrame::HLine);
 	vbox->addWidget(frame);
 	///
@@ -710,3 +724,70 @@ void PresetMidiInputAdapter::reloadActionList()
 	setupActionList();
 	loadSettings();
 }
+
+
+
+
+
+RelDragWidget::RelDragWidget()
+{
+	m_mouseIsDown = false;
+	m_xBox = 0;
+	m_yBox = 0;
+}
+
+void RelDragWidget::setXBox(QSpinBox *box)
+{
+	m_xBox = box;
+}
+
+void RelDragWidget::setYBox(QSpinBox *box)
+{
+	m_yBox = box;
+}
+	
+QSize RelDragWidget::sizeHint () const { return QSize(160,120); }
+
+void RelDragWidget::paintEvent(QPaintEvent *pe)
+{
+	QPainter p(this);
+	p.fillRect(rect(), Qt::green);
+}
+
+void RelDragWidget::mousePressEvent(QMouseEvent *evt)
+{
+	if(!m_xBox || !m_yBox)
+		return;
+		
+	m_mouseIsDown = true;
+	m_mouseDownAt = evt->pos();
+	m_mouseDownValues = QPoint(m_xBox->value(), m_yBox->value());
+}
+
+void RelDragWidget::mouseMoveEvent(QMouseEvent *evt)
+{
+	if(m_mouseIsDown)
+	{
+		QPoint dist = evt->pos() - m_mouseDownAt;
+		qDebug() << "Dist: "<<dist;
+		
+		double xScale = 3.5;
+		double yScale = 3.5;
+		m_xBox->setValue((int)( dist.x() * xScale) + m_mouseDownValues.x());
+		m_yBox->setValue((int)( dist.y() * yScale) + m_mouseDownValues.y());
+	}
+}
+
+void RelDragWidget::mouseReleasEvent(QMouseEvent *evt)
+{
+	m_mouseIsDown = false;
+}
+
+	
+// 	QSpinBox *m_xBox;
+// 	QSpinBox *m_yBox;
+// 	
+// 	bool m_mouseIsDown;
+// 	
+// 	QPoint m_mouseDownAt;
+// 	QPoint m_mouseDownValues;

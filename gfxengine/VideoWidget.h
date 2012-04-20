@@ -54,6 +54,7 @@ public:
 	
 signals:
 	void clicked();
+	void pointClicked(QPoint);
 	void sourceDiscarded(VideoSource*);
 	
 public slots:

@@ -279,7 +279,7 @@ bool GLVideoInputDrawable::setVideoInput(const QString& camera)
 	if(m_source == source)
 		return true;
 
-	qDebug() << "GLVideoInputDrawable::setVideoInput(): camera:"<<camera;
+	//qDebug() << "GLVideoInputDrawable::setVideoInput(): camera:"<<camera;
 	if(m_source &&
 	   m_source != source)
 	{

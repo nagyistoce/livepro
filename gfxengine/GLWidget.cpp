@@ -2320,7 +2320,7 @@ void GLWidget::setupReadbackBuffers()
 
 			glBindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, 0);
 
-			qDebug() << "GLWidget::setupReadbackBuffers(): Generated FBO size:"<<m_readbackSize<<", PBO data size: "<<dataSize/1024<<" Kb";
+			//qDebug() << "GLWidget::setupReadbackBuffers(): Generated FBO size:"<<m_readbackSize<<", PBO data size: "<<dataSize/1024<<" Kb";
 		}
 		#endif
 	}

@@ -95,9 +95,29 @@ void VideoWidget::setFadeLength(int ms)
 	m_fadeTimer.setInterval(sec / fps * 1000.0);
 }
 
-void VideoWidget::mouseReleaseEvent(QMouseEvent*)
+void VideoWidget::mouseReleaseEvent(QMouseEvent *evt)
 {
- 	emit clicked();
+	emit clicked();
+	
+	QPoint point = evt->pos();
+	 
+	if(!m_targetRect.contains(point))
+	{
+		//qDebug() << "VideoWidget::mouseReleaseEvent: point "<<point<<" outside of m_targetRect:"<<m_targetRect<<", not emitting pointClicked(point)";
+		return;
+	}
+	
+	point -= m_targetRect.topLeft();
+	
+	double scaleX = (double)m_sourceRect.width()  / (double)m_targetRect.width();
+	double scaleY = (double)m_sourceRect.height() / (double)m_targetRect.height();
+	//qDebug() << "VideoWidget::mouseReleaseEvent: orig pnt: "<<point<<", scale:"<<scaleX<<","<<scaleY<<", source:"<<m_sourceRect<<", target:"<<m_targetRect;
+	
+	// Adjust point from 'widget space' back to 'frame space'
+	point.setX((int)(point.x() * scaleX));
+	point.setY((int)(point.y() * scaleY));
+	
+	emit pointClicked(point);
 }
 
 void VideoWidget::closeEvent(QCloseEvent*)

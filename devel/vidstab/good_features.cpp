@@ -45,8 +45,8 @@ IplImage* QImage2IplImage(QImage qimg);
 QImage IplImage2QImage(IplImage *iplImg);
 
 
-//#define SOURCE_CAP
-#define SOURCE_FILE
+#define SOURCE_CAP
+//#define SOURCE_FILE
 
 class CornerItem {
 public:
@@ -426,7 +426,8 @@ int main(int argc, char *argv[]) {
 	
 			
 		// Default Stabilizer Settings:
-		BOOL cleanOutput = TRUE;		// Whether to show overlayed data on the video such as motion vectors.
+		//BOOL cleanOutput = TRUE;		// Whether to show overlayed data on the video such as motion vectors.
+		BOOL cleanOutput = FALSE;		// Whether to show overlayed data on the video such as motion vectors.
 		BOOL showVectorsUsed = TRUE;		// Whether to display the Local Motion Vectors that were used for determining the Global Motion Vector.
 		BOOL showCompensation = TRUE;		// Whether to show the compensated image or the original image.
 		BOOL comparePrevFrame = TRUE;		// Whether to do Optical Flow compared to the previous frame or the first frame.

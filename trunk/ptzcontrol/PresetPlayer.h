@@ -33,6 +33,34 @@ public:
 	QString name;
 };
 
+class RelDragWidget : public QWidget
+{
+	Q_OBJECT
+public:
+	RelDragWidget();
+	void setXBox(QSpinBox *box);
+	void setYBox(QSpinBox *box);
+	
+	QSize sizeHint() const;
+
+protected:
+	void mousePressEvent(QMouseEvent *);
+	void mouseMoveEvent(QMouseEvent *);
+	void mouseReleasEvent(QMouseEvent *);
+	
+	void paintEvent(QPaintEvent *);
+	
+private:
+	QSpinBox *m_xBox;
+	QSpinBox *m_yBox;
+	
+	bool m_mouseIsDown;
+	
+	QPoint m_mouseDownAt;
+	QPoint m_mouseDownValues;
+
+};
+
 class PresetPlayer : public QWidget
 {
 	Q_OBJECT

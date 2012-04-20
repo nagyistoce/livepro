@@ -124,7 +124,7 @@ void findPointsToTrack(StabilizerData *s)
 
 	// Keep a copy of this reference image, so that the following frames
 	// will find their movements relative to this reference frame.
-    s->imageRef = cvCloneImage(s->grey);		// Greyscale Ref image
+	s->imageRef = cvCloneImage(s->grey);		// Greyscale Ref image
 
 	// Look for corners that seem good for tracking, storing them into 'pointsCurr'.
 	s->count = MAX_POINTS;
@@ -152,7 +152,7 @@ void findPointsToTrack(StabilizerData *s)
 
 	// Set all points as valid since new points have just been generated.
 	memset(s->valid, TRUE, s->count);
-//memset(s->status, TRUE, s->count);
+	//memset(s->status, TRUE, s->count);
 
 	s->valid_count = s->count;
 
@@ -187,12 +187,12 @@ IplImage* stabilizeImage(StabilizerData *s, IplImage *image)
 	}
 
 	// Convert the current frame to Greyscale
-    cvCvtColor( image, s->grey, CV_BGR2GRAY );
+    	cvCvtColor( image, s->grey, CV_BGR2GRAY );
 
 	// At first, find corner points in the image to initialize the tracking.
 	// If a lot of the points are later detected (because of movement), then add new ones.
 	if( s->need_new_corners || (s->valid_count < cvRound(s->detected_count * RESET_RATIO)))
-    {
+    	{
 		START_TIMING(cornerProcess);	// Record the timing.
 
 		findPointsToTrack(s);
@@ -208,8 +208,8 @@ IplImage* stabilizeImage(StabilizerData *s, IplImage *image)
 
 		s->got_new_corners = TRUE;		// Signal that new corners were obtained.
 	}
-    else if( s->count > 0 )
-    {
+	else if( s->count > 0 )
+	{
 		s->got_new_corners = FALSE;		// Signal that previous corners were used.
 
 		// Find the optical flow using Pyramid levels to handle sudden movements, and LK for good reliability.
@@ -219,6 +219,7 @@ IplImage* stabilizeImage(StabilizerData *s, IplImage *image)
 			imageCurrentReference = s->prev_grey;	// Compare the current frame with the previous frame.
 		else
 			imageCurrentReference = s->imageRef;	// Compare the current frame with the first (or ref) frame.
+			
 		// Compare imageCurrentReference & pointsPrev with grey, generating pointsCurr & status arrays.
 		cvCalcOpticalFlowPyrLK( imageCurrentReference, s->grey, s->prev_pyramid, s->pyramid,
 			s->pointsPrev, s->pointsCurr, s->count, cvSize(OPFLOW_WIN_SIZE,OPFLOW_WIN_SIZE), OPFLOW_PYR_LEVEL, s->status, 0,
@@ -461,7 +462,12 @@ IplImage* stabilizeImage(StabilizerData *s, IplImage *image)
 		cvReleaseImage(&s->imageTmp);
 
 	if (s->roi.width > 0 && s->roi.height > 0) {
-		cvSet(s->imageOut, CV_RGB(200,255,200), 0);	// Set a default background color
+		static BOOL imgOutInit = FALSE;
+		if(!imgOutInit)
+		{
+			//cvSet(s->imageOut, CV_RGB(200,255,200), 0);	// Set a default background color
+			imgOutInit = TRUE;
+		}
 
 		s->imageTmp = cropImage(image, s->roi);
 		if (!s->imageTmp) {

@@ -7,6 +7,48 @@
 #include "GLSceneGroup.h"
 #include "GLDrawables.h"
 
+class ScaledGraphicsView : public QGraphicsView
+{
+public:
+	ScaledGraphicsView(QWidget *parent=0) : QGraphicsView(parent)
+	{
+		setFrameStyle(QFrame::NoFrame);
+		setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::SmoothPixmapTransform );
+		setCacheMode(QGraphicsView::CacheBackground);
+		setViewportUpdateMode(QGraphicsView::BoundingRectViewportUpdate);
+		setOptimizationFlags(QGraphicsView::DontSavePainterState);
+		setViewportUpdateMode(QGraphicsView::SmartViewportUpdate);
+		setTransformationAnchor(AnchorUnderMouse);
+		setResizeAnchor(AnchorViewCenter);
+		setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+		setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+	}
+
+protected:
+	void resizeEvent(QResizeEvent *)
+	{
+		adjustViewScaling();
+	}
+
+	void adjustViewScaling()
+	{
+		if(!scene())
+			return;
+
+		float sx = ((float)width()) / scene()->width();
+		float sy = ((float)height()) / scene()->height();
+
+		float scale = qMin(sx,sy);
+		setTransform(QTransform().scale(scale,scale));
+		//qDebug("Scaling: %.02f x %.02f = %.02f",sx,sy,scale);
+		update();
+		//m_view->fitInView(m_scene->sceneRect(), Qt::KeepAspectRatioByExpanding);
+		//m_view->fitInView(m_scene->sceneRect(), Qt::KeepAspectRatio);
+	}
+
+};
+
+
 MainWindow::MainWindow()
 	: QWidget()
 {
@@ -118,32 +160,83 @@ MainWindow::MainWindow()
 	;
 
 
-
 	// Setup the layout of the window
 	QVBoxLayout *vbox = new QVBoxLayout(this);
 	//vbox->setContentsMargins(0,0,0,0);
 	
 		// Create the GLWidget to do the actual rendering
-		GLWidget *glw = new GLWidget(this);
-		vbox->addWidget(glw);
+ 		GLWidget *glw = new GLWidget(this);
+ 		vbox->addWidget(glw);
+ 		
+ 		QPolygonF cornerTranslations	= QPolygonF()
+			<< QPointF(-250,500)
+			<< QPointF(0,0)
+			<< QPointF(250,-50)
+			<< QPointF(0,0);
+
+ 		
+ 		glw->setCornerTranslations(cornerTranslations);
+
+/*		ScaledGraphicsView * graphicsView = new ScaledGraphicsView();
+		QGraphicsScene *graphicsScene = new QGraphicsScene();
+		graphicsView->setScene(graphicsScene);
+		graphicsView->setViewport(new QGLWidget(QGLFormat(QGL::SampleBuffers)));
+		//graphicsScene->setSceneRect(QRectF(0,0,1000.,750.));
+		graphicsView->setBackgroundBrush(Qt::black);
+		vbox->addWidget(graphicsView);*/
 		
 		GLScene *scene = new GLScene();
 		
-		QList<GLImageDrawable*> items;
-		//for (int i = 0; i < 64 ; ++i) {
-		for (int i = 0; i < files.size(); ++i) {
-			GLImageDrawable *item = new GLImageDrawable(files[i]);
-			item->setRect(QRectF(0,0,48,48));
+		QList<GLDrawable*> items;
+		for (int i = 0; i < 100 ; ++i) {
+		//for (int i = 0; i < files.size(); ++i) {
+			//GLImageDrawable *item = new GLImageDrawable(files[i % files.size()]);
+			GLRectDrawable *item = new GLRectDrawable();
+			item->setFillColor(Qt::white);
+// 			item->setBorderColor(Qt::black);
+// 			item->setBorderWidth(2.0);
+			
+			item->setRect(QRectF(0,0,16,16));
 			//item->setOffset(-kineticPix.width()/2, -kineticPix.height()/2);
 			item->setZIndex(i);
 			items << item;
 			scene->addDrawable(item);
+			
+			//graphicsScene->addItem(item);
+			
+// 			if(drawable->rect().isNull())
+// 				//m_rect = QRectF(QPointF(0,0),canvasSize());
+// 				drawable->setRect(m_graphicsScene->sceneRect());
+
 		}
+		m_items = items;
+
+/*			m_image = QImage(640,480,QImage::Format_ARGB32_Premultiplied);
+			m_image.fill(Qt::blue);
+			
+			GLImageDrawable *item = new GLImageDrawable(files[0]);
+			item->setRect(QRectF(0,0,48,48));
+			//item->setOffset(-kineticPix.width()/2, -kineticPix.height()/2);
+			item->setZIndex(0);
+			items << item;
+			scene->addDrawable(item);
+			
+			graphicsScene->addItem(item);
+			
+ 			m_imgDrw = item;
+ 			m_imgDrw->setRect(m_image.rect());*/
+ 			
+//  			connect(&m_timer, SIGNAL(timeout()), this, SLOT(timeout()));
+//  			timeout();
+//  			m_timer.setInterval(50);
+//  			m_timer.start();
+//  			m_time.restart();
 		
 		// setGLWidget() adds all the drawables in the scene to the GLWidget
 		scene->setGLWidget(glw);
 		
-		QSizeF avgSize(48.,48.);
+		
+		QSizeF avgSize(16.,16.);
 		
 		// States
 		QState *rootState = new QState;
@@ -155,7 +248,7 @@ MainWindow::MainWindow()
 		
 		// Values
 		for (int i = 0; i < items.count(); ++i) {
-			GLImageDrawable *item = items.at(i);
+			GLDrawable *item = items.at(i);
 			// Ellipse
 			ellipseState->assignProperty(item, "position",
 							QPointF(cos((i / 63.0) * 6.28) * 250,
@@ -168,13 +261,13 @@ MainWindow::MainWindow()
 		
 			// Random
 			randomState->assignProperty(item, "position",
-							QPointF(-250 + qrand() % 500,
-								-250 + qrand() % 500));
+							QPointF(-450 + qrand() % 800,
+								-450 + qrand() % 800));
 		
 			// Tiled
 			tiledState->assignProperty(item, "position",
-						QPointF(((i % 8) - 4) * avgSize.width() + avgSize.width() / 2,
-							((i / 8) - 4) * avgSize.height() + avgSize.height() / 2));
+						QPointF(((i % 40) - 20) * avgSize.width() + avgSize.width() / 2,
+							((i / 40) - 20) * avgSize.height() + avgSize.height() / 2));
 		
 			// Centered
 			centeredState->assignProperty(item, "position", QPointF());
@@ -189,7 +282,11 @@ MainWindow::MainWindow()
 		for (int i = 0; i < items.count(); ++i) 
 		{
 			QPropertyAnimation *anim = new QPropertyAnimation(items[i], "position");
-			anim->setDuration(750 + i * 25);
+			//anim->setDuration(750);
+			//anim->setDuration(750 + i * 25);
+			//anim->setDuration(250 + (i % 250) * 25);
+			//anim->setDuration(150 + (i % 250) * 7);
+			anim->setDuration(250 + i * 10);
 			anim->setEasingCurve(QEasingCurve::InOutBack);
 			group->addAnimation(anim);
 		}
@@ -233,11 +330,74 @@ MainWindow::MainWindow()
 		trans->addAnimation(group);
 		
 		states->start();
+		
 	
 		glw->setViewport(QRect(-350, -350, 700, 700));
+		//graphicsScene->setSceneRect(QRectF(-350, -350, 700, 700));
 	
 	
 	// Adjust window for a 4:3 aspect ratio
 	resize(700, 750);
 }
 
+void MainWindow::timeout()
+{
+// 	QPainterPath path;
+// 	path.moveTo(controlPoints.at(index));
+// 	path.cubicTo(controlPoints.at(index+1),
+// 			controlPoints.at(index+2),
+// 			controlPoints.at(index+3));
+// 	
+
+	QPainterPath path;
+	//path.addRect(20, 20, 60, 60);
+	
+	int val = m_time.elapsed() % 3000;
+	double progress = (double)val / 3000.;
+	
+	path.moveTo(-200, -200);
+	path.cubicTo(200, 0,  100, 100,  200, 200);
+	//path.cubicTo(0, 99,  50, 50,  0, 0);
+	
+	//qreal curLen = 1.0;
+	double count = (double)m_items.count();
+	
+	for (int i = 0; i < m_items.count(); ++i)
+	{
+		GLDrawable *item = m_items[i];
+		
+		qreal curLen = ((double)i)/count + progress; //metrics.width(32); // width of the item
+		if(curLen > 1.0)
+			curLen -= 1.0;
+		
+		//qreal t = m_shapePath.percentAtLength(curLen);
+		qreal t = curLen;
+		QPointF pt = path.pointAtPercent(t);
+		qreal angle = path.angleAtPercent(t);
+		
+		//qDebug() << "progress:"<<progress<<", item:"<<i<<", curLen:"<<curLen<<", pt:"<<pt<<", angle:"<<angle;
+		
+		
+		// draw rotated letter
+// 		painter->save();
+		item->setPosition(pt);
+		item->setRotation(QVector3D(angle,angle,angle));
+		
+		//curLen += interval;
+	}
+	
+// 	QPainter painter(&m_image);
+// 	//painter.fillRect(0, 0, 100, 100, Qt::white);
+// 	painter.fillRect(m_image.rect(), Qt::transparent);
+// 	painter.setPen(QPen(Qt::white, 1, Qt::SolidLine,
+// 			Qt::FlatCap, Qt::MiterJoin));
+// 	painter.setBrush(Qt::black);
+// 	
+// 	painter.drawPath(path);
+// 	
+// 	//QPainter painter(&m_image);
+// 	//painter.strokePath(path, painter.pen());
+// 	
+// 	m_imgDrw->setImage(m_image);
+// 	//m_imgDrw->setRect(
+}

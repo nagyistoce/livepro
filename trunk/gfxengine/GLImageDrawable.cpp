@@ -308,29 +308,56 @@ void GLImageDrawable::hqXfadeTick(bool callUpdate)
 	else
 	{
 		QSize size = m_image.rect().united(m_oldImage.rect()).size();
-		QImage intermImage(size, QImage::Format_ARGB32_Premultiplied);
-		QPainter p(&intermImage);
+//		QImage intermImage(size, QImage::Format_ARGB32_Premultiplied);
+// 		QPainter p(&intermImage);
+// 		
+// 		p.setOpacity(m_fadeValue);
+// 		p.drawImage(0,0,m_image);
+// 		p.setOpacity(1-m_fadeValue);
+// 		p.drawImage(0,0,m_oldImage);
+// 		p.end();
+// 		
+// 		QImage alphaImage(intermImage.size(), intermImage.format());
+// 		QPainter alphaPainter(&alphaImage);
+// 
+// 		QImage a2 = m_image.alphaChannel();
+// 		QImage a1 = m_oldImage.alphaChannel();
+// 		alphaPainter.setOpacity(m_fadeValue);
+// 		alphaPainter.drawImage(0,0,a2);
+// 		alphaPainter.setOpacity(1.0-m_fadeValue);
+// 		alphaPainter.drawImage(0,0,a1);
+// 		
+// 		alphaPainter.end();
+// 		
+// 		//intermImage = intermImage.convertToFormat(QImage::Format_ARGB32_Premultiplied);
+// 		forceSetAlphaChannel(intermImage, alphaImage);
 		
-		p.setOpacity(m_fadeValue);
-		p.drawImage(0,0,m_image);
-		p.setOpacity(1-m_fadeValue);
-		p.drawImage(0,0,m_oldImage);
+		
+		double opac = m_fadeValue;
+		QImage result = m_image;
+		QImage over   = m_oldImage;
+		
+		QColor alpha = Qt::black;
+		alpha.setAlphaF(opac);
+		
+		QPainter p;
+		
+		// This method pulled from https://projects.kde.org/projects/playground/artwork/smaragd/repository/revisions/c71af7bc12611e462426e75c3d5793a87b67f57e/diff
+		// per Christoph Feck <christoph@maxiom.de> 
+		p.begin(&over);
+		p.setCompositionMode(QPainter::CompositionMode_DestinationIn);
+		p.fillRect(result.rect(), alpha);
 		p.end();
 		
-		QImage alphaImage(intermImage.size(), intermImage.format());
-		QPainter alphaPainter(&alphaImage);
-
-		QImage a2 = m_image.alphaChannel();
-		QImage a1 = m_oldImage.alphaChannel();
-		alphaPainter.setOpacity(m_fadeValue);
-		alphaPainter.drawImage(0,0,a2);
-		alphaPainter.setOpacity(1.0-m_fadeValue);
-		alphaPainter.drawImage(0,0,a1);
+		p.begin(&result);
+		p.setCompositionMode(QPainter::CompositionMode_DestinationOut);
+		p.fillRect(result.rect(), alpha);
 		
-		alphaPainter.end();
+		p.setCompositionMode(QPainter::CompositionMode_Plus);
+		p.drawImage(0, 0, over);
+		p.end();
 		
-		//intermImage = intermImage.convertToFormat(QImage::Format_ARGB32_Premultiplied);
-		forceSetAlphaChannel(intermImage, alphaImage);
+		QImage intermImage = result;
 		
 		
 		//qDebug() << "GLImageDrawable::hqXfadeTick: interm size:"<<size<<", fadeValue:"<<m_fadeValue;

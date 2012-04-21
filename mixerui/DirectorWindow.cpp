@@ -1507,12 +1507,12 @@ CameraWidget::CameraWidget(DirectorWindow* dir, VideoReceiver *rx, QString con, 
 	vbox->addWidget(m_glWidget);
 
 	//GLVideoDrawable *gld = new GLVideoDrawable();
-	//gld->setVideoSource(rx);
+	//gld->setVideoSource(rx);setCaptureInput
 	//vid->addDrawable(gld);
 	//vidgld->setVideoConnection(con);
 	m_glWidget->addDrawable(vidgld);
 	
-	setWindowTitle(QString("Camera %1").arg(index));
+	setWindowTitle(QString("Input %1").arg(index));
 	//gld->setObjectName(qPrintable(windowTitle()));
 	vidgld->setObjectName(qPrintable(windowTitle()));
 	resize(320,240);
@@ -1539,6 +1539,12 @@ CameraWidget::CameraWidget(DirectorWindow* dir, VideoReceiver *rx, QString con, 
 	
 	// Switch to cam on click
 	connect(m_glWidget, SIGNAL(clicked()), this, SLOT(switchTo()));
+}
+
+void CameraWidget::setCon(const QString& con)
+{
+	qDebug() << "CameraWidget::setCon: New con string: "<<con;
+	m_con = con;
 }
 	
 void CameraWidget::showPropertyEditor()
@@ -2017,6 +2023,36 @@ void PropertyEditorWindow::setSourceWidget(DirectorSourceWidget* source)
 			
 		}
 		
+		// Capture Input
+		if(widgetCam)
+		{
+			NEW_SECTION("Capture Input");
+			
+			QHash<QString,QString> params = GLVideoInputDrawable::parseConString(widgetCam->con());
+			QStringList inputs = params["inputs"].split(";");
+			if(inputs.isEmpty() || inputs[0].isEmpty())
+			{
+				inputs = QStringList() << "Default" << "Composite" << "S-Video" << "Component" << "HDMI";
+				qDebug() << "PropertyEditorWindow::setSourceWidget: No inputs in con string, using default assumptions: "<<inputs;
+			}
+			else
+			{
+				qDebug() << "PropertyEditorWindow::setSourceWidget: Input list from server: "<<inputs;
+			}
+			
+			
+			QComboBox *combo = new QComboBox();
+			combo->addItems(inputs);
+			connect(combo, SIGNAL(activated(QString)), this, SLOT(setCaptureInput(QString)));
+			form->addRow(tr("&Input:"), combo);
+			
+			combo->setCurrentIndex(inputs.indexOf(params["input"]));
+			
+			QPushButton *btn = new QPushButton("Apply to Player");
+			connect(btn, SIGNAL(clicked()), this, SLOT(sendVidOpts()));
+			form->addRow("",btn);
+		}
+		
 		// Levels
 		{
 			NEW_SECTION("White/Black Levels");
@@ -2245,6 +2281,33 @@ void PropertyEditorWindow::setAdvancedFilter(QString name)
 	m_vid->setFilterType(type);
 }
 
+void PropertyEditorWindow::setCaptureInput(QString name)
+{
+	if(!m_source)
+		return;
+		
+	DirectorSourceWidget *source = m_source;
+	CameraWidget *widgetCam = dynamic_cast<CameraWidget*>(source);
+	if(widgetCam)
+	{
+		QString con = widgetCam->con();
+		
+		// Set the new card input
+		QHash<QString,QString> params = GLVideoInputDrawable::parseConString(widgetCam->con());
+		params["input"] = name;
+		
+		// Rebuild the con string
+		QStringList encoded;
+		foreach(QString key, params.keys())
+			encoded.append(tr("%1=%2").arg(key).arg(params[key]));
+			
+		m_vid->setProperty("cardInput", name);
+		
+		// Set it back on the cam
+		widgetCam->setCon(encoded.join(","));	
+	}
+}
+
 int PropertyEditorWindow::indexOfFilter(int filter)
 {
 	GLVideoDrawable::FilterType type = (GLVideoDrawable::FilterType)filter;
@@ -2306,7 +2369,8 @@ void PropertyEditorWindow::sendVidOpts()
 		<< "adjustRight"
 		<< "filterType"
 		<< "sharpAmount"
-		<< "rotation";
+		<< "rotation"
+		<< "cardInput";
 		
 		
 		
@@ -2421,7 +2485,8 @@ void PropertyEditorWindow::saveVidOpts()
 		<< "adjustRight"
 		<< "filterType"
 		<< "sharpAmount"
-		<< "rotation";
+		<< "rotation"
+		<< "cardInput";
 		
 	QVariantMap map;
 	
@@ -2668,7 +2733,7 @@ InputBalanceWindow::InputBalanceWindow(DirectorWindow *dir)
 	: QWidget(dir)
 	, m_director(dir)
 {
-	setWindowTitle("Camera Color Balancer");
+	setWindowTitle("Video Color Balancer");
 	
 	QVBoxLayout *vbox = new QVBoxLayout(this);
 	//vbox->setContentsMargins(0,0,0,0);
@@ -2781,7 +2846,7 @@ void InputBalanceWindow::buildCombos()
 CameraMixerWidget::CameraMixerWidget(DirectorWindow *dir)
 	: DirectorSourceWidget(dir)
 {
-	setWindowTitle("Camera Mixer");
+	setWindowTitle("Video Mixer");
 	
 	m_setGroup = new GLSceneGroup();
 	m_scene = new GLScene();

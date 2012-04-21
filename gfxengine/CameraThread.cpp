@@ -78,6 +78,9 @@ public:
 	static BMDCaptureDelegate *openDevice(QString deviceName, CameraThread *api);
 	
 	bool hasSignal() { return m_hasSignal; }
+	
+	QStringList inputs();
+	bool setInput(const QString& bmdInput);
 
 private:
 	static QStringList	s_knownDevices;
@@ -724,7 +727,7 @@ QStringList CameraThread::inputs()
 	
 	#ifdef ENABLE_DECKLINK_CAPTURE
 	if(m_bmd)
-		return QStringList() << "Default";
+		return m_bmd->inputs(); //QStringList() << "Default";
 	#endif
 	#ifdef ENABLE_TEST_GENERATOR
 	if(m_testGen)
@@ -775,7 +778,11 @@ void CameraThread::setInput(int idx)
 	
 	#ifdef ENABLE_DECKLINK_CAPTURE
 	if(m_bmd)
-		return;
+	{
+		QStringList list = m_bmd->inputs();
+		if(idx >= 0 && idx < list.size())
+			m_bmd->setInput(list[idx];
+	}
 	#endif
 	#ifdef ENABLE_TEST_GENERATOR
 	if(m_testGen)
@@ -801,7 +808,7 @@ bool CameraThread::setInput(const QString& name)
 	
 	#ifdef ENABLE_DECKLINK_CAPTURE
 	if(m_bmd)
-		return false;
+		return m_bmd->setInput(name);
 	#endif
 	#ifdef ENABLE_TEST_GENERATOR
 	if(m_testGen)
@@ -1571,47 +1578,7 @@ BMDCaptureDelegate::BMDCaptureDelegate(CameraThread *api, IDeckLink *deck)
 {
 	pthread_mutex_init(&m_mutex, NULL);
 	
-	
-	QString bmdInput = "Composite";
-	if(!bmdInput.isEmpty())
-	{
-		IDeckLinkConfiguration *deckLinkConfiguration = NULL;
-		BMDVideoConnection bmdVideoConnection = bmdVideoConnectionComposite;
-	
-		if (m_deckLink->QueryInterface(IID_IDeckLinkConfiguration, (void**)&deckLinkConfiguration) != S_OK) 
-		{
-			qDebug() << "BMDCaptureDelegate: "<<api<<" Could not obtain the IDeckLinkConfiguration interface";
-		}
-		else
-		{
-			if (bmdInput == "SDI") {
-				bmdVideoConnection = bmdVideoConnectionSDI;
-		
-			} else if(bmdInput == "HDMI") {
-				bmdVideoConnection = bmdVideoConnectionHDMI;
-		
-			} else if(bmdInput == "Component") {
-				bmdVideoConnection = bmdVideoConnectionComponent;
-		
-			} else if(bmdInput == "Composite") {
-				bmdVideoConnection = bmdVideoConnectionComposite;
-		
-			} else if(bmdInput == "S-Video") {
-				bmdVideoConnection = bmdVideoConnectionSVideo;
-		
-			} else if(bmdInput == "Optical-SDI") {
-				bmdVideoConnection = bmdVideoConnectionOpticalSDI;
-			}
-			
-			//if (deckLinkConfiguration->SetVideoInputFormat(bmdVideoConnection) != S_OK)
-			if (deckLinkConfiguration->SetInt(bmdDeckLinkConfigVideoInputConnection, bmdVideoConnection) != S_OK)
-			
-				qDebug() << "BMDCaptureDelegate: "<<api<<" Could not set input video connection to "<<bmdInput;
-			
-			if (deckLinkConfiguration != NULL) 
-				deckLinkConfiguration->Release();
-		}
-	}
+	setInput("Composite");
 	
 	if(m_deckLink && 
 	   m_deckLink->QueryInterface(IID_IDeckLinkInput, (void**)&m_deckLinkInput) == S_OK)
@@ -1721,6 +1688,64 @@ BMDCaptureDelegate::BMDCaptureDelegate(CameraThread *api, IDeckLink *deck)
 			return;
 		}
 	}
+}
+
+QStringList BMDCaptureDelegate::inputs()
+{
+	return QStringList()
+		<< "SDI"
+		<< "HDMI"
+		<< "Component"
+		<< "Composite"
+		<< "S-Video"
+		<< "Optical-SDI";
+}
+
+bool BMDCaptureDelegate::setInput(const QString& bmdInput)
+{
+	bool rval = false;
+	QString bmdInput = "Composite";
+	if(!bmdInput.isEmpty())
+	{
+		IDeckLinkConfiguration *deckLinkConfiguration = NULL;
+		BMDVideoConnection bmdVideoConnection = bmdVideoConnectionComposite;
+	
+		if (m_deckLink->QueryInterface(IID_IDeckLinkConfiguration, (void**)&deckLinkConfiguration) != S_OK) 
+		{
+			qDebug() << "BMDCaptureDelegate: "<<api<<" Could not obtain the IDeckLinkConfiguration interface";
+		}
+		else
+		{
+			if (bmdInput == "SDI") {
+				bmdVideoConnection = bmdVideoConnectionSDI;
+		
+			} else if(bmdInput == "HDMI") {
+				bmdVideoConnection = bmdVideoConnectionHDMI;
+		
+			} else if(bmdInput == "Component") {
+				bmdVideoConnection = bmdVideoConnectionComponent;
+		
+			} else if(bmdInput == "Composite") {
+				bmdVideoConnection = bmdVideoConnectionComposite;
+		
+			} else if(bmdInput == "S-Video") {
+				bmdVideoConnection = bmdVideoConnectionSVideo;
+		
+			} else if(bmdInput == "Optical-SDI") {
+				bmdVideoConnection = bmdVideoConnectionOpticalSDI;
+			}
+			
+			//if (deckLinkConfiguration->SetVideoInputFormat(bmdVideoConnection) != S_OK)
+			if (deckLinkConfiguration->SetInt(bmdDeckLinkConfigVideoInputConnection, bmdVideoConnection) != S_OK)
+				qDebug() << "BMDCaptureDelegate: "<<api<<" Could not set input video connection to "<<bmdInput;
+			else
+				rval = true;
+			
+			if (deckLinkConfiguration != NULL) 
+				deckLinkConfiguration->Release();
+		}
+	}
+	return rval;
 }
 
 BMDCaptureDelegate::~BMDCaptureDelegate()

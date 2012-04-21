@@ -107,15 +107,12 @@ QStringList VideoInputSenderManager::videoConnections(bool justNetString)
 			QStringList inputs = camera->inputs();
 			QString input = inputs.isEmpty() ? "" : inputs.at(camera->input());
 			
-			/// HACK TODO FIXME!
-			if(input == "Composite1")
-				input = "S-Video"; // TODO provide interface to select input at runtime
-			
-			con = QString("dev=%1,input=%2,net=%3:%4")
+			con = QString("dev=%1,input=%2,net=%3:%4,inputs=%4")
 				.arg(dev)
 				.arg(input)
 				.arg(ipAddress)
-				.arg(sender->serverPort());
+				.arg(sender->serverPort())
+				.arg(inputs.join(";"));
 		}
 		
 		qDebug() << "VideoInputSenderManager::videoConnections: "<<dev<<" Added con: "<<con;

@@ -254,6 +254,8 @@ public slots:
 	virtual bool switchTo();
 	void setDeinterlace(bool);
 	
+	void setCon(const QString&);
+	
 	void showPropertyEditor();
 	
 protected:
@@ -375,6 +377,7 @@ private slots:
 	void sendVidOpts();
 	
 	void setAdvancedFilter(QString);
+	void setCaptureInput(QString);
 	
 	void loadVidOpts(bool setSource=true);
 	void saveVidOpts();

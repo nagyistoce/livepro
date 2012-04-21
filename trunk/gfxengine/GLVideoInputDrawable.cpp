@@ -57,6 +57,13 @@ QHash<QString,QString> GLVideoInputDrawable::parseConString(const QString& con)
 	return map;
 }
 
+QStringList GLVideoInputDrawable::inputList(const QString& con)
+{
+	QHash<QString,QString> map = parseConString(con);
+	QStringList list = map["inputs"].split(";");
+	return list;
+}
+
 QUrl GLVideoInputDrawable::extractUrl(const QString& con)
 {
 	QString netString;

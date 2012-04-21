@@ -3919,7 +3919,8 @@ void GLVideoDrawable::loadHintsFromSource()
 			<< "adjustRight"
 			<< "filterType"
 			<< "sharpAmount"
-			<< "rotation";
+			<< "rotation"
+			<< "cardInput";
 		
 		foreach(QString prop, props)
 		{
@@ -3957,7 +3958,8 @@ void GLVideoDrawable::storeHintsToSource()
 		<< "adjustRight"
 		<< "filterType"
 		<< "sharpAmount"
-		<< "rotation";
+		<< "rotation"
+		<< "cardInput";
 	
 	foreach(QString prop, props)
 		map[prop] = property(qPrintable(prop));	

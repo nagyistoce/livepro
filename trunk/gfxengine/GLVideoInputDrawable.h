@@ -34,6 +34,7 @@ public:
 	
 	static QHash<QString,QString> parseConString(const QString& con);
 	static QUrl extractUrl(const QString& con);
+	static QStringList inputList(const QString& con);
 	
 	QString videoConnection() { return m_videoConnection; }
 	

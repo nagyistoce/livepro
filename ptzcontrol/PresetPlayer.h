@@ -40,6 +40,7 @@ public:
 	RelDragWidget();
 	void setXBox(QSpinBox *box);
 	void setYBox(QSpinBox *box);
+	void setZBox(QSpinBox *box);
 	
 	QSize sizeHint() const;
 
@@ -47,12 +48,14 @@ protected:
 	void mousePressEvent(QMouseEvent *);
 	void mouseMoveEvent(QMouseEvent *);
 	void mouseReleasEvent(QMouseEvent *);
-	
+	void wheelEvent(QWheelEvent *);
+		
 	void paintEvent(QPaintEvent *);
 	
 private:
 	QSpinBox *m_xBox;
 	QSpinBox *m_yBox;
+	QSpinBox *m_zBox;
 	
 	bool m_mouseIsDown;
 	

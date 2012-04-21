@@ -41,8 +41,8 @@ int main(int argc, char *argv[])
 	spin->setValue(val);
 
 #define SETUP_ZOOM_SPINBOX(spin,val) \
-	spin->setMinimum(125); \
-	spin->setMaximum(165); \
+	spin->setMinimum(1832); \
+	spin->setMaximum(2296); \
 	spin->setValue(val);
 	
 #define SETUP_WIN_SPINBOX(spin,val) \
@@ -78,7 +78,7 @@ namespace NumberUtils
 		int destDist = mapToB - mapToA;
 		int finalVal = (int)(destDist * partial) + mapToA;
 		
-		qDebug() << "mapValue("<<valueToMap<<","<<mapFromA<<","<<mapFromB<<","<<mapToA<<","<<mapToB<<"): dist:"<<dist<<", partial:"<<partial<<", destDist:"<<destDist<<", finalVal:"<<finalVal;
+		//qDebug() << "mapValue("<<valueToMap<<","<<mapFromA<<","<<mapFromB<<","<<mapToA<<","<<mapToB<<"): dist:"<<dist<<", partial:"<<partial<<", destDist:"<<destDist<<", finalVal:"<<finalVal;
 		
 		return finalVal;
 	}
@@ -224,15 +224,16 @@ void PresetPlayer::setupGui()
 	connect(m_yBox, SIGNAL(valueChanged(int)), this, SLOT(yChanged(int)));
 	hbox->addWidget(m_yBox);
 	
-	reldrag->setXBox(m_xBox);
-	reldrag->setYBox(m_yBox);
-	
 	hbox->addWidget(new QLabel("Z: "));
 	m_zBox = new QSpinBox();
 	SETUP_SERVO_SPINBOX(m_zBox,lastZ);
 	m_zBox->setMaximum(100);
 	connect(m_zBox, SIGNAL(valueChanged(int)), this, SLOT(zChanged(int)));
 	hbox->addWidget(m_zBox);
+	
+	reldrag->setXBox(m_xBox);
+	reldrag->setYBox(m_yBox);
+	reldrag->setZBox(m_zBox);
 	
 	QPushButton *zero = new QPushButton("0");
 	connect(zero, SIGNAL(clicked()), m_zoom, SLOT(zero()));
@@ -646,6 +647,20 @@ void PlayerZoomAdapter::setZoom(int zoom, bool zero)
 	{
 		zero = true;
 		m_hasZeroed = true;
+		
+		/*if(m_zoomMinusVal < 0)   m_zoomMinusVal = 0;
+		if(m_zoomMinusVal > 180) m_zoomMinusVal = 180;
+		int zMin = mapValue(m_zoomMinusVal, 0, 180, SERVO_MIN, SERVO_MAX);
+		
+		if(m_zoomPlusVal < 0)   m_zoomPlusVal = 0;
+		if(m_zoomPlusVal > 180) m_zoomPlusVal = 180;
+		int zPlus = mapValue(m_zoomPlusVal, 0, 180, SERVO_MIN, SERVO_MAX);
+		
+		if(m_zoomMidVal < 0)   m_zoomMidVal = 0;
+		if(m_zoomMidVal > 180) m_zoomMidVal = 180;
+		int zMid = mapValue(m_zoomMidVal, 0, 180, SERVO_MIN, SERVO_MAX);
+		
+		qDebug() << "Mapped zoom values: -/+: "<<zMin<<","<<zPlus<<", mid:"<<zMid;*/ 
 	}
 	
 	if(zero)
@@ -746,6 +761,11 @@ void RelDragWidget::setYBox(QSpinBox *box)
 	m_yBox = box;
 }
 	
+void RelDragWidget::setZBox(QSpinBox *box)
+{
+	m_zBox = box;
+}
+
 QSize RelDragWidget::sizeHint () const { return QSize(160,120); }
 
 void RelDragWidget::paintEvent(QPaintEvent *pe)
@@ -769,18 +789,44 @@ void RelDragWidget::mouseMoveEvent(QMouseEvent *evt)
 	if(m_mouseIsDown)
 	{
 		QPoint dist = evt->pos() - m_mouseDownAt;
-		qDebug() << "Dist: "<<dist;
+		//qDebug() << "Dist: "<<dist;
 		
-		double xScale = 3.5;
-		double yScale = 3.5;
+		double zFactor = ((double)(m_zBox->value()) / 15.);
+		double zScale = 1.0 - zFactor;
+		//qDebug() << "zScale:"<<zScale<<", zFactor:"<<zFactor;
+		
+		if(zScale < 0.0)
+			zScale = 0.1;
+		if(zScale > 1.0)
+			zScale = 1.0;
+		
+		double xScale = 2.5 * zScale;
+		double yScale = 2.5 * zScale;
+		
+		if(xScale < 0.51)
+			xScale = 0.51;
+		if(yScale < 0.51)
+			yScale = 0.51;
+		
+		
+		qDebug() << "xScale:"<<xScale<<", zScale:"<<zScale;
 		m_xBox->setValue((int)( dist.x() * xScale) + m_mouseDownValues.x());
-		m_yBox->setValue((int)( dist.y() * yScale) + m_mouseDownValues.y());
+		m_yBox->setValue((int)( dist.y() * yScale * -1 ) + m_mouseDownValues.y());
 	}
 }
 
 void RelDragWidget::mouseReleasEvent(QMouseEvent *evt)
 {
 	m_mouseIsDown = false;
+}
+
+void RelDragWidget::wheelEvent(QWheelEvent *event)
+{
+	int numDegrees = event->delta() / 8;
+	int numSteps = numDegrees / 15;
+	//qDebug() << "Wheel numSteps: "<<numSteps<<", numDegrees:"<<numDegrees;
+	m_zBox->setValue(m_zBox->value() + numSteps);
+
 }
 
 	

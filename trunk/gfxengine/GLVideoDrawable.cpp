@@ -3883,6 +3883,17 @@ void GLVideoDrawable::loadHintsFromSource()
 			// This dynamic property is set to allow the GLVideoDrawable to be sent over the wire 
 			// and it's checked in setVideoSource() to trigger another call to loadHintsFromSource() 
 			setProperty("hintLoadPending",true);
+			
+			int count = property("-q-hint-attempt-count").toInt();
+			if(count < 5)
+			{
+				QTimer::singleShot(500, this, SLOT(loadHintsFromSource()));
+				setProperty("-q-hint-attempt-count", count ++);
+				qDebug() << "GLVideoInputDrawable::loadHintsFromSource(): Warning: Waiting for 500ms to attempt hint load from "<<(QObject*)rx<<" again, attempt#:"<<count;
+			}
+			else
+				qDebug() << "GLVideoInputDrawable::loadHintsFromSource(): Not attempting another load, count: "<<count;
+				
 			return;
 		}
 	}
@@ -3895,7 +3906,7 @@ void GLVideoDrawable::loadHintsFromSource()
 	setProperty("hintLoadPending",false);
 	
 	
-	//qDebug() << "GLVideoDrawable::loadHintsFromSource(): Using map:"<<map;
+	qDebug() << "GLVideoDrawable::loadHintsFromSource(): Using map:"<<map;
 	if(!map.isEmpty())
 	{
 		QStringList props = QStringList() 

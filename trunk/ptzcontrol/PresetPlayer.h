@@ -64,6 +64,8 @@ private:
 
 };
 
+class Pixmap;	
+
 class PresetPlayer : public QWidget
 {
 	Q_OBJECT
@@ -99,6 +101,9 @@ private slots:
 	
 	void pointClicked(QPoint);
 	
+	void updateLive();
+	void sceneSnapshot();
+	
 protected:
 	void setupGui();
 	void setupClient();
@@ -114,6 +119,7 @@ protected:
 	
 private:
 	QSplitter *m_split;
+	QSplitter *m_masterSplitter;
 	
 	QString m_vidhost;
 	int     m_vidport;
@@ -139,6 +145,13 @@ private:
 	QGridLayout *m_presetLayout;
 	
 	bool m_lockSendValues;
+	
+	QGraphicsScene *m_scene;
+	QGraphicsPixmapItem *m_live;
+	QTimer m_updateLiveTimer;
+	QTimer m_snapshotTimer;
+	
+	QHash<QString,Pixmap*> m_images;
 };
 
 class PlayerZoomAdapter : public QObject

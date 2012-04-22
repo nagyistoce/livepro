@@ -24,6 +24,8 @@
 #define Video_GetVideoHints "GetVideoHints"
 #define Video_SetVideoHints "SetVideoHints"
 
+#define Video_SetCardInput "SetCardInput"
+
 // Sent by the VideoSender when the signal status changes on a connected CameraThread
 #define Video_SignalStatusChanged "SignalStatusChanged"
 

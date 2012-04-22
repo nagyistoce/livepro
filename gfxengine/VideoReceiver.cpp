@@ -322,6 +322,13 @@ void VideoReceiver::setSize(int w, int h)
 		<< "h"   << h);
 }
 
+void VideoReceiver::setCardInput(const QString& input)
+{
+	sendCommand(QVariantList() 
+		<< "cmd" << Video_SetCardInput
+		<< "input" << input);
+}
+
 void VideoReceiver::setVideoHints(QVariantMap hints)
 {
 	m_videoHints = hints;

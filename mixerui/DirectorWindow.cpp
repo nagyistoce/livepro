@@ -40,6 +40,10 @@
 #include <QCDEStyle>
 #include <QCleanlooksStyle>
 
+#define SETTINGS_FILE "config.ini"
+#define GetSettingsObject(objectName) QSettings objectName(SETTINGS_FILE,QSettings::IniFormat);
+
+
 QMap<QString,QRect> DirectorWindow::s_storedSystemWindowsGeometry;
 
 DirectorWindow::DirectorWindow(QWidget *parent)
@@ -457,7 +461,7 @@ void DirectorWindow::closeEvent(QCloseEvent */*event*/)
 
 void DirectorWindow::readSettings()
 {
-	QSettings settings;
+	GetSettingsObject(settings);
 	QPoint pos = settings.value("DirectorWindow/pos", QPoint(10, 10)).toPoint();
 	QSize size = settings.value("DirectorWindow/size", QSize(900,700)).toSize();
 	move(pos);
@@ -604,7 +608,7 @@ void DirectorWindow::applyTiling()
 
 void DirectorWindow::writeSettings()
 {
-	QSettings settings;
+	GetSettingsObject(settings);
 	settings.setValue("DirectorWindow/pos", pos());
 	settings.setValue("DirectorWindow/size", size());
 
@@ -1053,7 +1057,7 @@ void GroupPlayerWidget::openEditor()
 
 void GroupPlayerWidget::browse()
 {
-	QSettings settings;
+	GetSettingsObject(settings);
 	QString curFile = m_collection->fileName();
 	if(curFile.trimmed().isEmpty())
 		curFile = settings.value("last-collection-file").toString();
@@ -1087,7 +1091,7 @@ void GroupPlayerWidget::saveFile()
 {
 	QString curFile = m_collection->fileName();
 	
-	QSettings settings;
+	GetSettingsObject(settings);
 	
 	if(curFile.trimmed().isEmpty())
 	{
@@ -1286,7 +1290,7 @@ void OverlayWidget::openEditor()
 
 void OverlayWidget::browse()
 {
-	QSettings settings;
+	GetSettingsObject(settings);
 	QString curFile = m_collection->fileName();
 	if(curFile.trimmed().isEmpty())
 		curFile = settings.value("last-collection-file").toString();
@@ -1319,7 +1323,7 @@ void OverlayWidget::saveFile()
 {
 	QString curFile = m_collection->fileName();
 	
-	QSettings settings;
+	GetSettingsObject(settings);
 	
 	if(curFile.trimmed().isEmpty())
 	{
@@ -1520,7 +1524,7 @@ CameraWidget::CameraWidget(DirectorWindow* dir, VideoReceiver *rx, QString con, 
 	
 	m_configMenu = new QMenu(this);
 	QAction * action;
-	QSettings settings;
+	GetSettingsObject(settings);
 	
 	// Add Properties menu item
 	action = m_configMenu->addAction("Properties...");
@@ -1567,6 +1571,14 @@ bool CameraWidget::switchTo()
 	qDebug() << "CameraWidget::switchTo: Using con string: "<<m_con;
 	
  	GLDrawable *gld = m_camSceneGroup->at(0)->at(0);
+ 	
+ 	// Set pending so the drawable on the server side re-applies hints like cropping/AR
+ 	// This was added because I was having trouble with my BlackMagic input - it didnt seem
+ 	// to 'remember' the cropping when just clicking (calling switchTo()) but when hitting
+ 	// the "apply to player" button in the property window, then the cropping appeared
+ 	// correct - but click to another camera and click back - cropping was incorrect. 
+ 	// This seems to fix that problem.
+ 	gld->setProperty("hintLoadPending",true);
  	//gld->setProperty("videoConnection", m_con);
 // 	
 	if(!m_dir->players())
@@ -1603,6 +1615,54 @@ bool CameraWidget::switchTo()
 		m_switcher->notifyIsLive(this);
 	
 	return true;
+}
+
+void CameraWidget::setInput(const QString& name)
+{
+	if(!m_dir->players())
+		return;
+
+	// Set the new card input
+	QHash<QString,QString> params = GLVideoInputDrawable::parseConString(m_con);
+	params["input"] = name;
+
+	// Rebuild the con string
+	QStringList encoded;
+	foreach(QString key, params.keys())
+		encoded.append(tr("%1=%2").arg(key).arg(params[key]));
+		
+	m_drawable->setProperty("cardInput", name);
+	
+	// Set it back on the cam
+	setCon(encoded.join(","));
+	
+	GLDrawable *gld = m_camSceneGroup->at(0)->at(0);
+	
+// 	if(gld->property("videoConnection").toString() != m_con)
+// 	{
+// 		qDebug() << "CameraWidget::setInput("<<name<<"): Not setting, not currently the live camera";
+// 		return;
+// 	}
+
+	// transmitted over the wire to the camera thread on the other end
+	m_rx->setCardInput(name);
+	
+	foreach(PlayerConnection *player, m_dir->players()->players())
+	{
+		if(player->isConnected())
+		{
+			if(player->lastGroup() == m_camSceneGroup)
+			{
+				//player->setGroup(m_camSceneGroup, m_camSceneGroup->at(0));
+	 			player->setUserProperty(gld, name, "cardInput");
+	 			qDebug() << "CameraWidget::setInput: Changed capture input to: "<<name;
+	 		}
+	 		else
+	 		{
+	 			qDebug() << "CameraWidget::setInput("<<name<<"): Not setting, not currently the live group";
+	 		}
+	 	}
+	 }
 }
 
 void CameraWidget::setDeinterlace(bool flag)
@@ -1981,7 +2041,7 @@ void PropertyEditorWindow::setSourceWidget(DirectorSourceWidget* source)
 			m_settingsCombo = new QComboBox();
 			m_settingsList.clear();
 			
-			QSettings s;
+			GetSettingsObject(s);
 			QVariantList list = s.value(QString("vidopts/%1").arg(source->windowTitle())).toList();
 			QStringList nameList = QStringList(); 
 			foreach(QVariant data, list)
@@ -2290,21 +2350,7 @@ void PropertyEditorWindow::setCaptureInput(QString name)
 	CameraWidget *widgetCam = dynamic_cast<CameraWidget*>(source);
 	if(widgetCam)
 	{
-		QString con = widgetCam->con();
-		
-		// Set the new card input
-		QHash<QString,QString> params = GLVideoInputDrawable::parseConString(widgetCam->con());
-		params["input"] = name;
-		
-		// Rebuild the con string
-		QStringList encoded;
-		foreach(QString key, params.keys())
-			encoded.append(tr("%1=%2").arg(key).arg(params[key]));
-			
-		m_vid->setProperty("cardInput", name);
-		
-		// Set it back on the cam
-		widgetCam->setCon(encoded.join(","));	
+		widgetCam->setInput(name);	
 	}
 }
 
@@ -2402,7 +2448,7 @@ void PropertyEditorWindow::deleteVidOpt()
 	if(QMessageBox::question(this, "Really Delete?", QString("Are you sure you want to delete '%1'?").arg(map["name"].toString()),
 		QMessageBox::Ok | QMessageBox::Cancel) == QMessageBox::Ok)
 	{
-		QSettings s;
+		GetSettingsObject(s);
 		
 		QString key = QString("vidopts/%1").arg(m_source->windowTitle());
 		QVariantList list = s.value(key).toList(), newList;
@@ -2520,7 +2566,7 @@ void PropertyEditorWindow::saveVidOpts()
 		name = text;
 		map["name"] = name;
 	
-		QSettings s;
+		GetSettingsObject(s);
 		
 		bool found = false;
 		QVariantList newList;
@@ -3259,7 +3305,7 @@ void VideoPlayerWidget::loadFromMap(const QVariantMap& map)
 
 void VideoPlayerWidget::browse()
 {
-	QSettings settings;
+	GetSettingsObject(settings);
 	QString curFile = file();
 	if(curFile.trimmed().isEmpty())
 		curFile = settings.value("last-video-file").toString();

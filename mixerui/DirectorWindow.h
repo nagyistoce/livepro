@@ -253,6 +253,7 @@ public slots:
 	// DirectorSourceWidget::	
 	virtual bool switchTo();
 	void setDeinterlace(bool);
+	void setInput(const QString& input);
 	
 	void setCon(const QString&);
 	

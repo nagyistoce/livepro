@@ -82,6 +82,9 @@ public slots:
 	void setFPS(int);
 	void setSize(int, int);
 	
+	// Only applicable if sender is connected to a camera thread
+	void setCardInput(const QString&);
+	
 	void queryFPS();
 	void querySize();
 	

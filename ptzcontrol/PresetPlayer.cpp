@@ -114,6 +114,8 @@ PresetPlayer::PresetPlayer()
 	setupGui();
 	loadPresets();
 	
+	m_updateLiveTimer.start();
+	
 	(void*)PresetMidiInputAdapter::instance(this);
 	
 }
@@ -129,25 +131,227 @@ void PresetPlayer::setupClient()
 void PresetPlayer::closeEvent(QCloseEvent *)
 {
 	QSettings().setValue("mainwindow/splitter",m_split->saveState());
+	//QSettings().setValue("mainwindow/master-splitter",m_masterSplitter->saveState());
+	
+}
+/*
+class View : public QGraphicsView
+{
+public:
+    View(QGraphicsScene *scene) : QGraphicsView(scene) { }
+
+protected:
+    void resizeEvent(QResizeEvent *event)
+    {
+        QGraphicsView::resizeEvent(event);
+        fitInView(sceneRect(), Qt::KeepAspectRatio);
+    }
+};*/
+
+class ScaledGraphicsView : public QGraphicsView
+{
+public:
+	ScaledGraphicsView(QWidget *parent=0) : QGraphicsView(parent)
+	{
+		setFrameStyle(QFrame::NoFrame);
+		setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::SmoothPixmapTransform );
+		setCacheMode(QGraphicsView::CacheBackground);
+		setViewportUpdateMode(QGraphicsView::BoundingRectViewportUpdate);
+		setOptimizationFlags(QGraphicsView::DontSavePainterState);
+		setViewportUpdateMode(QGraphicsView::SmartViewportUpdate);
+		setTransformationAnchor(AnchorUnderMouse);
+		setResizeAnchor(AnchorViewCenter);
+		setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+		setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+	}
+
+protected:
+	void resizeEvent(QResizeEvent *)
+	{
+		adjustViewScaling();
+	}
+
+	void adjustViewScaling()
+	{
+		if(!scene())
+			return;
+
+		float sx = ((float)width()) / scene()->width();
+		float sy = ((float)height()) / scene()->height();
+
+		float scale = qMin(sx,sy);
+		setTransform(QTransform().scale(scale,scale));
+		//qDebug("Scaling: %.02f x %.02f = %.02f",sx,sy,scale);
+		update();
+		//m_view->fitInView(m_scene->sceneRect(), Qt::KeepAspectRatioByExpanding);
+		//m_view->fitInView(m_scene->sceneRect(), Qt::KeepAspectRatio);
+	}
+
+};
+
+
+
+class Pixmap : public QGraphicsPixmapItem
+{
+public:
+	Pixmap(const QPixmap &pix, QSpinBox *xBox, QSpinBox *yBox, QSpinBox *zBox)
+		: QGraphicsPixmapItem(pix)
+		, m_xBox(xBox)
+		, m_yBox(yBox)
+		, m_zBox(zBox)
+		, m_x(xBox->value())
+		, m_y(yBox->value())
+		, m_z(zBox->value())
+	{
+		setCacheMode(DeviceCoordinateCache);
+	}
+	
+	void mousePressEvent ( QGraphicsSceneMouseEvent * event )
+	{
+		m_xBox->setValue(m_x);
+		m_yBox->setValue(m_y);
+		m_zBox->setValue(m_z);
+	}
+	
+	QSpinBox *m_xBox;
+	QSpinBox *m_yBox;
+	QSpinBox *m_zBox;
+	int m_x;
+	int m_y;
+	int m_z;
+};
+
+
+void PresetPlayer::sceneSnapshot()
+{
+	VideoFramePtr frame = m_src->frame();
+	QImage image;
+	if(frame && frame->isValid())
+		image = frame->toImage();
+		
+	int pan  = m_client->lastPan();
+	int tilt = m_client->lastTilt();
+	
+	if(pan < SERVO_MIN)
+	{
+		if(pan < 0)   pan = 0;
+		if(pan > 180) pan = 180;
+		pan = mapValue(pan, 0, 180, SERVO_MIN, SERVO_MAX);
+	}
+	
+	if(tilt < SERVO_MIN)
+	{
+		if(tilt < 0)   tilt = 0;
+		if(tilt > 180) tilt = 180;
+		tilt = mapValue(tilt, 0, 180, SERVO_MIN, SERVO_MAX);
+	}
+	
+	double zVal = (double)m_zBox->value();
+	double zFrac = 1. - (zVal / 15.);
+	double intervalX = 362;//* zFrac;//image.size().width();
+	double intervalY = 272;//* zFrac;//image.size().height();
+	
+	double x = ((int)( ((double)pan + 200)  / intervalX ) ) * intervalX;
+	double y = ((int)( ((double)(SERVO_MAX - tilt + SERVO_MAX * .3 + zVal * (intervalY*1.))) / intervalY ) ) * intervalY;
+	
+	QString key = tr("%1.%2").arg(x).arg(y);
+	
+	image = image.scaled(intervalX,intervalY);
+	
+	if(m_images.contains(key))
+	{
+		m_images.value(key)->setPixmap(QPixmap::fromImage(image));
+	}
+	else
+	{
+		Pixmap *item = new Pixmap(QPixmap::fromImage(image),m_xBox,m_yBox,m_zBox);
+		m_images[key] = item;
+		item->setPos(x,y);
+		m_scene->addItem(item);
+	}
+}
+
+void PresetPlayer::updateLive()
+{
+// 	VideoFramePtr frame = m_src->frame();
+// 	QImage image;
+// 	if(frame && frame->isValid())
+// 		image = frame->toImage();
+// 	
+// 	double intervalX = 362;//image.size().width();
+// 	double intervalY = 272;//image.size().height();
+// 	image = image.scaled(intervalX, intervalY);
+// 	
+// 	m_live->setPixmap(QPixmap::fromImage(image));;
+// 	
+// 	int pan  = m_client->lastPan();
+// 	int tilt = m_client->lastTilt();
+// 	
+// 	if(pan < SERVO_MIN)
+// 	{
+// 		if(pan < 0)   pan = 0;
+// 		if(pan > 180) pan = 180;
+// 		pan = mapValue(pan, 0, 180, SERVO_MIN, SERVO_MAX);
+// 	}
+// 	
+// 	if(tilt < SERVO_MIN)
+// 	{
+// 		if(tilt < 0)   tilt = 0;
+// 		if(tilt > 180) tilt = 180;
+// 		tilt = mapValue(tilt, 0, 180, SERVO_MIN, SERVO_MAX);
+// 	}
+// 	
+// // 	double intervalX = image.size().width();
+// // 	double intervalY = image.size().height();
+// 	
+// 	
+// 	double x = pan; //((int)( ((double)pan)  / intervalX ) ) * intervalX;
+// 	double y = (SERVO_MAX - tilt + SERVO_MAX * .3 + m_zBox->value() * (intervalY*1.));
+// 	
+// 	m_live->setPos(x,y);
 }
 
 void PresetPlayer::setupGui()
 {	
 	QVBoxLayout *vbox = new QVBoxLayout(this);
+// 	m_masterSplitter = new QSplitter();
+// 	vbox->addWidget(m_masterSplitter);
+	
+// 	QWidget *mainBase = new QWidget();
+// 	m_masterSplitter->addWidget(mainBase);
+	
+// 	m_scene = new QGraphicsScene(SERVO_MIN, SERVO_MIN, SERVO_MAX, SERVO_MAX);
+// 	QGraphicsView *view = new ScaledGraphicsView();
+// 	view->setScene(m_scene);
+	//m_masterSplitter->addWidget(view);
+	
+/*	m_live = new QGraphicsPixmapItem();
+	m_live->setPos((SERVO_MAX - SERVO_MIN) / 2, (SERVO_MAX - SERVO_MIN) / 2);
+	
+	m_scene->addItem(m_live);
+	connect(&m_updateLiveTimer, SIGNAL(timeout()), this, SLOT(updateLive()));
+	m_updateLiveTimer.setInterval(250);*/
+	
+// 	connect(&m_snapshotTimer, SIGNAL(timeout()), this, SLOT(sceneSnapshot()));
+// 	m_snapshotTimer.setInterval(1500);
+// 	m_snapshotTimer.setSingleShot(true);
+	
+	
+// 	vbox = new QVBoxLayout(mainBase);
 	QSplitter *split = new QSplitter();
 	split->setOrientation(Qt::Vertical);
 	vbox->addWidget(split);
 	m_split = split; // store ptr for saving state
 	
-	QHBoxLayout *hbox;
 	QSettings set;
 	
+	QHBoxLayout *hbox;
 	
 	QWidget *topBase = new QWidget();
 	hbox = new QHBoxLayout(topBase);
 	
-	VideoWidget *drw = new VideoWidget(topBase);
-	hbox->addWidget(drw);
+// 	VideoWidget *drw = new VideoWidget(topBase);
+// 	hbox->addWidget(drw);
 	
 	QVBoxLayout *vbox2 = new QVBoxLayout();
 	
@@ -195,8 +399,8 @@ void PresetPlayer::setupGui()
 
 	split->addWidget(topBase);
 	
-	connect(drw, SIGNAL(pointClicked(QPoint)), this, SLOT(pointClicked(QPoint)));
-	drw->setVideoSource(m_src);
+	//connect(drw, SIGNAL(pointClicked(QPoint)), this, SLOT(pointClicked(QPoint)));
+	//drw->setVideoSource(m_src);
 	
 	int lastX = 129; //set.value("lastX",127).toInt();
 	int lastY = 115; //set.value("lastY",127).toInt();
@@ -293,6 +497,7 @@ void PresetPlayer::setupGui()
 	vbox->addStretch(1);
 	
 	split->restoreState(QSettings().value("mainwindow/splitter").toByteArray());
+	//m_masterSplitter->restoreState(QSettings().value("mainwindow/master-splitter").toByteArray());
 }
 
 void PresetPlayer::loadPresets()
@@ -556,6 +761,10 @@ void PresetPlayer::sendServoValues(int x, int y, int z, bool zero)
 	if(m_lockSendValues)
 		return;
 	m_lockSendValues = true;
+	
+// 	if(m_snapshotTimer.isActive())
+// 		m_snapshotTimer.stop();
+// 	m_snapshotTimer.start();
 	
 	qDebug() << "PresetPlayer::sendServoValues(): "<<x<<y<<z<<zero;
 	

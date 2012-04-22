@@ -890,7 +890,22 @@ void VideoSenderThread::processBlock()
 		
 		sendReply(QVariantList() << "cmd" << cmd << "hints" << map);
 	}
-	
+	else
+	if(cmd == Video_SetCardInput)
+	{
+		QString name = map["input"].toString();
+		
+		VideoSource *source = m_sender->videoSource();
+		CameraThread *camera = dynamic_cast<CameraThread*>(source);
+		if(!camera)
+		{
+			// error
+			qDebug() << "VideoSenderThread::processBlock: "<<cmd<<": Video source is not a video input class ('CameraThread'), unable to set card input, qobject:"<<(QObject*)source; 
+			return;
+		}
+		
+		camera->setInput(name);
+	}
 	else
 	{
 		// Unknown Command

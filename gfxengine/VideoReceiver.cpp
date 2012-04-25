@@ -552,7 +552,27 @@ void VideoReceiver::processBlock()
 				
 				if(frame->bufferType() == VideoFrame::BUFFER_IMAGE)
 				{
-					frame->setImage(QImage((const uchar*)block.constData(), imgX, imgY, (QImage::Format)imageFormatId).copy());
+                                        QImage::Format imageFormat = (QImage::Format)imageFormatId;
+                                        int expectedBytes = imgY * imgX *
+                                            (imageFormat == QImage::Format_RGB16  ||
+                                             imageFormat == QImage::Format_RGB555 ||
+                                             imageFormat == QImage::Format_RGB444 ||
+                                             imageFormat == QImage::Format_ARGB4444_Premultiplied ? 2 :
+                                             imageFormat == QImage::Format_RGB888 ||
+                                             imageFormat == QImage::Format_RGB666 ||
+                                             imageFormat == QImage::Format_ARGB6666_Premultiplied ? 3 :
+                                             4);
+
+                                        if(expectedBytes > block.size())
+                                        {
+                                            qDebug() << "Error: not enough bytes in block for frame, skipping: "<<expectedBytes<<" > "<<block.size();
+                                        }
+                                        else
+                                        {
+                                            QImage origImage((const uchar*)block.constData(), imgX, imgY, (QImage::Format)imageFormatId);
+                                            //qDebug() << "origImage.rect:"<<origImage.rect()<<", imgX:"<<imgX<<", imgY:"<<imgY<<", block.size:"<<block.size();
+                                            frame->setImage(origImage.copy());
+                                        }
 					
 					// Disabled upscaling for now because:
 					// 1. It was taking approx 20ms to upscale 320x240->1024x758

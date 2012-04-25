@@ -131,7 +131,7 @@ void PresetPlayer::setupClient()
 void PresetPlayer::closeEvent(QCloseEvent *)
 {
 	QSettings().setValue("mainwindow/splitter",m_split->saveState());
-	//QSettings().setValue("mainwindow/master-splitter",m_masterSplitter->saveState());
+        QSettings().setValue("mainwindow/master-splitter",m_masterSplitter->saveState());
 	
 }
 /*
@@ -314,7 +314,7 @@ void PresetPlayer::updateLive()
 void PresetPlayer::setupGui()
 {	
 	QVBoxLayout *vbox = new QVBoxLayout(this);
-// 	m_masterSplitter = new QSplitter();
+        //m_masterSplitter = new QSplitter();
 // 	vbox->addWidget(m_masterSplitter);
 	
 // 	QWidget *mainBase = new QWidget();
@@ -346,12 +346,16 @@ void PresetPlayer::setupGui()
 	QSettings set;
 	
 	QHBoxLayout *hbox;
+
+        m_masterSplitter = new QSplitter();
 	
-	QWidget *topBase = new QWidget();
-	hbox = new QHBoxLayout(topBase);
+        QWidget *topBase = new QWidget();
+        hbox = new QHBoxLayout(topBase);
+
+        m_masterSplitter->addWidget(topBase);
 	
-// 	VideoWidget *drw = new VideoWidget(topBase);
-// 	hbox->addWidget(drw);
+        VideoWidget *drw = new VideoWidget(topBase);
+        hbox->addWidget(drw);
 	
 	QVBoxLayout *vbox2 = new QVBoxLayout();
 	
@@ -388,7 +392,8 @@ void PresetPlayer::setupGui()
 	hbox->addLayout(vbox2);
 	
 	RelDragWidget *reldrag = new RelDragWidget();
-	hbox->addWidget(reldrag);
+        //hbox->addWidget(reldrag);
+        m_masterSplitter->addWidget(reldrag);
 	
 	
 	
@@ -397,10 +402,11 @@ void PresetPlayer::setupGui()
 
 
 
-	split->addWidget(topBase);
+        //split->addWidget(topBase);
+        split->addWidget(m_masterSplitter);
 	
-	//connect(drw, SIGNAL(pointClicked(QPoint)), this, SLOT(pointClicked(QPoint)));
-	//drw->setVideoSource(m_src);
+        connect(drw, SIGNAL(pointClicked(QPoint)), this, SLOT(pointClicked(QPoint)));
+        drw->setVideoSource(m_src);
 	
 	int lastX = 129; //set.value("lastX",127).toInt();
 	int lastY = 115; //set.value("lastY",127).toInt();
@@ -497,7 +503,7 @@ void PresetPlayer::setupGui()
 	vbox->addStretch(1);
 	
 	split->restoreState(QSettings().value("mainwindow/splitter").toByteArray());
-	//m_masterSplitter->restoreState(QSettings().value("mainwindow/master-splitter").toByteArray());
+        m_masterSplitter->restoreState(QSettings().value("mainwindow/master-splitter").toByteArray());
 }
 
 void PresetPlayer::loadPresets()

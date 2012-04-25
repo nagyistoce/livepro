@@ -19,4 +19,9 @@ SOURCES += PresetPlayer.cpp
 HEADERS += PanTiltClient.h
 SOURCES += PanTiltClient.cpp
 
-include(/opt/miditcp/client/miditcp.pri)
+win32 {
+    include(../../miditcp/client/miditcp.pri)
+}
+unix {
+    include(/opt/miditcp/client/miditcp.pri)
+}

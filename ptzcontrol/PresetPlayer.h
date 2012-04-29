@@ -7,6 +7,7 @@
 class PanTiltClient;
 class PlayerZoomAdapter;
 class VideoSource;
+class VideoReceiver;
 
 class Preset
 {
@@ -71,6 +72,7 @@ class PresetPlayer : public QWidget
 	Q_OBJECT
 public:
 	PresetPlayer();
+	~PresetPlayer();
 	int presetIndex(Preset*);
 	QList<Preset*> presets() { return m_presets; }
 	
@@ -132,7 +134,7 @@ private:
 	QPoint frameToPanTilt(QPoint);
 	QSize m_frameSize;
 	
-	VideoSource *m_src;
+	VideoReceiver *m_src;
 	
 	//QextSerialPort *m_port;
 	PanTiltClient *m_client;

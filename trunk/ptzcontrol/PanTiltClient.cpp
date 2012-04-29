@@ -137,7 +137,7 @@ void PanTiltClient::dataReady()
 		return;
 	}
 	QByteArray bytes = m_socket->readAll();
-	//qDebug() << "PanTiltClient::dataReady(): Reading from socket:"<<m_socket<<", read:"<<bytes.size()<<" bytes"; 
+	qDebug() << "PanTiltClient::dataReady(): Reading from socket:"<<m_socket<<", read:"<<bytes.size()<<" bytes"; 
 	if(bytes.size() > 0)
 	{
 		m_dataBlock.append(bytes);

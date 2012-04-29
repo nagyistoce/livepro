@@ -12,6 +12,8 @@
 #include <QApplication>
 #include <QDebug>
 
+#define ENABLE_VIDEO_RX
+
 int main(int argc, char *argv[])
 {
 	QApplication app(argc, argv);
@@ -108,16 +110,28 @@ PresetPlayer::PresetPlayer()
 	if(m_ptzhost.isEmpty())	EXIT_MISSING("ptzhost");
 	if(m_ptzport <= 0)	EXIT_MISSING("ptzport");
 	
+	#ifdef ENABLE_VIDEO_RX
 	m_src = VideoReceiver::getReceiver(m_vidhost,m_vidport);
+	
+	// assuming ssh tunnel, reduce fps to lower bandwidth usage
+	if(m_ptzhost ==  "localhost")
+		m_src->setFPS(1);
+	#endif
 	
 	setupClient();
 	setupGui();
 	loadPresets();
 	
-	m_updateLiveTimer.start();
+	//m_updateLiveTimer.start();
 	
-	(void*)PresetMidiInputAdapter::instance(this);
+	//(void*)PresetMidiInputAdapter::instance(this);
 	
+}
+
+PresetPlayer::~PresetPlayer()
+{
+	if(m_ptzhost ==  "localhost")
+		m_src->setFPS(15);
 }
 
 void PresetPlayer::setupClient() 
@@ -224,6 +238,7 @@ public:
 
 void PresetPlayer::sceneSnapshot()
 {
+	#ifdef ENABLE_VIDEO_RX
 	VideoFramePtr frame = m_src->frame();
 	QImage image;
 	if(frame && frame->isValid())
@@ -269,6 +284,7 @@ void PresetPlayer::sceneSnapshot()
 		item->setPos(x,y);
 		m_scene->addItem(item);
 	}
+	#endif
 }
 
 void PresetPlayer::updateLive()
@@ -354,8 +370,10 @@ void PresetPlayer::setupGui()
 
         m_masterSplitter->addWidget(topBase);
 	
+        #ifdef ENABLE_VIDEO_RX
         VideoWidget *drw = new VideoWidget(topBase);
         hbox->addWidget(drw);
+        #endif
 	
 	QVBoxLayout *vbox2 = new QVBoxLayout();
 	
@@ -405,8 +423,10 @@ void PresetPlayer::setupGui()
         //split->addWidget(topBase);
         split->addWidget(m_masterSplitter);
 	
+	#ifdef ENABLE_VIDEO_RX
         connect(drw, SIGNAL(pointClicked(QPoint)), this, SLOT(pointClicked(QPoint)));
         drw->setVideoSource(m_src);
+        #endif
 	
 	int lastX = 129; //set.value("lastX",127).toInt();
 	int lastY = 115; //set.value("lastY",127).toInt();
@@ -445,9 +465,14 @@ void PresetPlayer::setupGui()
 	reldrag->setYBox(m_yBox);
 	reldrag->setZBox(m_zBox);
 	
-	QPushButton *zero = new QPushButton("0");
-	connect(zero, SIGNAL(clicked()), m_zoom, SLOT(zero()));
-	hbox->addWidget(zero);
+	
+	
+	if(m_zoom)
+	{
+		QPushButton *zero = new QPushButton("0");
+		connect(zero, SIGNAL(clicked()), m_zoom, SLOT(zero()));
+		hbox->addWidget(zero);
+	}
 	
 	QPushButton *btn;
 	btn = new QPushButton("Save");
@@ -480,24 +505,27 @@ void PresetPlayer::setupGui()
 	hbox = new QHBoxLayout();
 	hbox->addStretch(1);
 	
-	hbox->addWidget(new QLabel("Zoom Config: "));
-	zoom = new QSpinBox();
-	zoom->setPrefix("(-) ");
-	SETUP_ZOOM_SPINBOX(zoom, m_zoom->zoomMinusVal());
-	connect(zoom, SIGNAL(valueChanged(int)), m_zoom, SLOT(setZoomMinusVal(int)));
-	hbox->addWidget(zoom);
-	
-	zoom = new QSpinBox();
-	zoom->setPrefix("(+) ");
-	SETUP_ZOOM_SPINBOX(zoom, m_zoom->zoomPlusVal());
-	connect(zoom, SIGNAL(valueChanged(int)), m_zoom, SLOT(setZoomPlusVal(int)));
-	hbox->addWidget(zoom);
-	
-	zoom = new QSpinBox();
-	zoom->setPrefix("(|) ");
-	SETUP_ZOOM_SPINBOX(zoom, m_zoom->zoomMidVal());
-	connect(zoom, SIGNAL(valueChanged(int)), m_zoom, SLOT(setZoomMidVal(int)));
-	hbox->addWidget(zoom);
+	if(m_zoom)
+	{
+		hbox->addWidget(new QLabel("Zoom Config: "));
+		zoom = new QSpinBox();
+		zoom->setPrefix("(-) ");
+		SETUP_ZOOM_SPINBOX(zoom, m_zoom->zoomMinusVal());
+		connect(zoom, SIGNAL(valueChanged(int)), m_zoom, SLOT(setZoomMinusVal(int)));
+		hbox->addWidget(zoom);
+		
+		zoom = new QSpinBox();
+		zoom->setPrefix("(+) ");
+		SETUP_ZOOM_SPINBOX(zoom, m_zoom->zoomPlusVal());
+		connect(zoom, SIGNAL(valueChanged(int)), m_zoom, SLOT(setZoomPlusVal(int)));
+		hbox->addWidget(zoom);
+		
+		zoom = new QSpinBox();
+		zoom->setPrefix("(|) ");
+		SETUP_ZOOM_SPINBOX(zoom, m_zoom->zoomMidVal());
+		connect(zoom, SIGNAL(valueChanged(int)), m_zoom, SLOT(setZoomMidVal(int)));
+		hbox->addWidget(zoom);
+	}
 	
 	vbox->addLayout(hbox);
 	vbox->addStretch(1);
@@ -697,6 +725,7 @@ void PresetPlayer::zChanged(int z)
 
 QPoint PresetPlayer::frameToPanTilt(QPoint pnt)
 {
+	#ifdef ENABLE_VIDEO_RX
 	VideoFramePtr frame = m_src->frame();
 	if(frame && frame->isValid())
 		m_frameSize = frame->toImage().size();
@@ -735,6 +764,10 @@ QPoint PresetPlayer::frameToPanTilt(QPoint pnt)
 	qDebug() << "PresetPlayer::frameToPanTilt("<<pnt<<"): final point: "<<curX<<","<<curY;
 	
 	return QPoint(curX, curY);
+	#else
+	
+	return QPoint();
+	#endif
 }
 
 void PresetPlayer::pointClicked(QPoint pnt)
@@ -765,6 +798,10 @@ void PresetPlayer::pointClicked(QPoint pnt)
 void PresetPlayer::sendServoValues(int x, int y, int z, bool zero)
 {
 	if(m_lockSendValues)
+		return;
+	if(!m_client)
+		return;
+	if(!m_zoom)
 		return;
 	m_lockSendValues = true;
 	
@@ -845,6 +882,9 @@ void PlayerZoomAdapter::zero()
 
 void PlayerZoomAdapter::setZoom(int zoom, bool zero)
 {
+	if(!m_client)
+		return;
+		
 	if(zoom > 100)
 		zoom = 100;
 	if(zoom < 0)

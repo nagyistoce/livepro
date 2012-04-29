@@ -156,10 +156,16 @@ void GLVideoInputDrawable::setNetworkSource(const QString& src)
 	if (!isLocalHost)
 		isLocalHost = host == QHostAddress(QHostAddress::LocalHost).toString();
 
+	// Force localhost flag if the hostname is localhost
+	// - but only if no video input is specified. We check
+	// for empty video input so that we can still use
+	// a network connection even with localhost for those times
+	// where we want to connect over a local ssh tunnel
 	if(!isLocalHost &&
+	   !m_videoInput.isEmpty() &&
 	   host == "localhost")
 		isLocalHost = true;
-	
+		
 	// If we already tried opening a local device, force to use the network
 	if((m_source && m_source->hasError())
 	   //|| m_videoInput.startsWith("test:")
@@ -267,7 +273,10 @@ void GLVideoInputDrawable::testXfade()
 bool GLVideoInputDrawable::setVideoInput(const QString& camera)
 {
 	if(camera.isEmpty())
+	{
+		m_source = 0;
 		return false;
+	}
 		
 // 	testXfade();
 // 	return true;
@@ -275,7 +284,7 @@ bool GLVideoInputDrawable::setVideoInput(const QString& camera)
 
 	m_videoInput = camera;
 
-	CameraThread *source = CameraThread::threadForCamera(camera.isEmpty() ?  DEFAULT_INPUT : camera);
+	CameraThread *source = CameraThread::threadForCamera(camera);
 
 	if(!source)
 	{

@@ -59,6 +59,7 @@ public slots:
 	
 private slots:
 	void testXfade();
+	void pollErrorFlag();
 	
 private:
 	QString m_videoConnection;
@@ -69,6 +70,7 @@ private:
 	bool m_useNetworkSource;
 	QHash<QString,bool> m_localHasError;
 	QHash<QString,bool> m_isLocal;
+	QTimer m_errorPoll;
 };
 
 #endif

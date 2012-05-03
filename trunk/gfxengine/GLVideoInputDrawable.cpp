@@ -20,6 +20,8 @@ GLVideoInputDrawable::GLVideoInputDrawable(QString file, QObject *parent)
 	if(!file.isEmpty())
 		setVideoInput(file);
 
+	connect(&m_errorPoll, SIGNAL(timeout()), this, SLOT(pollErrorFlag()));
+	m_errorPoll.setInterval(250);
         //QTimer::singleShot(2500, this, SLOT(testXfade()));
 }
 
@@ -95,7 +97,7 @@ void GLVideoInputDrawable::setVideoConnection(const QString& con)
 {
 	m_videoConnection = con;
 
-	//qDebug() << "GLVideoInputDrawable::setVideoConnection: con:"<<con;
+	qDebug() << "GLVideoInputDrawable::setVideoConnection: con:"<<con;
 	
 	// Example: dev=/dev/video0,input=S-Video0,net=10.0.1.70:8877
 	if(con.isEmpty())
@@ -167,7 +169,7 @@ void GLVideoInputDrawable::setNetworkSource(const QString& src)
 		isLocalHost = true;
 		
 	// If we already tried opening a local device, force to use the network
-	if((m_source && m_source->hasError())
+	if(!m_source || (m_source && m_source->hasError())
 	   //|| m_videoInput.startsWith("test:")
 	   )
 	{
@@ -190,8 +192,23 @@ void GLVideoInputDrawable::setNetworkSource(const QString& src)
 	qDebug() << "GLVideoInputDrawable::setNetworkSource: src:"<<src<<", isLocalHost:"<<isLocalHost<<", m_videoInput:"<<m_videoInput;
 }
 
+void GLVideoInputDrawable::pollErrorFlag()
+{
+	if(!m_source || (m_source && m_source->hasError())
+	   //|| m_videoInput.startsWith("test:")
+	   )
+	{
+		qDebug() << "GLVideoInputDrawable::pollErrorFlag: Forcing to use the network for src:"<<m_networkSource<<" due to local device error.";
+		m_localHasError[m_videoInput] = true;
+		m_isLocal[m_networkSource] = false;
+		setUseNetworkSource(true);
+		m_errorPoll.stop();
+	}
+}
+
 void GLVideoInputDrawable::setUseNetworkSource(bool flag)
 {
+	qDebug() << "GLVideoInputDrawable::setNetworkSource: flag:"<<flag;
 	m_useNetworkSource = flag;
 
 	if(m_networkSource.isEmpty())
@@ -272,6 +289,8 @@ void GLVideoInputDrawable::testXfade()
 
 bool GLVideoInputDrawable::setVideoInput(const QString& camera)
 {
+	qDebug() << "GLVideoInputDrawable::setVideoInput: camera:"<<camera;
+	
 	if(camera.isEmpty())
 	{
 		m_source = 0;
@@ -305,6 +324,9 @@ bool GLVideoInputDrawable::setVideoInput(const QString& camera)
 	m_source = source;
 	m_source->setFps(30);
 	m_source->registerConsumer(this);
+	
+	if(!m_errorPoll.isActive())
+		m_errorPoll.start();
 
 	// Just for testing...
 	//if(camera == "/dev/video1")

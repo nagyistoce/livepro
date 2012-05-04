@@ -137,7 +137,9 @@ bool VideoReceiver::connectTo(const QString& host, int port, QString url, const 
 	
 	if(m_socket)
 	{
-		//qDebug() << "VideoReceiver::connectTo: Discarding old socket:"<<m_socket;
+		#ifdef DEBUG
+		qDebug() << "VideoReceiver::connectTo: Discarding old socket:"<<m_socket;
+		#endif
 		disconnect(m_socket, 0, this, 0);
 		m_dataBlock.clear();
 		
@@ -388,19 +390,22 @@ void VideoReceiver::dataReady()
 	
 	if(!m_connected)
 	{
+		#ifdef DEBUG
+		qDebug() << "VideoReceiver::dataReady(): Port: "<<m_port<<": Not connected, clearing data block.";
+		#endif
 		m_dataBlock.clear();
 		return;
 	}
 	QByteArray bytes = m_socket->readAll();
 	#ifdef DEBUG
-	qDebug() << "VideoReceiver::dataReady(): Reading from socket:"<<m_socket<<", read:"<<bytes.size()<<" bytes";
+	qDebug() << "VideoReceiver::dataReady(): Port: "<<m_port<<": Reading from socket:"<<m_socket<<", read:"<<bytes.size()<<" bytes";
 	#endif
 	 
 	if(bytes.size() > 0)
 	{
 		m_dataBlock.append(bytes);
 		#ifdef DEBUG
-		qDebug() << "VideoReceiver::dataReady(): Read bytes:"<<bytes.count()<<", buffer size:"<<m_dataBlock.size();
+		qDebug() << "VideoReceiver::dataReady(): Port: "<<m_port<<": Read bytes:"<<bytes.count()<<", buffer size:"<<m_dataBlock.size();
 		#endif
 		
 		processBlock();
@@ -411,81 +416,117 @@ void VideoReceiver::processBlock()
 {
 	if(!m_connected)
 		return;
-		
+
+	#ifdef DEBUG_TIME
+	QTime time;
+	time.start();
+
+	QTime t2;
+	t2.start();
+	#endif
+
 	#define HEADER_SIZE 256
 	
 	// First thing server sends is a single 256-byte header containing the initial frame byte count
 	// Byte count and frame size CAN change in-stream as needed.
-	if(m_byteCount < 0)
+// 	if(m_byteCount < 0)
+// 	{
+// 		if(m_dataBlock.size() >= HEADER_SIZE)
+// 		{
+// 			QByteArray header = m_dataBlock.left(HEADER_SIZE);
+// 			//m_dataBlock.remove(0,HEADER_SIZE);
+// 			
+// 			const char *headerData = header.constData();
+// 			sscanf(headerData,"%d",&m_byteCount);
+// 			//qDebug() << "VideoReceiver::processBlock(): First frame on connect, m_byteCount:"<<m_byteCount; 
+// 		}
+// 	}
+	
+	bool done = false;
+	while(!done)
 	{
-		if(m_dataBlock.size() >= HEADER_SIZE)
+		// It's possible we entered this function with a m_byteCount>0, 
+		// which indicates that we found a header last time, but not enough bytes
+		// in the block for the data body, so we returned. But this time,
+		// we may have enough bytes - but the header is already taken, so just look
+		// for the body if m_byteCount>0;
+		if(m_dataBlock.size() < HEADER_SIZE)
+		{
+			#ifdef DEBUG
+			qDebug() << "VideoReceiver::processBlock: Port: "<<m_port<<": Not enough bytes for a header, setting done";
+			#endif
+			done = true;
+			continue;
+		}
+		if(m_byteCount <= 0)/* &&
+		   m_dataBlock.size() >= HEADER_SIZE)*/
 		{
 			QByteArray header = m_dataBlock.left(HEADER_SIZE);
-			//m_dataBlock.remove(0,HEADER_SIZE);
+			m_dataBlock.remove(0,HEADER_SIZE);
 			
 			const char *headerData = header.constData();
-			sscanf(headerData,"%d",&m_byteCount);
-			//qDebug() << "VideoReceiver::processBlock(): First frame on connect, m_byteCount:"<<m_byteCount; 
+				
+			#ifdef DEBUG
+			qDebug() << "VideoReceiver::processBlock: Port: "<<m_port<<": header data:"<<headerData;
+			#endif
+			if(QString(header).isEmpty())
+			{
+				#ifdef DEBUG
+				qDebug() << "VideoReceiver::processBlock: Port: "<<m_port<<": Empty header, setting done";
+				#endif
+				done = true;
+				continue;
+			}
+		
+			sscanf(headerData,
+				"%d " // byteCount
+				"%d " // w
+				"%d " // h
+				"%d " // pixelFormat
+				"%d " // image.format
+				"%d " // bufferType
+				"%d " // timestamp
+				"%d " // holdTime
+				"%d " // original width
+				"%d", // original height
+				&m_byteCount, 
+				&m_imgX,
+				&m_imgY,
+				&m_pixelFormatId,
+				&m_imageFormatId,
+				&m_bufferType,
+				&m_timestamp,
+				&m_holdTime,
+				&m_origX,
+				&m_origY);
 		}
-	}
-	
-	if(m_byteCount >= 0)
-	{
-		int frameSize = m_byteCount+HEADER_SIZE;
 		
 		#ifdef DEBUG
-		qDebug() << "VideoReceiver::processBlock: Port: "<<m_port<<": m_byteCount:"<<m_byteCount<<" bytes, m_dataBlock size:"<<m_dataBlock.size()<<", frameSize:"<<frameSize;
+		qDebug() << "VideoReceiver::processBlock: Port: "<<m_port<<": Done reading header, m_byteCount:"<<m_byteCount<<" bytes, m_dataBlock size:"<<m_dataBlock.size();
 		#endif
 	
-		while(m_dataBlock.size() >= frameSize)
+		if(m_dataBlock.size() < m_byteCount)
 		{
-			QByteArray block = m_dataBlock.left(frameSize);
-			m_dataBlock.remove(0,frameSize);
+			done = true;
+			#ifdef DEBUG
+			qDebug() << "VideoReceiver::processBlock: Port: "<<m_port<<": Found header, got byte count: "<<m_byteCount<<", m_dataBlock.size():"<<m_dataBlock.size()<<", but not enough bytes left in block to continue processing.";
+			#endif
+			continue;
+		}
+		else
+		{
+			#ifdef DEBUG_TIME
+			qDebug() << "VideoReceiver::processBlock: Port: "<<m_port<<": t2.elapsed:"<<t2.restart()<<", mark1";
+			#endif
 			
-			QByteArray header = block.left(HEADER_SIZE);
-			block.remove(0,HEADER_SIZE);
-			
-			const char *headerData = header.constData();
-			
-								
-			int byteTmp,imgX,imgY,pixelFormatId,imageFormatId,bufferType,timestamp,holdTime,origX,origY;
-			
-			//qDebug() << "VideoReceiver::processBlock: header data:"<<headerData;
-				
-			sscanf(headerData,
-					"%d " // byteCount
-					"%d " // w
-					"%d " // h
-					"%d " // pixelFormat
-					"%d " // image.format
-					"%d " // bufferType
-					"%d " // timestamp
-					"%d " // holdTime
-					"%d " // original width
-					"%d", // original height
-					&byteTmp, 
-					&imgX,
-					&imgY,
-					&pixelFormatId,
-					&imageFormatId,
-					&bufferType,
-					&timestamp,
-					&holdTime,
-					&origX,
-					&origY);
-					
-			if(imgX < 0 && imgY < 0 && holdTime < 0)
+			// If these variables are negative, then assume that indicates a QMap data block
+			if(m_imgX < 0 && m_imgY < 0 && m_holdTime < 0)
 			{
 				// data frame from VideoSender in response to a query request (Video_Get* command)
 				// or from a signal received by the VideoSender (such as signalStatusChanged(bool))
 				
-				if(byteTmp != m_byteCount)
-				{
-					m_byteCount = byteTmp;
-					frameSize = m_byteCount + HEADER_SIZE;
-					//qDebug() << "VideoReceiver::processBlock: Frame size changed: "<<frameSize;
-				}
-				
+				QByteArray block = m_dataBlock.left(m_byteCount);
+
 				QDataStream stream(&block, QIODevice::ReadOnly);
 				QVariantMap map;
 				stream >> map;
@@ -494,112 +535,107 @@ void VideoReceiver::processBlock()
 				qDebug() << "VideoReceiver::processBlock: Port: "<<m_port<<": Received MAP block: "<<map;
 				#endif
 				
-				processReceivedMap(map);
+				if(!map.isEmpty())
+				    processReceivedMap(map);
 			}
 			else
 			// No need to create and emit frames if noone is listeneing for frames!
 			if(m_consumerList.isEmpty())
 			{
-				//qDebug() << "VideoReceiver::processBlock: Port: "<<m_port<<": No consumers, not processingframe";
-				m_dataBlock.clear();
-				return;
+				#ifdef DEBUG
+				qDebug() << "VideoReceiver::processBlock: Port: "<<m_port<<": No consumers, not processingframe";
+				#endif
+				//block.clear();
+				m_dataBlock.remove(0,m_byteCount);
+
+				continue;
 			}
 			else
+			 // consumer list wasn't empty, not a map block
 			{
 				//qDebug() << "raw header scan: byteTmp:"<<byteTmp<<", size:"<<imgX<<"x"<<imgY;
 				
 				//qDebug() << "VideoReceiver::processBlock: raw header data:"<<headerData;
-				if(byteTmp > 1024*1024*1024     ||
-					imgX > 1900 || imgX < 0 ||
-					imgY > 1900 || imgY < 0)
+				if(m_byteCount > 1024*1024*1024     ||
+					m_imgX > 1900 || m_imgX < 0 ||
+					m_imgY > 1900 || m_imgY < 0)
 				{
 					#ifdef DEBUG
-					qDebug() << "VideoReceiver::processBlock: Frame too large (bytes > 1GB or invalid W/H): "<<byteTmp<<imgX<<imgY;
+					qDebug() << "VideoReceiver::processBlock: Port: "<<m_port<<": Frame too large (bytes > 1GB or invalid W/H): "<<m_byteCount<<m_imgX<<m_imgY;
 					#endif
-					m_dataBlock.clear();
+					//m_dataBlock.clear();
 					
-					enqueue(new VideoFrame(QImage("../data/icons/dot.gif"),1000/30));
+					//enqueue(new VideoFrame(QImage("../data/icons/dot.gif"),1000/30));
 					
-					return;
+					//return;
+					m_dataBlock.remove(0,m_byteCount);
+					continue;
 				}
 				
-				if(byteTmp != m_byteCount)
-				{
-					m_byteCount = byteTmp;
-					frameSize = m_byteCount + HEADER_SIZE;
-					//qDebug() << "VideoReceiver::processBlock: Frame size changed: "<<frameSize;
-				}
 				//QImage frame = QImage::fromData(block);
 			
 				//QImage frame = QImage::fromData(block);
 				//QImage frame((const uchar*)block.constData(), imgX, imgY, (QImage::Format)formatId); 
-				if(pixelFormatId == 0)
-					pixelFormatId = (int)QVideoFrame::Format_RGB32;
+				if(m_pixelFormatId == 0)
+					m_pixelFormatId = (int)QVideoFrame::Format_RGB32;
 					
 				//VideoFrame frame;
 				VideoFrame *frame = new VideoFrame();
+				
 				#ifdef DEBUG_VIDEOFRAME_POINTERS
 				qDebug() << "VideoReceiver::processBlock(): Created new frame:"<<frame;
 				#endif
 				
-				frame->setHoldTime    (holdTime);
-				frame->setCaptureTime (timestampToQTime(timestamp));
-				frame->setPixelFormat ((QVideoFrame::PixelFormat)pixelFormatId);
-				frame->setBufferType  ((VideoFrame::BufferType)bufferType);
+				frame->setHoldTime    (m_holdTime);
+				frame->setCaptureTime (timestampToQTime(m_timestamp));
+				frame->setPixelFormat ((QVideoFrame::PixelFormat)m_pixelFormatId);
+				frame->setBufferType  ((VideoFrame::BufferType)m_bufferType);
 				
 				//qDebug() << "final pixelformat:"<<pixelFormatId;
 				
-				
+				bool validFrame = true;
+
 				if(frame->bufferType() == VideoFrame::BUFFER_IMAGE)
 				{
-                                        QImage::Format imageFormat = (QImage::Format)imageFormatId;
-                                        int expectedBytes = imgY * imgX *
-                                            (imageFormat == QImage::Format_RGB16  ||
-                                             imageFormat == QImage::Format_RGB555 ||
-                                             imageFormat == QImage::Format_RGB444 ||
-                                             imageFormat == QImage::Format_ARGB4444_Premultiplied ? 2 :
-                                             imageFormat == QImage::Format_RGB888 ||
-                                             imageFormat == QImage::Format_RGB666 ||
-                                             imageFormat == QImage::Format_ARGB6666_Premultiplied ? 3 :
-                                             4);
-
-                                        if(expectedBytes > block.size())
-                                        {
-                                            qDebug() << "Error: not enough bytes in block for frame, skipping: "<<expectedBytes<<" > "<<block.size();
-                                        }
-                                        else
-                                        {
-                                            QImage origImage((const uchar*)block.constData(), imgX, imgY, (QImage::Format)imageFormatId);
-                                            //qDebug() << "origImage.rect:"<<origImage.rect()<<", imgX:"<<imgX<<", imgY:"<<imgY<<", block.size:"<<block.size();
-                                            frame->setImage(origImage.copy());
-                                        }
+					QImage::Format imageFormat = (QImage::Format)m_imageFormatId;
+					int expectedBytes = m_imgY * m_imgX *
+						(imageFormat == QImage::Format_RGB16  ||
+						 imageFormat == QImage::Format_RGB555 ||
+						 imageFormat == QImage::Format_RGB444 ||
+						 imageFormat == QImage::Format_ARGB4444_Premultiplied ? 2 :
+						 imageFormat == QImage::Format_RGB888 ||
+						 imageFormat == QImage::Format_RGB666 ||
+						 imageFormat == QImage::Format_ARGB6666_Premultiplied ? 3 :
+						 4);
 					
-					// Disabled upscaling for now because:
-					// 1. It was taking approx 20ms to upscale 320x240->1024x758
-					// 2. Why upscale here?? If user wants a larger image, he can make the thing drawing this frame larger,
-					//    which will scale the frame at that point - which probably will be on the GPU anyway
-					// Therefore, given the 20ms (or, even 10ms if it was) and the fact that the GPU can do scaling anyway,
-					// no need to waste valuable time upscaling here for little to no benefit at all. 
-// 					if(origX != imgX || origY != imgY)
-// 					{
-// 						QTime x;
-// 						x.start();
-// 						frame->setImage(frame->image().scaled(origX,origY));
-// 						qDebug() << "VideoReceiver::processBlock: Upscaled frame from "<<imgX<<"x"<<imgY<<" to "<<origX<<"x"<<imgY<<" in "<<x.elapsed()<<"ms";
-// 						
-// 					} 
-// 					else
-// 					{
-						//frame->setImage(frame->image().copy()); // disconnect from the QByteArray by calling copy() to make an internal copy of the buffer
-//					}
+					if(expectedBytes > m_dataBlock.size())
+					{
+						qDebug() << "Error: not enough bytes in block for frame, skipping: "<<expectedBytes<<" > "<<m_dataBlock.size();
+						validFrame = false;
+					}
+					else
+					{
+						#ifdef DEBUG_TIME
+						qDebug() << "VideoReceiver::processBlock: Port: "<<m_port<<": t2.elapsed:"<<t2.restart()<<", mark2";
+						#endif
+						
+						//QImage origImage((const uchar*)block.constData(), m_imgX, m_imgY, (QImage::Format)m_imageFormatId);
+						QImage origImage((const uchar*)m_dataBlock.constData(), m_imgX, m_imgY, (QImage::Format)m_imageFormatId);
+						//qDebug() << "origImage.rect:"<<origImage.rect()<<", imgX:"<<imgX<<", imgY:"<<imgY<<", block.size:"<<block.size();
+						frame->setImage(origImage.copy());
+						
+						#ifdef DEBUG_TIME
+						qDebug() << "VideoReceiver::processBlock: Port: "<<m_port<<": t2.elapsed:"<<t2.restart()<<", mark3";
+						#endif
+					}
 				}
 				else
 				{
 					//QByteArray array;
-					qDebug() << "m_byteCount:"<<m_byteCount<<", size:"<<imgX<<"x"<<imgY;
+					qDebug() << "m_byteCount:"<<m_byteCount<<", size:"<<m_imgX<<"x"<<m_imgY;
 					uchar *pointer = frame->allocPointer(m_byteCount);
 					//if(pointer && m_byteCount > 0)
-						memcpy(pointer, (const char*)block.constData(), m_byteCount);
+						memcpy(pointer, (const char*)m_dataBlock.constData(), m_byteCount);
 					//array.append((const char*)block.constData(), m_byteCount);
 					//frame->setByteArray(array);
 				}
@@ -607,18 +643,27 @@ void VideoReceiver::processBlock()
 // 				if(origX != imgX || origY != imgY)
 // 					frame->setSize(QSize(origX,origY));
 // 				else
-					frame->setSize(QSize(imgX,imgY));
+					frame->setSize(QSize(m_imgX,m_imgY));
 					
-				#ifdef DEBUG
-				qDebug() << "VideoReceiver::processBlock: Port: "<<m_port<<": New Frame, frame size:"<<frame->size()<<", consumers size:"<< m_consumerList.size();
-				#endif
-				//frame->image().save("frametest.jpg");
-	
-				#ifdef DEBUG_VIDEOFRAME_POINTERS
-				qDebug() << "VideoReceiver::processBlock(): Enqueing new frame:"<<frame;
-				#endif
-				
-				enqueue(frame);
+				if(validFrame)
+				{
+					#ifdef DEBUG
+					qDebug() << "VideoReceiver::processBlock: Port: "<<m_port<<": New Frame, frame size:"<<frame->size()<<", consumers size:"<< m_consumerList.size();
+					#endif
+					//frame->image().save("frametest.jpg");
+		
+					#ifdef DEBUG_VIDEOFRAME_POINTERS
+					qDebug() << "VideoReceiver::processBlock(): Enqueing new frame:"<<frame;
+					#endif
+					
+					enqueue(frame);
+				}
+				else
+				{
+					#ifdef DEBUG
+					qDebug() << "VideoReceiver::processBlock: Port: "<<m_port<<": validFrame=false, not enquing frame";
+					#endif
+				}
 				/*
 				//480,480, QImage::Format_RGB32);
 				
@@ -643,10 +688,12 @@ void VideoReceiver::processBlock()
 	// 			//qDebug() << "processBlock(): latency: "<<;
 				#endif
 				
-				int msecLatency = msecTo(timestamp);
+				int msecLatency = msecTo(m_timestamp);
 				m_latencyAccum += msecLatency;
-				
-				if (m_debugFps && !(m_frameCount % 100)) 
+				#ifdef DEBUG_TIME
+				m_debugFps = true;
+				#endif
+				if (m_debugFps && !(m_frameCount % 10))
 				{
 					QString framesPerSecond;
 					framesPerSecond.setNum(m_frameCount /(m_time.elapsed() / 1000.0), 'f', 2);
@@ -655,7 +702,7 @@ void VideoReceiver::processBlock()
 					latencyPerFrame.setNum((((double)m_latencyAccum) / ((double)m_frameCount)), 'f', 3);
 					
 					if(m_debugFps && framesPerSecond!="0.00")
-						qDebug() << "VideoReceiver: Receive FPS: " << qPrintable(framesPerSecond) << qPrintable(QString(", Receive Latency: %1 ms").arg(latencyPerFrame));
+						qDebug() << "VideoReceiver::processBlock: Port: "<<m_port<<": Receive FPS: " << qPrintable(framesPerSecond) << qPrintable(QString(", Receive Latency: %1 ms").arg(latencyPerFrame));
 			
 					m_time.start();
 					m_frameCount = 0;
@@ -663,11 +710,28 @@ void VideoReceiver::processBlock()
 					
 					//lastFrameTime = time.elapsed();
 				}
+				
 				m_frameCount++;
-			}
-		}
-	}
-}
+				
+				#ifdef DEBUG_TIME
+				qDebug() << "VideoReceiver::processBlock: Port: "<<m_port<<": t2.elapsed:"<<t2.restart()<<", mark4";
+				#endif
+				
+			} // consumer list wasn't empty, not a map block
+		
+			m_dataBlock.remove(0,m_byteCount);
+
+			// Reset byte count so that the next time thru, m_dataBlock is assumed to start with a header
+			m_byteCount = -1;
+
+			
+		} // m_dataBlock.size() >= m_byteCount
+	} // while !done
+
+	#ifdef DEBUG_TIME
+	qDebug() << "VideoReceiver::processBlock: Port: "<<m_port<<": end of function, processing time: "<<time.elapsed();
+	#endif
+} // end of func
 
 
 QTime VideoReceiver::timestampToQTime(int ts)

@@ -159,6 +159,9 @@ private:
 #endif
 	bool m_connected;
 	static QMutex m_threadCacheMutex;
+	
+	// Header data storage between reads
+	int m_imgX, m_imgY, m_pixelFormatId, m_imageFormatId, m_bufferType, m_timestamp, m_holdTime, m_origX, m_origY;
 };
 
 #endif // VideoReceiver_H

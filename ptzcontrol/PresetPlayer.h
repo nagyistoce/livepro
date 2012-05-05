@@ -106,6 +106,8 @@ private slots:
 	void updateLive();
 	void sceneSnapshot();
 	
+	void zero();
+	
 protected:
 	void setupGui();
 	void setupClient();

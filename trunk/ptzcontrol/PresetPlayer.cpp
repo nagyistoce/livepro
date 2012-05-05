@@ -470,7 +470,7 @@ void PresetPlayer::setupGui()
 	if(m_zoom)
 	{
 		QPushButton *zero = new QPushButton("0");
-		connect(zero, SIGNAL(clicked()), m_zoom, SLOT(zero()));
+		connect(zero, SIGNAL(clicked()), this, SLOT(zero()));
 		hbox->addWidget(zero);
 	}
 	
@@ -532,6 +532,12 @@ void PresetPlayer::setupGui()
 	
 	split->restoreState(QSettings().value("mainwindow/splitter").toByteArray());
         m_masterSplitter->restoreState(QSettings().value("mainwindow/master-splitter").toByteArray());
+}
+
+void PresetPlayer::zero()
+{
+	m_zBox->setValue(0);
+	m_zoom->zero();
 }
 
 void PresetPlayer::loadPresets()
@@ -1055,8 +1061,8 @@ void RelDragWidget::mouseMoveEvent(QMouseEvent *evt)
 		if(zScale > 1.0)
 			zScale = 1.0;
 		
-		double xScale = 2.5 * zScale;
-		double yScale = 2.5 * zScale;
+		double xScale = 1.5 * zScale;
+		double yScale = 1.5 * zScale;
 		
 		if(xScale < 0.51)
 			xScale = 0.51;

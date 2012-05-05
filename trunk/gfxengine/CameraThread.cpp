@@ -1093,7 +1093,7 @@ void CameraThread::run()
 	qDebug() << "CameraThread::run: "<<this<<" In Thread ID "<<QThread::currentThreadId();
 	#endif
 	
-//         int counter = 0;
+	int counter = 0;
 	while(!m_killed)
 	{
                 //qDebug() << "CameraThread::run: "<<this<<" counter:"<<counter++;
@@ -1120,7 +1120,11 @@ void CameraThread::run()
                 }
                 */
 
-		msleep(int(1000 / m_fps / 1.5 / (m_deinterlace ? 1 : 2)));
+		//int ms = int(1000 / m_fps / 1.5 / (m_deinterlace ? 1 : 2));
+		int ms = int(1000 / m_fps);// / 1.5 / (m_deinterlace ? 1 : 2));
+		msleep(ms);
+//  		if(counter++ < 100)
+//  			qDebug() << "CameraThread: ms:"<<ms;
 		//msleep(int(1000 / m_fps / 1.5));// (m_deinterlace ? 1 : 2)));
 	};
 }

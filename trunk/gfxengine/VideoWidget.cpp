@@ -16,6 +16,7 @@
 #include <QApplication>
 #include <QMessageBox>
 
+
 VideoWidget::VideoWidget(QWidget *parent)
 	: 
 	#ifdef NO_OPENGL
@@ -618,6 +619,138 @@ void VideoWidget::setFps(int fps)
 	if(m_thread)
 		m_thread->setIsBuffered(m_forceFps < 0);
 }
+/*
+void VideoWidget::paintEvent(QPaintEvent *event)
+{
+	if(rect().isEmpty() || !isVisible())
+		return;
+		
+	QPainter painter(this);
+	if(!painter.isActive())
+		return;
+	
+	//p.drawImage(m_targetRect,m_frame->image(),m_sourceRect);
+	QImage frameImage = m_frame->image();
+// 	if(m_sourceRect != frameImage.rect())
+// 		frameImage = frameImage.copy(m_sourceRect);
+	
+	painter.setRenderHint(QPainter::Antialiasing);
+	
+// 	qDebug() << "> GLWidget::paintEvent OpenGL:"  << ((painter.paintEngine()->type() != QPaintEngine::OpenGL &&
+// 			painter.paintEngine()->type() != QPaintEngine::OpenGL2) ? "disabled" : "enabled");
+	
+	QGLContext* context = const_cast<QGLContext *>(QGLContext::currentContext());
+	if (!context)
+	{
+		qDebug() << "> GLWidget::paintEvent !!! Unable to retrieve OGL context";
+		return;
+	}
+	context->makeCurrent();
+	
+	//painter.fillRect(QRectF(QPoint(0, 0), QSize(1280, 768)), Qt::black);
+	painter.fillRect(m_targetRect, Qt::black);
+	
+	painter.beginNativePainting();
+	
+	// Setting up texture and transfering data to the GPU 
+	
+	static GLuint texture = 0;
+	if (texture != 0)
+	{
+		context->deleteTexture(texture);
+	}
+	
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	glBindTexture(GL_TEXTURE_RECTANGLE_ARB, texture);
+	
+	glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	
+	glTexImage2D(
+		GL_TEXTURE_RECTANGLE_ARB,
+		0,
+		GL_RGBA8, 
+		frameImage.width(), frameImage.height(),
+		0,
+		GL_BGRA,
+		GL_UNSIGNED_BYTE,
+		frameImage.bits()
+		);
+		
+	//assert(glGetError() == GL_NO_ERROR);
+	
+	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	glEnable(GL_TEXTURE_RECTANGLE_ARB);
+	
+	glClearColor(0.3, 0.3, 0.4, 1.0);
+	
+	// Initialize shaders and execute them    
+	//_init_shaders();
+	
+	int img_width = frameImage.width();
+	int img_height = frameImage.height();
+	GLfloat offset_x = m_targetRect.left();
+	GLfloat offset_y = m_targetRect.top();
+	GLfloat gl_width = m_targetRect.width(); //width(); // GL context size
+	GLfloat gl_height = m_targetRect.height(); //height();
+	
+	glDisable(GL_CULL_FACE); // might cause problems if enabled
+	glBegin(GL_QUADS);
+		glTexCoord2f(m_sourceRect.left(), m_sourceRect.top());
+		glVertex2f(offset_x, offset_y);
+	
+		glTexCoord2f(m_sourceRect.right(), m_sourceRect.top());
+		glVertex2f(offset_x + gl_width, offset_y);
+	
+		glTexCoord2f(m_sourceRect.right(), m_sourceRect.bottom());
+		glVertex2f(offset_x + gl_width, offset_y + gl_height);
+	
+		glTexCoord2f(m_sourceRect.left(), m_sourceRect.bottom());
+		glVertex2f(offset_x, offset_y + gl_height);
+	glEnd();
+	// draw a single quad
+	
+	painter.endNativePainting();
+	
+	m_frameCount ++;
+	if(m_renderFps)
+	{
+		QString framesPerSecond;
+		framesPerSecond.setNum(m_frameCount /(m_elapsedTime.elapsed() / 1000.0), 'f', 2);
+		
+		
+		QString latencyString;
+		if(!m_frame->captureTime().isNull())
+		{
+			int msecLatency = m_frame->captureTime().msecsTo(QTime::currentTime());
+			
+			m_latencyAccum += msecLatency;
+			
+			QString latencyPerFrame;
+			latencyPerFrame.setNum((((double)m_latencyAccum) / ((double)m_frameCount)), 'f', 3);
+			
+			latencyString = QString("| %1 ms latency").arg(latencyPerFrame);
+		}
+			
+			
+
+// 		painter.setPen(Qt::black);
+// 		painter.drawText(m_targetRect.x() + 6,m_targetRect.y() + 16,QString("%1 fps %2").arg(framesPerSecond).arg(latencyString));
+// 		painter.setPen(Qt::white);
+// 		painter.drawText(m_targetRect.x() + 5,m_targetRect.y() + 15,QString("%1 fps %2").arg(framesPerSecond).arg(latencyString));
+		
+		if(!(m_frameCount % 30))
+		{
+			m_elapsedTime.start();
+			m_frameCount = 0;
+			m_latencyAccum = 0;
+			qDebug() << "FPS: "<<QString("%1 fps %2").arg(framesPerSecond).arg(latencyString);
+		}
+	}
+}
+*/
 
 void VideoWidget::paintEvent(QPaintEvent*)
 {
@@ -630,7 +763,7 @@ void VideoWidget::paintEvent(QPaintEvent*)
 	//p.setRenderHint(QPainter::SmoothPixmapTransform);
 	//p.setRenderHint(QPainter::Antialiasing);
 
-	p.fillRect(rect(),m_videoBgColor);
+	//p.fillRect(rect(),m_videoBgColor);
 
 	if(!m_thread)
 	{
@@ -657,8 +790,16 @@ void VideoWidget::paintEvent(QPaintEvent*)
 				{
 					//QImage image((const uchar*)m_frame->byteArray().constData(),m_frame->size().width(),m_frame->size().height(),QImage::Format_RGB32);
 					const QImage::Format imageFormat = VideoFrame::imageFormatFromPixelFormat(m_frame->pixelFormat());
-					if(imageFormat != QImage::Format_Invalid)
+					if(imageFormat == QImage::Format_Invalid)
 					{
+						qDebug() << "VideoWidget::paintEvent: Invalid pixel format for byte array buffer";
+					}
+					#ifndef NO_OPENGL
+					else
+					if(imageFormat != QImage::Format_ARGB32 &&
+					   imageFormat != QImage::Format_RGB32)
+					{
+					#endif
 						QImage image(m_frame->pointer(),
 							m_frame->size().width(),
 							m_frame->size().height(),
@@ -679,13 +820,90 @@ void VideoWidget::paintEvent(QPaintEvent*)
 						//painter->drawImage(target,image,source);
 						//updateRects();
 						p.drawImage(m_targetRect,image,m_sourceRect);
-						//qDebug() << "VideoWidget::paintEvent: Painted RAW frame, size:" << image.size()<<", source:"<<m_sourceRect<<", target:"<<m_targetRect<<", format:"<<image.format();
+					//	qDebug() << "VideoWidget::paintEvent: Painted RAW frame, size:" << image.size()<<", source:"<<m_sourceRect<<", target:"<<m_targetRect<<", format:"<<image.format();
+					#ifndef NO_OPENGL
 					}
 					else
 					{
-						qDebug() << "VideoWidget::paintEvent: Invalid pixel format for byte array buffer";
+						p.setRenderHint(QPainter::Antialiasing);
+						
+					// 	qDebug() << "> GLWidget::paintEvent OpenGL:"  << ((p.paintEngine()->type() != QPaintEngine::OpenGL &&
+					// 			p.paintEngine()->type() != QPaintEngine::OpenGL2) ? "disabled" : "enabled");
+						
+						QGLContext* context = const_cast<QGLContext *>(QGLContext::currentContext());
+						if (!context)
+						{
+							qDebug() << "> GLWidget::paintEvent !!! Unable to retrieve OGL context";
+							return;
+						}
+						context->makeCurrent();
+						
+						//p.fillRect(QRectF(QPoint(0, 0), QSize(1280, 768)), Qt::black);
+						p.fillRect(m_targetRect, Qt::black);
+						
+						p.beginNativePainting();
+						
+						// Setting up texture and transfering data to the GPU 
+						
+						static GLuint texture = 0;
+						if (texture != 0)
+						{
+							context->deleteTexture(texture);
+						}
+						
+						glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+						glBindTexture(GL_TEXTURE_RECTANGLE_ARB, texture);
+						
+						glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+						glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+						glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+						glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+						
+						glTexImage2D(
+							GL_TEXTURE_RECTANGLE_ARB,
+							0,
+							GL_RGBA8, 
+							m_frame->size().width(), m_frame->size().height(),
+							0,
+							GL_BGRA,
+							GL_UNSIGNED_BYTE,
+							m_frame->pointer()
+							);
+							
+						//assert(glGetError() == GL_NO_ERROR);
+						
+						glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+						glEnable(GL_TEXTURE_RECTANGLE_ARB);
+						
+						glClearColor(0.3, 0.3, 0.4, 1.0);
+						
+						// Initialize shaders and execute them    
+						//_init_shaders();
+						
+						GLfloat offset_x = m_targetRect.left();
+						GLfloat offset_y = m_targetRect.top();
+						GLfloat gl_width = m_targetRect.width(); //width(); // GL context size
+						GLfloat gl_height = m_targetRect.height(); //height();
+						
+						glDisable(GL_CULL_FACE); // might cause problems if enabled
+						glBegin(GL_QUADS);
+							glTexCoord2f(m_sourceRect.left(), m_sourceRect.top());
+							glVertex2f(offset_x, offset_y);
+						
+							glTexCoord2f(m_sourceRect.right(), m_sourceRect.top());
+							glVertex2f(offset_x + gl_width, offset_y);
+						
+							glTexCoord2f(m_sourceRect.right(), m_sourceRect.bottom());
+							glVertex2f(offset_x + gl_width, offset_y + gl_height);
+						
+							glTexCoord2f(m_sourceRect.left(), m_sourceRect.bottom());
+							glVertex2f(offset_x, offset_y + gl_height);
+						glEnd();
+						// draw a single quad
+						
+						p.endNativePainting();
 					}
-					
+					#endif
 					
 					
 					//qDebug() << "Simple bytearray format: isNull: "<<image.isNull();
@@ -702,7 +920,98 @@ void VideoWidget::paintEvent(QPaintEvent*)
 // 				{
 // 					QImage img = m_frame->image().copy();
 // 					img = img.convertToFormat(QImage::Format_ARGB32_Premultiplied);
-					p.drawImage(m_targetRect,m_frame->image(),m_sourceRect);
+					//qDebug() << "VideoWidget::paintEvent: Painted QImage frame, size:" << m_frame->image().size()<<", source:"<<m_sourceRect<<", target:"<<m_targetRect<<", format:"<<m_frame->image().format();
+					//p.drawImage(m_targetRect,m_frame->image(),m_sourceRect);
+					
+					QImage frameImage = m_frame->image();
+					#ifndef NO_OPENGL
+					if(frameImage.format() != QImage::Format_ARGB32 &&
+					   frameImage.format() != QImage::Format_RGB32)
+					#endif
+						p.drawImage(m_targetRect,m_frame->image(),m_sourceRect);
+					#ifndef NO_OPENGL
+					else
+					{
+						
+						p.setRenderHint(QPainter::Antialiasing);
+						
+					// 	qDebug() << "> GLWidget::paintEvent OpenGL:"  << ((p.paintEngine()->type() != QPaintEngine::OpenGL &&
+					// 			p.paintEngine()->type() != QPaintEngine::OpenGL2) ? "disabled" : "enabled");
+						
+						QGLContext* context = const_cast<QGLContext *>(QGLContext::currentContext());
+						if (!context)
+						{
+							qDebug() << "> GLWidget::paintEvent !!! Unable to retrieve OGL context";
+							return;
+						}
+						context->makeCurrent();
+						
+						//p.fillRect(QRectF(QPoint(0, 0), QSize(1280, 768)), Qt::black);
+						p.fillRect(m_targetRect, Qt::black);
+						
+						p.beginNativePainting();
+						
+						// Setting up texture and transfering data to the GPU 
+						
+						static GLuint texture = 0;
+						if (texture != 0)
+						{
+							context->deleteTexture(texture);
+						}
+						
+						glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+						glBindTexture(GL_TEXTURE_RECTANGLE_ARB, texture);
+						
+						glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+						glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+						glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+						glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+						
+						glTexImage2D(
+							GL_TEXTURE_RECTANGLE_ARB,
+							0,
+							GL_RGBA8, 
+							frameImage.width(), frameImage.height(),
+							0,
+							GL_BGRA,
+							GL_UNSIGNED_BYTE,
+							frameImage.bits()
+							);
+							
+						//assert(glGetError() == GL_NO_ERROR);
+						
+						glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+						glEnable(GL_TEXTURE_RECTANGLE_ARB);
+						
+						glClearColor(0.3, 0.3, 0.4, 1.0);
+						
+						// Initialize shaders and execute them    
+						//_init_shaders();
+						
+						GLfloat offset_x = m_targetRect.left();
+						GLfloat offset_y = m_targetRect.top();
+						GLfloat gl_width = m_targetRect.width(); //width(); // GL context size
+						GLfloat gl_height = m_targetRect.height(); //height();
+						
+						glDisable(GL_CULL_FACE); // might cause problems if enabled
+						glBegin(GL_QUADS);
+							glTexCoord2f(m_sourceRect.left(), m_sourceRect.top());
+							glVertex2f(offset_x, offset_y);
+						
+							glTexCoord2f(m_sourceRect.right(), m_sourceRect.top());
+							glVertex2f(offset_x + gl_width, offset_y);
+						
+							glTexCoord2f(m_sourceRect.right(), m_sourceRect.bottom());
+							glVertex2f(offset_x + gl_width, offset_y + gl_height);
+						
+							glTexCoord2f(m_sourceRect.left(), m_sourceRect.bottom());
+							glVertex2f(offset_x, offset_y + gl_height);
+						glEnd();
+						// draw a single quad
+						
+						p.endNativePainting();
+					}
+					#endif
 // 				}
 			}
 	
@@ -715,7 +1024,7 @@ void VideoWidget::paintEvent(QPaintEvent*)
 			if(m_overlayFrame && m_overlaySource && !m_overlayFrame->image().isNull())
 				p.drawImage(m_overlayTargetRect,m_overlayFrame->image(),m_overlaySourceRect);
 			
-			if(m_showOverlayText)
+			if(m_showOverlayText && !m_overlayText.isEmpty())
 				p.drawPixmap(m_targetRect.topLeft(),m_overlay);
 		
 			m_frameCount ++;
@@ -740,10 +1049,10 @@ void VideoWidget::paintEvent(QPaintEvent*)
 					
 					
 	
-				p.setPen(Qt::black);
-				p.drawText(m_targetRect.x() + 6,m_targetRect.y() + 16,QString("%1 fps %2").arg(framesPerSecond).arg(latencyString));
-				p.setPen(Qt::white);
-				p.drawText(m_targetRect.x() + 5,m_targetRect.y() + 15,QString("%1 fps %2").arg(framesPerSecond).arg(latencyString));
+// 				p.setPen(Qt::black);
+// 				p.drawText(m_targetRect.x() + 6,m_targetRect.y() + 16,QString("%1 fps %2").arg(framesPerSecond).arg(latencyString));
+// 				p.setPen(Qt::white);
+// 				p.drawText(m_targetRect.x() + 5,m_targetRect.y() + 15,QString("%1 fps %2").arg(framesPerSecond).arg(latencyString));
 				
 				if(!(m_frameCount % 30))
 				{
@@ -764,6 +1073,7 @@ void VideoWidget::paintEvent(QPaintEvent*)
 
 	updateTimer();
 }
+
 
 void VideoWidget::setOverlaySource(VideoSource *source)
 {

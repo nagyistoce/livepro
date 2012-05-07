@@ -8,6 +8,7 @@
 #include <QThread>
 #include <QImage>
 #include <QTime>
+#include <QTimer>
 
 #define MJPEG_TEST 1
 
@@ -117,6 +118,7 @@ private slots:
 	void lostConnection(QAbstractSocket::SocketError);
 	void reconnect();
 	void connectionReady();
+	void connectTimeout();
 
 private:
 	void processReceivedMap(const QVariantMap&);
@@ -162,6 +164,9 @@ private:
 	
 	// Header data storage between reads
 	int m_imgX, m_imgY, m_pixelFormatId, m_imageFormatId, m_bufferType, m_timestamp, m_holdTime, m_origX, m_origY;
+	
+	// Timer to catch dead connect calls
+	QTimer m_connectTimer;
 };
 
 #endif // VideoReceiver_H

@@ -139,6 +139,9 @@ PlayerConnection::PlayerConnection(QObject *parent)
 	, m_crossfadeSpeed(750)
 	, m_useCount(0)
 {
+	connect(&m_connectTimer, SIGNAL(timeout()), this, SLOT(connectTimeout()));
+	m_connectTimer.setInterval(5 * 1000);
+	m_connectTimer.setSingleShot(true);
 }
 
 PlayerConnection::PlayerConnection(QByteArray& ba, QObject *parent)
@@ -157,6 +160,10 @@ PlayerConnection::PlayerConnection(QByteArray& ba, QObject *parent)
 	, m_useCount(0)
 {
 	fromByteArray(ba);
+	
+	connect(&m_connectTimer, SIGNAL(timeout()), this, SLOT(connectTimeout()));
+	m_connectTimer.setInterval(1000);
+	m_connectTimer.setSingleShot(true);
 }
 
 PlayerConnection::~PlayerConnection()
@@ -281,8 +288,13 @@ void PlayerConnection::removeOverlay(GLScene *scene)
 
 void PlayerConnection::connectPlayer(bool sendDefaults)
 {
+	if(m_connectTimer.isActive())
+		m_connectTimer.stop();
+
 	m_client = new VariantMapClient();
 	m_client->connectTo(m_host,9977);
+	
+	m_connectTimer.start();
 
 	connect(m_client, SIGNAL(socketConnected()), this, SLOT(clientConnected()));
 	connect(m_client, SIGNAL(receivedMap(QVariantMap)), this, SLOT(receivedMap(QVariantMap)));
@@ -334,6 +346,9 @@ void PlayerConnection::requestVideoInputList()
 
 void PlayerConnection::clientConnected()
 {
+	if(m_connectTimer.isActive())
+		m_connectTimer.stop();
+	
 	//qDebug() << "PlayerConnection::clientConnected(): m_justTesting:"<<m_justTesting;
 	m_isConnected = true;
 		
@@ -405,6 +420,9 @@ void PlayerConnection::socketError(QAbstractSocket::SocketError socketError)
 
 void PlayerConnection::lostConnection()
 {
+	if(m_connectTimer.isActive())
+		m_connectTimer.stop();
+	
 	//qDebug() << "PlayerConnection::lostConnection: m_autoReconnect:"<<m_autoReconnect; 
 	if(m_autoReconnect)
 	{
@@ -412,6 +430,21 @@ void PlayerConnection::lostConnection()
 	}
 	else
 	{
+		disconnectPlayer();
+	}
+}
+
+void PlayerConnection::connectTimeout()
+{
+	if(m_autoReconnect)
+	{
+		qDebug() << "PlayerConnection::connectTimeout: Connect call timed out, attempting reconnect.";
+		
+		reconnect();
+	}
+	else
+	{
+		qDebug() << "PlayerConnection::connectTimeout: Connect call timed out, disconnecting.";
 		disconnectPlayer();
 	}
 }

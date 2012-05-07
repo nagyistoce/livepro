@@ -99,6 +99,11 @@ VideoReceiver::VideoReceiver(QObject *parent)
 	
 	// For some reason, GLVideoDrawable WONT WORK if I sent the QImage (above) first - it HAS to use the dot.gif!!!! Grrr.
 	enqueue(new VideoFrame(QImage("../data/icons/dot.gif"),1000/30));
+	
+	connect(&m_connectTimer, SIGNAL(timeout()), this, SLOT(connectTimeout()));
+	m_connectTimer.setInterval(1000);
+	m_connectTimer.setSingleShot(true);
+	
 }
 VideoReceiver::~VideoReceiver()
 {
@@ -124,6 +129,9 @@ void VideoReceiver::destroySource()
 
 bool VideoReceiver::connectTo(const QString& host, int port, QString url, const QString& user, const QString& pass)
 {
+	if(m_connectTimer.isActive())
+		m_connectTimer.stop();
+	
 	if(url.isEmpty())
 		url = "/";
 		
@@ -164,6 +172,8 @@ bool VideoReceiver::connectTo(const QString& host, int port, QString url, const 
 	m_socket->connectToHost(host,port);
 	m_socket->setReadBufferSize(1024 * 1024 * 5);
 	
+	m_connectTimer.start();
+	
 	#ifdef DEBUG
 	qDebug() << "VideoReceiver::connectTo: Connecting to"<<host<<":"<<port<<" with socket:"<<m_socket;
 	#endif
@@ -179,6 +189,9 @@ bool VideoReceiver::connectTo(const QString& host, int port, QString url, const 
 
 void VideoReceiver::connectionReady()
 {
+	if(m_connectTimer.isActive())
+		m_connectTimer.stop();
+		
 	#ifdef DEBUG
 	qDebug() << "VideoReceiver::connectionReady(): Connected";
 	#endif
@@ -195,8 +208,36 @@ void VideoReceiver::log(const QString& str)
 	qDebug() << "VideoReceiver::log(): "<<str;
 }
 
+
+void VideoReceiver::connectTimeout()
+{
+	if(m_autoReconnect)
+	{
+		#ifdef DEBUG
+		qDebug() << "VideoReceiver::connectTimeout: Connect call timed out, attempting reconnect.";
+		#endif
+		
+		// GLVideoDrawable MUSt use dot.gif, not a transparent image as below
+		enqueue(new VideoFrame(QImage("../data/icons/dot.gif"),1000/30));
+		//QImage blueImage(1,1, QImage::Format_ARGB32);
+	        //blueImage.fill(Qt::transparent);
+		//enqueue(new VideoFrame(blueImage,1000/30));
+
+		//QTimer::singleShot(5000,this,SLOT(reconnect()));
+		reconnect();
+	}
+	else
+	{
+		qDebug() << "VideoReceiver::connectTimeout: Connect call timed out, exiting receiver thread.";
+		exit();
+	}
+}
+
 void VideoReceiver::lostConnection()
 {
+	if(m_connectTimer.isActive())
+		m_connectTimer.stop();
+	
 	if(m_autoReconnect)
 	{
 		#ifdef DEBUG

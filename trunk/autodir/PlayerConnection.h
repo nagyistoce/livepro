@@ -187,6 +187,7 @@ private slots:
 	void socketError(QAbstractSocket::SocketError);
 	void lostConnection();
 	void reconnect();
+	void connectTimeout();
 	
 private:
 	void setError(const QString&, const QString& cmd="");
@@ -226,6 +227,9 @@ private:
 	int m_useCount;
 	
 	QList<GLScene*> m_overlays;
+
+	// Timer to catch dead connect calls
+	QTimer m_connectTimer;
 };
 
 class PlayerConnectionList : public QAbstractListModel

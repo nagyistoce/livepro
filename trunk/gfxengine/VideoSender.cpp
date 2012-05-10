@@ -907,6 +907,11 @@ void VideoSenderThread::processBlock()
 		camera->setInput(name);
 	}
 	else
+	if(cmd == Video_Ping)
+	{
+		sendReply(QVariantList() << "cmd" << cmd << "ping" << map["ping"]);
+	}
+	else
 	{
 		// Unknown Command
 		qDebug() << "VideoSenderThread::processBlock: "<<cmd<<": Unknown command.";

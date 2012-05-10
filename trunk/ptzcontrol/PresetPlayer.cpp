@@ -665,7 +665,7 @@ void PresetPlayer::presetNameChanged(QString name)
 	p->name = name;
 	savePresets();
 	
-	PresetMidiInputAdapter *inst = PresetMidiInputAdapter::instance();
+	PresetMidiInputAdapter *inst = PresetMidiInputAdapter::instance(this);
 	inst->reloadActionList();
 }
 
@@ -941,7 +941,7 @@ void PlayerZoomAdapter::setZoom(int zoom, bool zero)
 
 void PresetPlayer::setupMidi()
 {
-	PresetMidiInputAdapter *inst = PresetMidiInputAdapter::instance();
+	PresetMidiInputAdapter *inst = PresetMidiInputAdapter::instance(this);
 	inst->reloadActionList();
 	
 	MidiInputSettingsDialog *d = new MidiInputSettingsDialog(inst,this);

@@ -64,6 +64,9 @@
 // Render a video connection string 'con' on the screen using a GLVideoInputDrawable
 #define Server_ShowVideoConnection	 "ShowVideoConnection"
 
+/// For detecting dead connections by the client...
+#define Server_DeadPing "DeadPing"
+
 // TODO not implemented below, should we implement these since they are all in subviews?
 #define Server_SetAlphaMask "SetAlphaMask"
 #define Server_SetKeystone "SetKeystone"

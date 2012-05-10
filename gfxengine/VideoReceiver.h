@@ -119,6 +119,7 @@ private slots:
 	void reconnect();
 	void connectionReady();
 	void connectTimeout();
+	void pingServer();
 
 private:
 	void processReceivedMap(const QVariantMap&);
@@ -167,6 +168,8 @@ private:
 	
 	// Timer to catch dead connect calls
 	QTimer m_connectTimer;
+	QTimer m_pingTimer;
+	QTimer m_pingDeadTimer;
 };
 
 #endif // VideoReceiver_H

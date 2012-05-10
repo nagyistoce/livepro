@@ -188,6 +188,7 @@ private slots:
 	void lostConnection();
 	void reconnect();
 	void connectTimeout();
+	void pingServer();
 	
 private:
 	void setError(const QString&, const QString& cmd="");
@@ -230,6 +231,8 @@ private:
 
 	// Timer to catch dead connect calls
 	QTimer m_connectTimer;
+	QTimer m_pingTimer;
+	QTimer m_pingDeadTimer;
 };
 
 class PlayerConnectionList : public QAbstractListModel

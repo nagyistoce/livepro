@@ -87,8 +87,8 @@ private slots:
 	
 	void videoInputListReceived(const QStringList&);
 	
-	GroupPlayerWidget * addGroupPlayer();
-	OverlayWidget * addOverlay();
+	GroupPlayerWidget * addGroupPlayer(bool browseOnload=true);
+	OverlayWidget * addOverlay(bool browseOnload=true);
 	CameraMixerWidget * addCameraMixer();
 	VideoPlayerWidget * addVideoPlayer();
 	
@@ -199,7 +199,7 @@ class GroupPlayerWidget : public DirectorSourceWidget
 {
 	Q_OBJECT
 public:
-	GroupPlayerWidget(DirectorWindow*);
+	GroupPlayerWidget(DirectorWindow*, bool browseOnload);
 	~GroupPlayerWidget();
 	
 	QString file();// { return m_collection->fileName(); }
@@ -276,7 +276,7 @@ class OverlayWidget : public DirectorSourceWidget
 {
 	Q_OBJECT
 public:
-	OverlayWidget(DirectorWindow*);
+	OverlayWidget(DirectorWindow*, bool browseOnload=true);
 	~OverlayWidget();
 	
 	QString file();// { return m_collection->fileName(); }

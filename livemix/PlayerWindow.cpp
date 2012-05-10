@@ -698,7 +698,9 @@ void PlayerWindow::receivedMap(QVariantMap map)
 	//qDebug() << "PlayerWindow::receivedMap: "<<map;
 
 	QString cmd = map["cmd"].toString();
-	qDebug() << "PlayerWindow::receivedMap: [COMMAND]: "<<cmd;
+	
+	if(cmd != Server_DeadPing)
+		qDebug() << "PlayerWindow::receivedMap: [COMMAND]: "<<cmd;
 
 	if(cmd == Server_Login)
 	{
@@ -1157,6 +1159,12 @@ void PlayerWindow::receivedMap(QVariantMap map)
 				<< "cmd"  << cmd
 				<< "list" << list);
 
+	}
+	else
+	if(cmd == Server_DeadPing)
+	{
+		sendReply(QVariantList()
+				<< "cmd" << cmd);
 	}
 	else
 	{

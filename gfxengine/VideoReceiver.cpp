@@ -8,6 +8,7 @@
 #include <QMutexLocker>
 
 //#define DEBUG
+//#define DEBUG_SOCKET
 
 QMap<QString,VideoReceiver *> VideoReceiver::m_threadMap;
 QMutex VideoReceiver::m_threadCacheMutex;
@@ -104,7 +105,14 @@ VideoReceiver::VideoReceiver(QObject *parent)
 	m_connectTimer.setInterval(1000);
 	m_connectTimer.setSingleShot(true);
 	
+	connect(&m_pingTimer, SIGNAL(timeout()), this, SLOT(pingServer()));
+	m_pingTimer.setInterval(1000);
+	
+	connect(&m_pingDeadTimer, SIGNAL(timeout()), this, SLOT(lostConnection()));
+	m_pingDeadTimer.setInterval(2000);
+	m_pingDeadTimer.setSingleShot(true);
 }
+
 VideoReceiver::~VideoReceiver()
 {
 	#ifdef DEBUG
@@ -145,7 +153,7 @@ bool VideoReceiver::connectTo(const QString& host, int port, QString url, const 
 	
 	if(m_socket)
 	{
-		#ifdef DEBUG
+		#ifdef DEBUG_SOCKET
 		qDebug() << "VideoReceiver::connectTo: Discarding old socket:"<<m_socket;
 		#endif
 		disconnect(m_socket, 0, this, 0);
@@ -174,7 +182,7 @@ bool VideoReceiver::connectTo(const QString& host, int port, QString url, const 
 	
 	m_connectTimer.start();
 	
-	#ifdef DEBUG
+	#ifdef DEBUG_SOCKET
 	qDebug() << "VideoReceiver::connectTo: Connecting to"<<host<<":"<<port<<" with socket:"<<m_socket;
 	#endif
 	
@@ -192,7 +200,7 @@ void VideoReceiver::connectionReady()
 	if(m_connectTimer.isActive())
 		m_connectTimer.stop();
 		
-	#ifdef DEBUG
+	#ifdef DEBUG_SOCKET
 	qDebug() << "VideoReceiver::connectionReady(): Connected";
 	#endif
 	m_connected = true;
@@ -201,6 +209,8 @@ void VideoReceiver::connectionReady()
 	
 	// Proactively request video hints
 	queryVideoHints();
+	
+	m_pingTimer.start();
 }
 
 void VideoReceiver::log(const QString& str)
@@ -213,7 +223,7 @@ void VideoReceiver::connectTimeout()
 {
 	if(m_autoReconnect)
 	{
-		#ifdef DEBUG
+		#ifdef DEBUG_SOCKET
 		qDebug() << "VideoReceiver::connectTimeout: Connect call timed out, attempting reconnect.";
 		#endif
 		
@@ -237,11 +247,13 @@ void VideoReceiver::lostConnection()
 {
 	if(m_connectTimer.isActive())
 		m_connectTimer.stop();
+		
+	m_pingTimer.stop();
 	
 	if(m_autoReconnect)
 	{
-		#ifdef DEBUG
-		qDebug() << "VideoReceiver::lostSonnection: Lost server, attempting to reconnect in 5 sec";
+		#ifdef DEBUG_SOCKET
+		qDebug() << "VideoReceiver::lostSonnection(): Lost server, attempting to reconnect in 5 sec";
 		#endif
 		
 		// GLVideoDrawable MUSt use dot.gif, not a transparent image as below
@@ -260,10 +272,17 @@ void VideoReceiver::lostConnection()
 
 void VideoReceiver::lostConnection(QAbstractSocket::SocketError error)
 {
-	//qDebug() << "VideoReceiver::lostConnection("<<error<<"):" << m_socket->errorString();
+	#ifdef DEBUG_SOCKET
+	qDebug() << "VideoReceiver::lostConnection("<<error<<"):" << m_socket->errorString();
+	#endif
 	
 	if(error == QAbstractSocket::ConnectionRefusedError)
 		lostConnection();
+	#ifdef DEBUG_SOCKET
+	else
+		qDebug() << "VideoReceiver::lostConnection("<<error<<"): NOT RECONNECTING";
+	#endif
+	
 }
 
 
@@ -274,6 +293,21 @@ void VideoReceiver::reconnect()
 		connectTo(m_host,m_port,m_url);
 }
 
+void VideoReceiver::pingServer()
+{
+	if(!m_connected)
+		return;
+		
+	sendCommand(QVariantList() << "cmd" << Video_Ping);
+	
+	#ifdef DEBUG_SOCKET
+	qDebug() << "VideoReceiver::pingServer(): ping sent";
+	#endif
+	
+	if(!m_pingDeadTimer.isActive())
+		m_pingDeadTimer.start();
+	
+}
 
 void VideoReceiver::sendCommand(QVariantMap map)
 {
@@ -868,6 +902,15 @@ void VideoReceiver::processReceivedMap(const QVariantMap & map)
 	{
 		//<< "flag"	<< flag
 		emit signalStatusChanged(map["flag"].toBool());
+	}
+	else
+	if(cmd == Video_Ping)
+	{
+		#ifdef DEBUG_SOCKET
+		qDebug() << "VideoReceiver::pingServer(): ping received";
+		#endif
+		
+		m_pingDeadTimer.stop();
 	}
 	else
 	{

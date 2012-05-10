@@ -350,9 +350,9 @@ void DirectorWindow::showPlayerLiveMonitor(PlayerConnection *con)
 		
 		qDebug() << "DirectorWindow::showPlayerLiveMonitor: Connected to "<<host<<":"<<port<<", creating widget...";
 		
-		//VideoWidget *vid = new VideoWidget();
-		//qDebug() << "DirectorWindow::showPlayerLiveMonitor: Created VideoWidget:"<<vid;
-		//vid->setVideoSource(rx);
+// 		VideoWidget *vid = new VideoWidget();
+// 		qDebug() << "DirectorWindow::showPlayerLiveMonitor: Created VideoWidget:"<<vid;
+// 		vid->setVideoSource(rx);
 		
 		GLWidget *vid = new GLWidget();
 		
@@ -504,7 +504,7 @@ void DirectorWindow::readSettings()
 
 void DirectorWindow::createUserSubwindows()
 {
-	return;
+	//return;
 	foreach(QVariant data, m_storedWindowOptions)
 	{
 		QVariantMap opts = data.toMap();
@@ -517,7 +517,7 @@ void DirectorWindow::createUserSubwindows()
 		{
 			if(!opts["file"].toString().isEmpty())
 			{
-				OverlayWidget *widget = addOverlay();
+				OverlayWidget *widget = addOverlay(false);
 				
 				widget->loadFromMap(opts);
 				
@@ -542,7 +542,7 @@ void DirectorWindow::createUserSubwindows()
 		{
 			if(!opts["file"].toString().isEmpty())
 			{
-				GroupPlayerWidget *widget = addGroupPlayer();
+				GroupPlayerWidget *widget = addGroupPlayer(false);
 				
 				widget->loadFromMap(opts);
 				
@@ -868,9 +868,9 @@ VideoPlayerWidget *DirectorWindow::addVideoPlayer()
 	return vid;
 }
 
-GroupPlayerWidget *DirectorWindow::addGroupPlayer()
+GroupPlayerWidget *DirectorWindow::addGroupPlayer(bool browseOnload)
 {
-	GroupPlayerWidget *vid = new GroupPlayerWidget(this); 
+	GroupPlayerWidget *vid = new GroupPlayerWidget(this, browseOnload); 
 
 	addSubwindow(vid);
 	
@@ -887,9 +887,9 @@ CameraMixerWidget *DirectorWindow::addCameraMixer()
 	return vid;
 }
 
-OverlayWidget *DirectorWindow::addOverlay()
+OverlayWidget *DirectorWindow::addOverlay(bool browseOnload)
 {
-	OverlayWidget *vid = new OverlayWidget(this); 
+	OverlayWidget *vid = new OverlayWidget(this, browseOnload); 
 	
 	addSubwindow(vid);
 	
@@ -970,7 +970,7 @@ void DirectorWindow::showCamColorWin()
 
 //////////////////////////
 
-GroupPlayerWidget::GroupPlayerWidget(DirectorWindow *d)
+GroupPlayerWidget::GroupPlayerWidget(DirectorWindow *d, bool browseOnload)
 	: DirectorSourceWidget(d)
 	, m_setGroup(0)
 	, m_scene(0)
@@ -997,20 +997,22 @@ GroupPlayerWidget::GroupPlayerWidget(DirectorWindow *d)
 	
 	QPushButton *newf = new QPushButton(QPixmap(":/data/icons/stock-new.png"), "");
 	QPushButton *edit = new QPushButton(QPixmap(":/data/icons/stock-edit.png"), "");
-	QPushButton *browse = new QPushButton(QPixmap(":/data/icons/stock-open.png"), "");
+	QPushButton *browseb = new QPushButton(QPixmap(":/data/icons/stock-open.png"), "");
 	hbox->addWidget(newf);
 	hbox->addWidget(edit);
-	hbox->addWidget(browse);
+	hbox->addWidget(browseb);
 	
 	vbox->addLayout(hbox);
 	
 	connect(newf, SIGNAL(clicked()), this, SLOT(newFile()));
 	connect(edit, SIGNAL(clicked()), this, SLOT(openEditor()));
-	connect(browse, SIGNAL(clicked()), this, SLOT(browse()));
+	connect(browseb, SIGNAL(clicked()), this, SLOT(browse()));
 	connect(m_glw, SIGNAL(clicked()), this, SLOT(switchTo()));
 	connect(m_combo, SIGNAL(currentIndexChanged(int)), this, SLOT(selectedGroupIndexChanged(int)));
 	
 	newFile();
+	if(browseOnload)
+		browse();
 }
 
 void GroupPlayerWidget::newFile()
@@ -1175,7 +1177,7 @@ void GroupPlayerWidget::selectedGroupIndexChanged(int idx)
 
 //////////////////////////
 
-OverlayWidget::OverlayWidget(DirectorWindow *d)
+OverlayWidget::OverlayWidget(DirectorWindow *d, bool browseOnload)
 	: DirectorSourceWidget(d)
 	, m_setGroup(0)
 	, m_scene(0)
@@ -1243,7 +1245,8 @@ OverlayWidget::OverlayWidget(DirectorWindow *d)
 	connect(m_combo, SIGNAL(currentIndexChanged(int)), this, SLOT(selectedGroupIndexChanged(int)));
 	
 	newFile();
-	browse();
+	if(browseOnload)
+		browse();
 }
 
 QVariantMap OverlayWidget::saveToMap()

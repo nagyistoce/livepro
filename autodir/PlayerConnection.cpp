@@ -15,6 +15,8 @@
 // Included for access because it has/is the containers for drawables
 #include "GLSceneGroup.h"
 
+#define DEBUG_SOCKET
+
 //////////////////////////////////////////////////////////////////////////////
 
 PlayerSubviewsModel::PlayerSubviewsModel(PlayerConnection *conn)
@@ -142,6 +144,13 @@ PlayerConnection::PlayerConnection(QObject *parent)
 	connect(&m_connectTimer, SIGNAL(timeout()), this, SLOT(connectTimeout()));
 	m_connectTimer.setInterval(5 * 1000);
 	m_connectTimer.setSingleShot(true);
+	
+	connect(&m_pingTimer, SIGNAL(timeout()), this, SLOT(pingServer()));
+	m_pingTimer.setInterval(1000);
+	
+	connect(&m_pingDeadTimer, SIGNAL(timeout()), this, SLOT(lostConnection()));
+	m_pingDeadTimer.setInterval(2000);
+	m_pingDeadTimer.setSingleShot(true);
 }
 
 PlayerConnection::PlayerConnection(QByteArray& ba, QObject *parent)
@@ -164,6 +173,13 @@ PlayerConnection::PlayerConnection(QByteArray& ba, QObject *parent)
 	connect(&m_connectTimer, SIGNAL(timeout()), this, SLOT(connectTimeout()));
 	m_connectTimer.setInterval(1000);
 	m_connectTimer.setSingleShot(true);
+
+	connect(&m_pingTimer, SIGNAL(timeout()), this, SLOT(pingServer()));
+	m_pingTimer.setInterval(1000);
+	
+	connect(&m_pingDeadTimer, SIGNAL(timeout()), this, SLOT(lostConnection()));
+	m_pingDeadTimer.setInterval(2000);
+	m_pingDeadTimer.setSingleShot(true);
 }
 
 PlayerConnection::~PlayerConnection()
@@ -348,8 +364,13 @@ void PlayerConnection::clientConnected()
 {
 	if(m_connectTimer.isActive())
 		m_connectTimer.stop();
+		
+	#ifdef DEBUG_SOCKET
+	qDebug() << "PlayerConnection::clientConnected()"; //: m_justTesting:"<<m_justTesting;
+	#endif
 	
-	//qDebug() << "PlayerConnection::clientConnected(): m_justTesting:"<<m_justTesting;
+	m_pingTimer.start();
+	
 	m_isConnected = true;
 		
 	if(m_justTesting)
@@ -377,6 +398,8 @@ void PlayerConnection::disconnectPlayer()
 	disconnect(m_client, 0, this, 0);
 
 	m_isConnected = false;
+	
+	m_pingTimer.stop();
 
 	m_client->exit();
 	m_client->deleteLater();
@@ -422,6 +445,10 @@ void PlayerConnection::lostConnection()
 {
 	if(m_connectTimer.isActive())
 		m_connectTimer.stop();
+		
+	m_pingTimer.stop();
+	
+	m_isConnected = false;
 	
 	//qDebug() << "PlayerConnection::lostConnection: m_autoReconnect:"<<m_autoReconnect; 
 	if(m_autoReconnect)
@@ -661,6 +688,22 @@ void PlayerConnection::subviewChanged(GLWidgetSubview *sub)
 		<< "data"	<< sub->toByteArray());
 }
 
+void PlayerConnection::pingServer()
+{
+	if(!m_isConnected)
+		return;
+		
+	sendCommand(QVariantList() << "cmd" << Server_DeadPing);
+	
+	#ifdef DEBUG_SOCKET
+	//qDebug() << "PlayerConnection::pingServer(): ping sent";
+	#endif
+	
+	if(!m_pingDeadTimer.isActive())
+		m_pingDeadTimer.start();
+	
+}
+
 void PlayerConnection::receivedMap(QVariantMap map)
 {
 	// TODO parse map response and emit signals based on contents
@@ -797,6 +840,15 @@ void PlayerConnection::receivedMap(QVariantMap map)
 		}
 	}
 	else
+	if(cmd == Server_DeadPing)
+	{
+		#ifdef DEBUG_SOCKET
+		//qDebug() << "PlayerConnection::receivedMap: Ping received";
+		#endif
+		
+		m_pingDeadTimer.stop();
+	}
+	else
 	if(map["status"].toString() == "error")
 	{
 		setError(map["message"].toString(), cmd);
@@ -851,7 +903,8 @@ void PlayerConnection::sendCommand(QVariantList reply)
 
 
 	//qDebug() << "PlayerConnection::sendCommand: [DEBUG] map:"<<map;
-	qDebug() << "PlayerConnection::sendCommand: [COMMAND] "<<map["cmd"].toString()<<", map:"<<map;
+	if(map["cmd"].toString() != Server_DeadPing)
+		qDebug() << "PlayerConnection::sendCommand: [COMMAND] "<<map["cmd"].toString()<<", map:"<<map;
 
 	if(m_client && m_isConnected)
 		m_client->sendMap(map);

@@ -19,7 +19,6 @@ public:
 // 	void setLogger(MainWindow*);
 	//void setInstance(OutputInstance*);
 	bool connectTo(const QString& host, int port);
-	void exit();
 	QString errorString(){ return m_socket->errorString(); }
 	
 	bool waitForData(int msec) { return m_socket ? m_socket->waitForReadyRead(msec) : false;  }
@@ -27,6 +26,7 @@ public:
 
 public slots:
 	void sendMap(const QVariantMap& map);
+        void exit();
 
 signals:
 	//void aspectRatioChanged(double);
@@ -53,7 +53,7 @@ protected:
 
 private:
 	void log(const QString&);
-	QTcpSocket *m_socket;
+        QPointer<QTcpSocket> m_socket;
 	
 	int m_blockSize;
 	QByteArray m_dataBlock;

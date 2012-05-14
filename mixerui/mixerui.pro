@@ -24,7 +24,12 @@ include(../varnet/varnet.pri)
 include(../3rdparty/qtgetopt/getopt.pri)
 
 # Client for the 'miditcp' server
+win32: {
+include(../../miditcp/client/miditcp.pri)
+}
+else: {
 include(/opt/miditcp/client/miditcp.pri)
+}
 
 # Qt Color Picker widget
 include(../3rdparty/qtcolorpicker/qtcolorpicker.pri)

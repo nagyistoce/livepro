@@ -43,7 +43,8 @@ bool VariantMapClient::connectTo(const QString& host, int port)
 
 	m_socket = new QTcpSocket(this);
 	connect(m_socket, SIGNAL(readyRead()), this, SLOT(dataReady()));
-	connect(m_socket, SIGNAL(disconnected()), this, SIGNAL(socketDisconnected()));
+        connect(m_socket, SIGNAL(disconnected()), this, SIGNAL(exit()));
+        connect(m_socket, SIGNAL(disconnected()), this, SIGNAL(socketDisconnected()));
 	connect(m_socket, SIGNAL(connected()), this, SIGNAL(socketConnected()));
 	connect(m_socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SIGNAL(socketError(QAbstractSocket::SocketError)));
 

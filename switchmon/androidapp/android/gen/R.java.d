@@ -1,4 +1,4 @@
-C:\Users\JosiahBryan\Devel\livepro\switchmon\androidapp\android\gen\org\kde\necessitas\example\LiveProSwitchMonAndroid\R.java \
+C:\Users\JosiahBryan\Devel\livepro\switchmon\androidapp\android\gen\org\kde\necessitas\example\LiveProSwitchMonAndroid\LiveProSwitchMonAndroid\R.java \
  : C:\Users\JosiahBryan\Devel\livepro\switchmon\androidapp\android\res\drawable\icon.png \
 C:\Users\JosiahBryan\Devel\livepro\switchmon\androidapp\android\res\drawable\logo.png \
 C:\Users\JosiahBryan\Devel\livepro\switchmon\androidapp\android\res\drawable-hdpi\icon.png \

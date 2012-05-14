@@ -985,7 +985,7 @@
                </layout>
               </item>
               <item>
-               <widget class="KeystonePointsEditor" name="keystoneEditor" native="true">
+               <widget class="QWidget" name="keystoneEditor" native="true">
                 <property name="minimumSize">
                  <size>
                   <width>100</width>
@@ -1007,14 +1007,6 @@
    </item>
   </layout>
  </widget>
- <customwidgets>
-  <customwidget>
-   <class>KeystonePointsEditor</class>
-   <extends>QWidget</extends>
-   <header>../KeystonePointsEditor.h</header>
-   <container>1</container>
-  </customwidget>
- </customwidgets>
  <resources/>
  <connections>
   <connection>

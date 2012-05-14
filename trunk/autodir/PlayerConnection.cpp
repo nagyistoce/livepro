@@ -401,7 +401,7 @@ void PlayerConnection::disconnectPlayer()
 	
 	m_pingTimer.stop();
 
-	m_client->exit();
+        //m_client->exit();
 	m_client->deleteLater();
 	m_client = 0;
 

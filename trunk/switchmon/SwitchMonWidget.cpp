@@ -122,10 +122,12 @@ void SwitchMonWidget::vidWidgetClicked()
 {
 	QObject *obj = sender();
 	QString con = obj->property("con").toString();
+
+	qDebug() << "SwitchMonWidget::vidWidgetClicked: clicked connection: "<<con;
+
 	if(con.isEmpty())
 		return;
 		
-	//qDebug() << "vidWidgetClicked: clicked connection: "<<con;
 	sendCon(con);
 	
 	if(m_lastLiveWidget)
@@ -362,17 +364,21 @@ void SwitchMonWidget::createViewers()
 		m_vbox->addLayout(m_bottomRow);
 	}
 
-	if(m_inputList.isEmpty())
-	    // Add in the "Live" output
-	    m_inputList.prepend(tr("net=%1:9978").arg(m_host));
+	//if(m_inputList.isEmpty())
+	//    // Add in the "Live" output
+	//    m_inputList.prepend(tr("net=%1:9978").arg(m_host));
 	
 	// Add in the "Live" output because when we generate a layout with 
 	// no viewers at all to start out with, the layout doesn't
 	// automatically expand when we receive the list of streams from the server.
 	// By adding in a known stream to start out with (which gets removed when
 	// we get the list from the server) we "prop up" the layout till the list arrives.
-	if(m_inputList.isEmpty())
-		m_inputList.append(tr("net=%1:9978").arg(m_host));
+	//if(m_inputList.isEmpty())
+	//	m_inputList.append(tr("net=%1:9978").arg(m_host));
+	//if(!m_inputList.isEmpty())
+	    //m_inputList.takeFirst();
+
+	qDebug() << "SwitchMonWidget::createViewers: Creating viewers for: "<<m_inputList;
 	
 	int idx = 0;
 	foreach(QVariant entry, m_inputList)
@@ -407,7 +413,8 @@ void SwitchMonWidget::createViewers()
 		//widget->setVideoBackgroundColor(QColor(50,50,50));
 		widget->setVideoSource(receiver);
 		widget->setOverlayText(idx == 0 ? tr("Live") : tr("Cam %1").arg(idx));
-		widget->setProperty("con", idx == 0 ? "" : con);
+		if(port != 9978)
+		    widget->setProperty("con", con);
 		
 		if(con == m_lastLiveCon)
 		{
@@ -474,7 +481,7 @@ void SwitchMonWidget::processInputEnumReply(const QByteArray &bytes)
 	m_inputList = replyMap["list"].toList();
 	
 	// Add in the "Live" output
-	m_inputList.prepend(tr("net=%1:9978").arg(m_host));
+	//m_inputList.prepend(tr("net=%1:9978").arg(m_host));
 	
 	createViewers();
 	

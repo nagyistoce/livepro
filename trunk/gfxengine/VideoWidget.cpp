@@ -1,10 +1,15 @@
 #include <QtGui/QApplication>
 
+
 #ifndef NO_OPENGL
 #include <QtOpenGL/QGLWidget>
 #endif
 
 #include <QDebug>
+
+#ifdef Q_OS_WIN32
+#define NO_OPENGL
+#endif
 
 #include "VideoWidget.h"
 #ifdef HAS_LIBAV
@@ -15,6 +20,7 @@
 #include <QPainter>
 #include <QApplication>
 #include <QMessageBox>
+
 
 
 VideoWidget::VideoWidget(QWidget *parent)

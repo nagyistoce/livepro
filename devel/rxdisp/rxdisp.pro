@@ -5,11 +5,11 @@ INCLUDEPATH += .
 
 QT += network
 
-DEFINES += NO_OPENGL
+#DEFINES += NO_OPENGL
 
 include(../../gfxengine/gfxengine.pri)
 
-DEFINES += NO_OPENGL
+#DEFINES += NO_OPENGL
 
 MOC_DIR = ../.build
 OBJECTS_DIR = ../.build

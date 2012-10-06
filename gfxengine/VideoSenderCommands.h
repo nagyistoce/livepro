@@ -29,6 +29,9 @@
 // Sent by the VideoSender when the signal status changes on a connected CameraThread
 #define Video_SignalStatusChanged "SignalStatusChanged"
 
+// Other classes can use this to send custom key/value pairs
+#define Video_SignalCustom "SignalCustom"
+
 #define Video_Ping "Ping"
 
 #endif

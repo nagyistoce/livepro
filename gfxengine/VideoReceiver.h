@@ -111,6 +111,9 @@ signals:
 	// Emitted only when connected to a CameraThread on the server side
 	void signalStatusChanged(bool);
 	
+	// Emitted when "sendCustomSignal" called on the VideoSender on the server side
+	void customSignal(QString key, QVariant value);
+	
 private slots:
 	void dataReady();
 	void processBlock();

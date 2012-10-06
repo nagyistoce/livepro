@@ -287,6 +287,12 @@ void VideoSender::setVideoSource(VideoSource *source)
 
 }
 
+void VideoSender::sendCustomSignal(QString key, QVariant value)
+{
+	// picked up by threads
+	emit customSignal(key, value);
+}
+
 void VideoSender::disconnectVideoSource()
 {
 	if(!m_source)
@@ -409,6 +415,7 @@ void VideoSender::incomingConnection(int socketDescriptor)
 	connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
 	connect(this, SIGNAL(receivedFrame()), thread, SLOT(frameReady()), Qt::QueuedConnection);
 	connect(this, SIGNAL(signalStatusChanged(bool)), thread, SLOT(signalStatusChanged(bool)), Qt::QueuedConnection);
+	connect(this, SIGNAL(customSignal(QString, QVariant)), thread, SLOT(customSignal(QString, QVariant)), Qt::QueuedConnection);
 	thread->moveToThread(thread);
 	thread->setSender(this);
 	thread->start();
@@ -478,6 +485,14 @@ void VideoSenderThread::signalStatusChanged(bool flag)
 	sendReply(QVariantList() 
 			<< "cmd"	<< Video_SignalStatusChanged
 			<< "flag"	<< flag);
+}
+
+void VideoSenderThread::customSignal(QString key, QVariant value)
+{
+	sendReply(QVariantList() 
+			<< "cmd"	<< Video_SignalCustom
+			<< "key"	<< key
+			<< "value"	<< value);
 }
 
 void VideoSenderThread::frameReady()

@@ -5,9 +5,10 @@
 
 // You can use either a GLWidget to render, or a VideoWidget - to use GLWidget, just comment out the following #define
 
-#define USE_VIDEO_WIDGET
+//#define USE_VIDEO_WIDGET
 
 #include "VideoReceiver.h"
+#include "GLImageHttpDrawable.h"
 
 #ifdef USE_VIDEO_WIDGET
 	#include "VideoWidget.h"
@@ -27,13 +28,10 @@ MainWindow::MainWindow()
 	
 	//QString host = "localhost"; //192.168.0.19"; //192.168.0.17";
 	QString host = "192.168.0.10";
-	int port = 8091;
+	int port = 8093;
 	//int port = 9978;
 	//int port = 7756;
 		
-	VideoReceiver *rx = VideoReceiver::getReceiver(host,port);
-
-	
 	#ifdef USE_VIDEO_WIDGET
 		
 		// Use a VideoWidget to handle the rendering.
@@ -43,6 +41,7 @@ MainWindow::MainWindow()
 		
 		//CameraThread *camera = CameraThread::threadForCamera("/dev/video0");
 		//videoWidget->setVideoSource(camera);
+		VideoReceiver *rx = VideoReceiver::getReceiver(host,port);
 		videoWidget->setVideoSource(rx);
 		
 		vbox->addWidget(videoWidget);
@@ -62,14 +61,23 @@ MainWindow::MainWindow()
 		// via VideoReceiver - see GLVideoInputDrawable::setVideoConnection()
 		//drw = new GLVideoInputDrawable();
 		//drw->setVideoInput("/dev/video0");
-		GLVideoDrawable *drw = new GLVideoDrawable();
-		drw->setVideoSource(rx); 
+		/*GLVideoDrawable *drw = new GLVideoDrawable();
+		drw->setVideoSource(rx);*/ 
+		
+		GLImageHttpDrawable *drw = new GLImageHttpDrawable();
+		drw->setUrl(QString("raw://%1:%2/").arg(host).arg(port));
+		
+		connect(drw, SIGNAL(videoReceiverChanged(VideoReceiver *)), this, SLOT(videoReceiverChanged(VideoReceiver *)));
 		
 		// Add the drawable to the scene
 		scene->addDrawable(drw);
+		m_drw = drw;
 		
 		// setGLWidget() adds all the drawables in the scene to the GLWidget
 		scene->setGLWidget(glw);
+		
+		m_glw = glw;
+		m_glw->setCrossfadeSpeed(750);
 		
 		// Setting the drawable rect and viewport is not strictly needed,
 		// since the viewport defaults to 0,0 by 1000x750, and when
@@ -84,6 +92,23 @@ MainWindow::MainWindow()
 	#endif
 	
 	// Adjust window for a 4:3 aspect ratio
-	resize(640, 480);
+	//resize(640, 480);
+	resize(1024,768);
 }
 
+void MainWindow::videoReceiverChanged(VideoReceiver *rx)
+{
+	//qDebug() << "MainWindow:: connecting to customSignal() on: "<<rx;
+	connect(rx, SIGNAL(customSignal(QString, QVariant)), this, SLOT(customSignal(QString, QVariant)));
+}
+
+void MainWindow::customSignal(QString key, QVariant value)
+{
+	if(key == "setFadeSpeed")
+	{
+		int speed = value.toInt();
+		qDebug() << "MainWindow::customSignal: setFadeSpeed: "<<speed<<"ms";
+		//m_glw->setCrossfadeSpeed(speed);
+		m_drw->setXFadeLength(speed);
+	}
+}

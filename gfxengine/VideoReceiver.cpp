@@ -904,6 +904,12 @@ void VideoReceiver::processReceivedMap(const QVariantMap & map)
 		emit signalStatusChanged(map["flag"].toBool());
 	}
 	else
+	if(cmd == Video_SignalCustom)
+	{
+		emit customSignal(map["key"].toString(), map["value"]);
+		//qDebug() << this << ": customSignal: key:"<<map["key"].toString() <<", value: "<< map["value"];
+	}
+	else
 	if(cmd == Video_Ping)
 	{
 		#ifdef DEBUG_SOCKET

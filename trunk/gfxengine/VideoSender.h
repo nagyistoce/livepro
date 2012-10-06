@@ -53,12 +53,15 @@ public:
 signals: 
 	void receivedFrame();
 	void signalStatusChanged(bool);
+	void customSignal(QString key, QVariant value);
 	
 public slots:
 	void disconnectVideoSource();
 	void setTransmitFps(int fps=-1); // auto fps based on source if -1
 	void setTransmitSize(const QSize& size=QSize()); // null size means auto size based on input
 	void setTransmitSize(int x, int y) { setTransmitSize(QSize(x,y)); }
+	
+	void sendCustomSignal(QString key, QVariant value);
 	
 	void transmitImage(QImage image);
 
@@ -112,6 +115,7 @@ signals:
 public slots:
 	void frameReady();
 	void signalStatusChanged(bool);
+	void customSignal(QString key, QVariant value);
 	
 protected slots:
 	void dataReady();

@@ -25,6 +25,11 @@ public:
 	QString url() { return m_url; }
 	bool pollDviz() { return m_pollDviz; }
 	int updateTime() { return m_updateTime; }
+	
+	VideoReceiver *videoReceiver() { return m_rx; }
+	
+signals:
+	void videoReceiverChanged(VideoReceiver *);
 
 public slots:
 	//virtual bool setImageFile(const QString&);

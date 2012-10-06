@@ -66,6 +66,7 @@ void GLImageHttpDrawable::setUrl(const QString& url)
 		}
 		
 		qDebug() << "GLImageHttpDrawable::setUrl: Got receiver:"<<m_rx;
+		emit videoReceiverChanged(m_rx);
 		m_pollDvizTimer.stop();
 		m_pollImageTimer.stop();
 		

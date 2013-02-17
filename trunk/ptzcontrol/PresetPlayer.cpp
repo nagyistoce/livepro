@@ -122,6 +122,8 @@ PresetPlayer::PresetPlayer()
 	setupGui();
 	loadPresets();
 	
+	connect(&m_gridTimer, SIGNAL(timeout()), this, SLOT(gridMoveNext()));
+	
 	//m_updateLiveTimer.start();
 	
 	//(void*)PresetMidiInputAdapter::instance(this);
@@ -503,6 +505,11 @@ void PresetPlayer::setupGui()
 	///
 	
 	hbox = new QHBoxLayout();
+	
+	btn = new QPushButton("Snapshot Grid");
+	connect(btn, SIGNAL(clicked()), this, SLOT(snapshotGrid()));
+	hbox->addWidget(btn);
+	
 	hbox->addStretch(1);
 	
 	if(m_zoom)
@@ -774,6 +781,60 @@ QPoint PresetPlayer::frameToPanTilt(QPoint pnt)
 	
 	return QPoint();
 	#endif
+}
+
+void PresetPlayer::snapshotGrid()
+{
+	sendServoValues(0,90,0);
+	
+	m_gridTimer.setInterval(1000);
+	m_gridTimer.start();
+}
+
+void PresetPlayer::gridMoveNext()
+{
+	QPoint minPnt(0,90);
+	QPoint maxPnt(180,130);
+	
+	int stepY = 20;
+	int stepX = 20;
+	
+	int curY = m_yBox->value();
+	int curX = m_xBox->value();
+	
+	VideoFramePtr frame = m_src->frame();
+	if(frame && frame->isValid())
+	{
+		QImage img = frame->toImage();
+		QString file = QString().sprintf("grid/grid-%03d-%03d.png",curY,curX);
+		
+		img.save(file);
+		
+		qDebug() << "PresetPlayer::gridMoveNext(): "<<curX<<" x "<<curY<<": Saved "<<file;
+	}
+	
+	
+	curX += stepX;
+	if(curX > maxPnt.x())
+	{
+		curX = 0;
+		curY += stepY;
+		m_gridTimer.setInterval(2000);
+	}
+	else
+	{
+		m_gridTimer.setInterval(1000);
+	}
+	
+	if(curY > maxPnt.y())
+	{
+		sendServoValues((maxPnt.x() - minPnt.x()) / 2 + minPnt.x(), (maxPnt.y() - minPnt.y()) / 2 + minPnt.y(), 0);
+		qDebug() << "PresetPlayer::gridMoveNext(): Done with grid.";
+		m_gridTimer.stop();
+		return;
+	}
+	
+	sendServoValues(curX, curY, 0);
 }
 
 void PresetPlayer::pointClicked(QPoint pnt)

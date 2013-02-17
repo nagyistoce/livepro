@@ -601,7 +601,10 @@ QStringList CameraThread::enumerateDevices(bool forceReenum)
 		if(av_open_input_file(&formatCtx, qPrintable(file), inFmt, 0, &formatParams) != 0)
 		//if(av_open_input_file(&m_av_format_context, "1", inFmt, 0, NULL) != 0)
 		{
-			//qDebug() << "[WARN] CameraThread::load(): av_open_input_file() failed, file:"<<file;
+			#ifdef Q_OS_LINUX
+				if(QFileInfo(file).exists())
+					qDebug() << "[WARN] CameraThread::load(): av_open_input_file() failed, file:"<<file;
+			#endif
 			break;
 		}
 		else
@@ -624,10 +627,15 @@ QStringList CameraThread::enumerateDevices(bool forceReenum)
  		{
 			SimpleV4L2 *v4l2 = new SimpleV4L2();
 			if(v4l2->openDevice(qPrintable(file)) &&
-			v4l2->initDevice())
+			   v4l2->initDevice())
 			{
 				//qDebug() << "CameraThread::enumerateDevices: Success with device "<<file;
 				list << file;
+			}
+			else
+			{
+				if(QFileInfo(file).exists())
+					qDebug() << "CameraThread::enumerateDevices: Failed to open existing device file: "<<file;
 			}
 			delete v4l2; // auto uninits and closes
 

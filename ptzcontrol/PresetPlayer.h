@@ -108,6 +108,10 @@ private slots:
 	
 	void zero();
 	
+	
+	void snapshotGrid();
+	void gridMoveNext();
+	
 protected:
 	void setupGui();
 	void setupClient();
@@ -119,6 +123,8 @@ protected:
 	void sendServoValues(int x, int y, int z, bool zero=false);
 
 	void closeEvent(QCloseEvent*);
+	
+	//void gridMoveDone();
 	
 	
 private:
@@ -156,6 +162,9 @@ private:
 	QTimer m_snapshotTimer;
 	
 	QHash<QString,Pixmap*> m_images;
+	
+	QTimer m_gridTimer;
+	//int m_gridImageCounter;
 };
 
 class PlayerZoomAdapter : public QObject

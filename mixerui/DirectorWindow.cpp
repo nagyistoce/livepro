@@ -681,6 +681,7 @@ void DirectorWindow::writeSettings()
 
 void DirectorWindow::showEvent(QShowEvent */*event*/)
 {
+	qDebug() << "DirectorWindow::showEvent(): Mark";
 	QTimer::singleShot(5, this, SLOT(showAllSubwindows()));
 	QTimer::singleShot(10, this, SLOT(createUserSubwindows()));
 }
@@ -1254,6 +1255,7 @@ QVariantMap OverlayWidget::saveToMap()
 	QVariantMap map;
 	map["file"] = file();
 	map["idx"] = currentIndex();
+	map["lastIdxShown"] = m_lastIdxShown;
 	return map;
 }
 
@@ -1261,6 +1263,13 @@ void OverlayWidget::loadFromMap(const QVariantMap& map)
 {
 	loadFile(map["file"].toString());
 	setCurrentIndex(map["idx"].toInt());
+	
+	m_lastIdxShown = map["lastIdxShown"].toInt();
+	if(m_lastIdxShown>-1)
+	{
+		m_combo->setCurrentIndex(m_lastIdxShown);
+		showOverlay(m_lastIdxShown);
+	}
 }
 
 void OverlayWidget::newFile()
@@ -1635,6 +1644,8 @@ void CameraWidget::setInput(const QString& name)
 		encoded.append(tr("%1=%2").arg(key).arg(params[key]));
 		
 	m_drawable->setProperty("cardInput", name);
+	
+	qDebug() << "CameraWidget::setInput: m_drawable:"<<(QObject*)m_drawable<<", cardInput:"<<name<<", con:"<<encoded.join(",");
 	
 	// Set it back on the cam
 	setCon(encoded.join(","));
@@ -2109,7 +2120,12 @@ void PropertyEditorWindow::setSourceWidget(DirectorSourceWidget* source)
 			connect(combo, SIGNAL(activated(QString)), this, SLOT(setCaptureInput(QString)));
 			form->addRow(tr("&Input:"), combo);
 			
-			combo->setCurrentIndex(inputs.indexOf(params["input"]));
+			QString curCardInput = item->property("cardInput").toString();
+			QString input = curCardInput.isEmpty() ? params["input"] : curCardInput;
+			
+			qDebug() << "PropertyEditorWindow::setSourceWidget: item:"<<(QObject*)item<<", input:"<<input<<", curCardInput:"<<curCardInput;
+			
+			combo->setCurrentIndex(inputs.indexOf(input));
 			
 			QPushButton *btn = new QPushButton("Apply to Player");
 			connect(btn, SIGNAL(clicked()), this, SLOT(sendVidOpts()));
@@ -2383,19 +2399,6 @@ void PropertyEditorWindow::sendVidOpts()
 {
 	if(!m_dir->players() || !m_vid)
 		return;
-		
-	/*
-		Q_PROPERTY(int brightness READ brightness WRITE setBrightness);
-		Q_PROPERTY(int contrast READ contrast WRITE setContrast);
-		Q_PROPERTY(int hue READ hue WRITE setHue);
-		Q_PROPERTY(int saturation READ saturation WRITE setSaturation);
-		
-		Q_PROPERTY(bool flipHorizontal READ flipHorizontal WRITE setFlipHorizontal);
-		Q_PROPERTY(bool flipVertical READ flipVertical WRITE setFlipVertical);
-		
-		Q_PROPERTY(QPointF cropTopLeft READ cropTopLeft WRITE setCropTopLeft);
-		Q_PROPERTY(QPointF cropBottomRight READ cropBottomRight WRITE setCropBottomRight);
-	*/
 	
 	QStringList props = QStringList() 
 		<< "whiteLevel"
@@ -2488,6 +2491,7 @@ void PropertyEditorWindow::loadVidOpts(bool setSource)
 	
 	foreach(QString prop, props)
 	{
+		qDebug() << "PropertyEditorWindow::loadVidOpts: "<<(QObject*)m_vid<<": prop:"<<prop<<", value:"<<map[prop];
 		m_vid->setProperty(qPrintable(prop), map[prop]);
 	}
 	
@@ -2542,6 +2546,7 @@ void PropertyEditorWindow::saveVidOpts()
 	foreach(QString prop, props)
 	{
 		map[prop] = m_vid->property(qPrintable(prop));
+		qDebug() << "PropertyEditorWindow::saveVidOpts: "<<(QObject*)m_vid<<": "<<prop<<", map:"<<map[prop]<<", read key:"<<qPrintable(prop);
 	}
 	
 	int idx = m_settingsCombo->currentIndex();
@@ -2583,6 +2588,7 @@ void PropertyEditorWindow::saveVidOpts()
 			
 			if(existingMap["name"].toString() == name)
 			{
+				//qDebug() << "PropertyEditorWindow::saveVidOpts: "<<(QObject*)m_vid<<": "<<name<<" [existing]: "<<map;
 				newList << QVariant(map);
 				found = true;
 				//idx = newList.size()-1;
@@ -2597,6 +2603,7 @@ void PropertyEditorWindow::saveVidOpts()
 		{
 			newList << QVariant(map);
 			idx = newList.size() - 1;
+			//qDebug() << "PropertyEditorWindow::saveVidOpts: "<<(QObject*)m_vid<<": "<<name<<" [new]: "<<map;
 		}
 		
 		s.setValue(key, newList);

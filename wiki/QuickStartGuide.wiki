@@ -8,13 +8,15 @@ Here's the very bare minimum quick start guide to running this system.
 
 Checkout the code:
 
-*`$ svn checkout http://livepro.googlecode.com/svn/trunk/ livepro-read-only`*
+*`$ svn checkout http://livepro.googlecode.com/svn/trunk/ livepro-read-only && cd livepro-read-only`*
 
 Build livemix:
 
 *`$ cd livemix && qmake && make -j3; cd..`*
 
 Build the mixer UI:
+
+*`$ cd ../ && svn checkout http://miditcp.googlecode.com/svn/trunk/ miditcp && cd livepro-read-only`
 
 *`$ cd mixerui && qmake && make -j3; cd ..`*
 
